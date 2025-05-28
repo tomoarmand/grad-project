@@ -12,16 +12,18 @@ function StudentPage() {
     };
 
     const refreshExercise = () => {
-        const newIndex = Math.floor(Math.random() * exercises.length);
+        const newIndex = getRandomIndex(exercises.length, currentExerciseIndex);
         setCurrentExerciseIndex(newIndex);
     }
 
     const handleSubmit = (event) => {
         event.preventDefault();
+        console.log(exercises[currentExerciseIndex]);
 
         const correctAnswer = exercises[currentExerciseIndex].correctAnswer
 
-        if (inputValue == correctAnswer) {
+
+        if (inputValue === correctAnswer) {
             alert("Correct Answer");
             setInputValue("")
             refreshExercise();
@@ -30,42 +32,36 @@ function StudentPage() {
             setInputValue("");
         }
 
-
-
     }
-    let randomIndexStorage = [];
 
-    const trueRandomIndex = () => {
+    const getRandomIndex = (length, except = null) => {
+        if (length <= 1) return 0;
 
-        let maxTries = stored.length
-        let tries = 0
-        let randomIndex
+        let randomIndex = Math.floor(Math.random() * length);
 
-        do {
-            randomIndex = Math.floor(Math.random() * stored.length);
-            tries++
-        } while (randomIndexStorage.includes(randomIndex) && (tries < maxTries))
-
-        if (!randomIndexStorage.includes(randomIndex)) {
-            randomIndexStorage.push(randomIndex);
-            return randomIndex;
-
-        } else {
-            return null;
+        if (randomIndex == except) {
+            randomIndex++
+            if (randomIndex == length) {
+                randomIndex = 0
+            }
         }
+        console.log("Random Index:", randomIndex);
+        return randomIndex;
     }
 
     useEffect(() => {
         const stored = JSON.parse(localStorage.getItem("exercises") || "[]");
         setExercises(stored);
 
-        const randomIndex = Math.floor(Math.random() * stored.length);
-        console.log("Random Index:", randomIndex);
+        const randomIndex = getRandomIndex(stored.length);
 
-        setCurrentExerciseIndex(randomIndex)
+
+        setCurrentExerciseIndex(randomIndex);
     }, []);
 
-    console.log(exercises[currentExerciseIndex])
+    if (currentExerciseIndex !== null && exercises[currentExerciseIndex]) {
+        console.log("Current correct answer:", exercises[currentExerciseIndex].correctAnswer);
+    }
 
     return (
         <>

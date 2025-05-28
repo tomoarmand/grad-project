@@ -6,7 +6,7 @@ import './App.css'
 function HomePage() {
     return (
         <>
-        <h1>Home Page</h1>
+        <h1 className="font-bold">Home Page</h1>
         <Link to="/StudentPage">Student Login</Link>
         <Link to="/TeacherPage">Teacher Login</Link>
         </>

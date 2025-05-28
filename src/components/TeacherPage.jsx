@@ -6,21 +6,37 @@ import { useState, useEffect } from 'react'
 function TeacherPage() {
     const [exercises, setExercises] = useState([]);
 
-    useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem("exercises") || "[]");
+    const fetchExercises = async () => {
+        const response = await fetch("http://localhost:3000/exercises");
+        const stored = await response.json();
         setExercises(stored);
-    }, []);
-
-    const addExercise = (exercise) => {
-        const updatedExercises = [...exercises, exercise];
-        setExercises(updatedExercises);
-        localStorage.setItem("exercises", JSON.stringify(updatedExercises))
     }
 
-    const deleteExercise = (id) => {
-        const updatedExercises = exercises.filter((ex) => ex.id !==id);
+    useEffect(() => {
+        fetchExercises();
+    }, []);
+
+    const addExercise = async (exercise) => {
+        const response = await fetch("http://localhost:3000/exercises", {
+            method: "POST",
+            body: JSON.stringify(exercise)
+        })
+        const data = await response.json();
+        exercise._id = data._id;
+
+        const updatedExercises = [...exercises, exercise];
         setExercises(updatedExercises);
-        localStorage.setItem("exercises", JSON.stringify(updatedExercises))
+    }
+
+    const deleteExercise = async (id) => {
+        console.log(id)
+        const response = await fetch(`http://localhost:3000/exercises/${id}`, {
+            method: "DELETE",
+        })
+
+        const remainingExercises = await response.json();
+        setExercises(remainingExercises);
+
     }
     return (
         <>
