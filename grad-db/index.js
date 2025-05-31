@@ -14,6 +14,14 @@ app.use(cors());
 const uri = process.env.MONGO_KEY;
 mongoose.connect(uri);
 
+mongoose.connection.on('connected', () => {
+  console.log('✅ Database connected successfully');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Database connection error:', err);
+});
+
 // Define Student schema
 const exerciseSchema = new mongoose.Schema({
   audioData: String,
