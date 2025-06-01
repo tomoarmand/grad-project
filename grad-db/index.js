@@ -31,32 +31,78 @@ const exerciseSchema = new mongoose.Schema({
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
-// API Endpoints
+// // API Endpoints
+// app.get('/exercises', async (req, res) => {
+//   const exercises = await Exercise.find();
+//   res.json(exercises);
+// });
+
+// app.post('/exercises', async (req, res) => {
+//   const exercises = new Exercise(req.body);
+//   await exercises.save();
+//   res.json(exercises);
+// });
+
+// app.get('/exercises/:id', async (req, res) => {
+//   const exercise = await Exercise.findById(req.params.id);
+//   res.json(exercise);
+// });
+
+// app.delete('/exercises/:id', async (req, res) => {
+//     const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
+//     if (!deletedExercise) {
+//         return res.status(404).json({ error: 'Exercise not found' });
+//       }
+
+//     const remainingExercises = await Exercise.find();
+//     res.json(remainingExercises);
+// })
+
 app.get('/exercises', async (req, res) => {
-  const exercises = await Exercise.find();
-  res.json(exercises);
+  try {
+    const exercises = await Exercise.find();
+    res.json(exercises);
+  } catch (err) {
+    console.error('Error fetching exercises:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.post('/exercises', async (req, res) => {
-  const exercises = new Exercise(req.body);
-  await exercises.save();
-  res.json(exercises);
+  try {
+    const exercise = new Exercise(req.body);
+    await exercise.save();
+    res.json(exercise);
+  } catch (err) {
+    console.error('Error saving exercise:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.get('/exercises/:id', async (req, res) => {
-  const exercise = await Exercise.findById(req.params.id);
-  res.json(exercise);
+  try {
+    const exercise = await Exercise.findById(req.params.id);
+    if (!exercise) return res.status(404).json({ error: 'Not found' });
+    res.json(exercise);
+  } catch (err) {
+    console.error('Error fetching exercise:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.delete('/exercises/:id', async (req, res) => {
+  try {
     const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
     if (!deletedExercise) {
-        return res.status(404).json({ error: 'Exercise not found' });
-      }
-
+      return res.status(404).json({ error: 'Exercise not found' });
+    }
     const remainingExercises = await Exercise.find();
     res.json(remainingExercises);
-})
+  } catch (err) {
+    console.error('Error deleting exercise:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
