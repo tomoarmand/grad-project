@@ -12,14 +12,7 @@ function RecordingComponent({ onSave }) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio : true });
         // Asks the browser for permission to use microphone
         // Stream is an audio stream from the mic
-
-        const mimeType = 'audio/webm;codecs=opus';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                alert("⚠️ Audio format not supported on this device.");
-                return;
-            };
-
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = new MediaRecorder(stream)
         // Creates a new MediaRecorder object to handle recording
         audioChunks.current = [];
         // Clears any previous chunks
@@ -31,12 +24,9 @@ function RecordingComponent({ onSave }) {
         };
 
         mediaRecorderRef.current.onstop = () => {
-            const blob = new Blob(audioChunks.current, { type: mimeType });
+            const blob = new Blob(audioChunks.current, { type: "audio/webm" });
             // Combines all the audio chunks into a single Blob, a binary object representing the audio file
-            if (blob.size === 0) {
-                alert("❌ Recording failed or was too short. Please try again.");
-                return;
-            };
+            
             const reader = new FileReader();
             // Uses a Filereader to convert the blob to a base64 string
             // This format is useful for sending audio to a server or storing it in a databse

@@ -31,71 +31,33 @@ const exerciseSchema = new mongoose.Schema({
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
-// // API Endpoints
-// app.get('/exercises', async (req, res) => {
-//   const exercises = await Exercise.find();
-//   res.json(exercises);
-// });
-
-// app.post('/exercises', async (req, res) => {
-//   const exercises = new Exercise(req.body);
-//   await exercises.save();
-//   res.json(exercises);
-// });
-
-// app.get('/exercises/:id', async (req, res) => {
-//   const exercise = await Exercise.findById(req.params.id);
-//   res.json(exercise);
-// });
-
-// app.delete('/exercises/:id', async (req, res) => {
-//     const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
-//     if (!deletedExercise) {
-//         return res.status(404).json({ error: 'Exercise not found' });
-//       }
-
-//     const remainingExercises = await Exercise.find();
-//     res.json(remainingExercises);
-// })
-
-const asyncHandler = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-// API Endpoints with error handling
-app.get('/exercises', asyncHandler(async (req, res) => {
+// API Endpoints
+app.get('/exercises', async (req, res) => {
   const exercises = await Exercise.find();
   res.json(exercises);
-}));
-
-app.post('/exercises', asyncHandler(async (req, res) => {
-  const exercise = new Exercise(req.body);
-  await exercise.save();
-  res.json(exercise);
-}));
-
-app.get('/exercises/:id', asyncHandler(async (req, res) => {
-  const exercise = await Exercise.findById(req.params.id);
-  if (!exercise) {
-    return res.status(404).json({ error: 'Exercise not found' });
-  }
-  res.json(exercise);
-}));
-
-app.delete('/exercises/:id', asyncHandler(async (req, res) => {
-  const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
-  if (!deletedExercise) {
-    return res.status(404).json({ error: 'Exercise not found' });
-  }
-  const remainingExercises = await Exercise.find();
-  res.json(remainingExercises);
-}));
-
-// Express error handler middleware
-app.use((err, req, res, next) => {
-  console.error('🔥 Error caught by middleware:', err);
-  res.status(500).json({ error: 'Server error', message: err.message });
 });
+
+app.post('/exercises', async (req, res) => {
+  const exercises = new Exercise(req.body);
+  await exercises.save();
+  res.json(exercises);
+});
+
+app.get('/exercises/:id', async (req, res) => {
+  const exercise = await Exercise.findById(req.params.id);
+  res.json(exercise);
+});
+
+app.delete('/exercises/:id', async (req, res) => {
+    const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
+    if (!deletedExercise) {
+        return res.status(404).json({ error: 'Exercise not found' });
+      }
+
+    const remainingExercises = await Exercise.find();
+    res.json(remainingExercises);
+})
+
 
 
 const PORT = process.env.PORT || 3000;
