@@ -9,7 +9,7 @@ function RecordingComponent({ onSave }) {
     // An array that holds pieces of the audio as they are recorded
 
     const startRecording = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio : true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         // Asks the browser for permission to use microphone
         // Stream is an audio stream from the mic
         mediaRecorderRef.current = new MediaRecorder(stream)
@@ -26,21 +26,21 @@ function RecordingComponent({ onSave }) {
         mediaRecorderRef.current.onstop = () => {
             const blob = new Blob(audioChunks.current, { type: "audio/webm" });
             // Combines all the audio chunks into a single Blob, a binary object representing the audio file
-            
+
             const reader = new FileReader();
             // Uses a Filereader to convert the blob to a base64 string
             // This format is useful for sending audio to a server or storing it in a databse
             reader.onloadend = () => {
                 const base64Audio = reader.result;
                 const newExercise = {
-                id: Date.now(),
-                audioData: base64Audio,
-                correctAnswer: correctAnswer,
-            };
-            console.log(newExercise)
-            onSave(newExercise);
-            // Calls onSave to pass the data back to the parent component
-            setCorrectAnswer("")
+                    id: Date.now(),
+                    audioData: base64Audio,
+                    correctAnswer: correctAnswer,
+                };
+                console.log(newExercise)
+                onSave(newExercise);
+                // Calls onSave to pass the data back to the parent component
+                setCorrectAnswer("")
             };
 
             reader.readAsDataURL(blob);
@@ -49,7 +49,7 @@ function RecordingComponent({ onSave }) {
             // base64-encoded Data URL.  It triggers onloadend event handler.
             // This is what reader.result becomes
         };
-        
+
         mediaRecorderRef.current.start();
         setIsRecording(true);
     };
@@ -64,18 +64,18 @@ function RecordingComponent({ onSave }) {
 
     return (
         <>
-        <h2>Record Exercise</h2>
-        <input
-        type="text"
-        placeholder="Correct Answer"
-        value={correctAnswer}
-        onChange={(event) => setCorrectAnswer(event.target.value)}
-        />
-        {!isRecording ? (
-            <button onClick={startRecording}>Start Recording</button>
-        ) : (
-            <button onClick={stopRecording}>Stop & Save</button>
-        )}
+            <h2>Record Exercise</h2>
+            <input
+                type="text"
+                placeholder="Correct Answer"
+                value={correctAnswer}
+                onChange={(event) => setCorrectAnswer(event.target.value)}
+            />
+            {!isRecording ? (
+                <button onClick={startRecording}>Start Recording</button>
+            ) : (
+                <button onClick={stopRecording}>Stop & Save</button>
+            )}
         </>
     )
 }

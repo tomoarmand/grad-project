@@ -59,6 +59,33 @@ app.delete('/exercises/:id', async (req, res) => {
 })
 
 
+// Define User schema
+const userSchema = new mongoose.Schema({
+  email: String,
+  fullName: String,
+  userType: String,
+});
+
+
+const User = mongoose.model('User', userSchema);
+
+app.get('/users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+app.post('/users', async (req, res) => {
+  const users = new User(req.body);
+  await users.save();
+  res.json(users);
+});
+
+app.get('/users/:id', async (req, res) => {
+  const user = await User.findById(req.params.id);
+  res.json(user);
+});
+
+
 
 const PORT = process.env.PORT || 3000;
 

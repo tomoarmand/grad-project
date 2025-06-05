@@ -7,14 +7,11 @@ function StudentPage() {
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(null);
     const [feedback, setFeedback] = useState("")
 
+    const API_URL = import.meta.env.VITE_API_URL;
+
     const handleInputChange = (event) => {
         setInputValue(event.target.value);
     };
-
-    const refreshExercise = () => {
-        const newIndex = getRandomIndex(exercises.length, currentExerciseIndex);
-        setCurrentExerciseIndex(newIndex);
-    }
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -49,14 +46,24 @@ function StudentPage() {
         return randomIndex;
     }
 
-    useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem("exercises") || "[]");
+    const refreshExercise = () => {
+        const newIndex = getRandomIndex(exercises.length, currentExerciseIndex);
+        setCurrentExerciseIndex(newIndex);
+    }
+
+    let stored = [];
+
+    const fetchExercises = async () => {
+        const response = await fetch(`${API_URL}/exercises`);
+        stored = await response.json();
         setExercises(stored);
 
         const randomIndex = getRandomIndex(stored.length);
-
-
         setCurrentExerciseIndex(randomIndex);
+    }
+
+    useEffect(() => {
+        fetchExercises();
     }, []);
 
     if (currentExerciseIndex !== null && exercises[currentExerciseIndex]) {
