@@ -8,11 +8,25 @@ function RecordingComponent({ onSave }) {
     const audioChunks = useRef([]);
     // An array that holds pieces of the audio as they are recorded
 
+    const getAudioMimeType = () => {
+        
+        const preferred = "audio/mp4";
+        if (MediaRecorder.isTypeSupported(preferred)) {
+            return preferred;
+        }
+
+        return "audio/webm";
+    }
+
     const startRecording = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         // Asks the browser for permission to use microphone
         // Stream is an audio stream from the mic
-        mediaRecorderRef.current = new MediaRecorder(stream)
+        const mimeType = getAudioMimeType();
+
+        const options = { mimeType };
+
+        mediaRecorderRef.current = new MediaRecorder(stream, options)
         // Creates a new MediaRecorder object to handle recording
         audioChunks.current = [];
         // Clears any previous chunks
@@ -24,7 +38,7 @@ function RecordingComponent({ onSave }) {
         };
 
         mediaRecorderRef.current.onstop = () => {
-            const blob = new Blob(audioChunks.current, { type: "audio/webm" });
+            const blob = new Blob(audioChunks.current, { type: mimeType });
             // Combines all the audio chunks into a single Blob, a binary object representing the audio file
 
             const reader = new FileReader();
