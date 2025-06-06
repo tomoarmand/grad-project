@@ -49,7 +49,7 @@ function TeacherPage() {
         <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
         <ExerciseList exercises={exercises} onDelete={deleteExercise}/>
         <RecordingComponent onSave={addExercise} />
-        <Link to="/">Home Page</Link>
+        <Link to="/"><p className="font-bold text-m sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
         </div>
     )
 }

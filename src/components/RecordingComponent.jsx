@@ -82,7 +82,6 @@ function RecordingComponent({ onSave }) {
             {!isRecording &&
             <input
                 className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10"
-                autoFocus
                 type="text"
                 placeholder="Enter correct answer here"
                 value={correctAnswer}
