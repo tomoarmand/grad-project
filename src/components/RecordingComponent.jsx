@@ -9,7 +9,7 @@ function RecordingComponent({ onSave }) {
     // An array that holds pieces of the audio as they are recorded
 
     const getAudioMimeType = () => {
-        
+
         const preferred = "audio/mp4";
         if (MediaRecorder.isTypeSupported(preferred)) {
             return preferred;
@@ -78,18 +78,28 @@ function RecordingComponent({ onSave }) {
 
     return (
         <>
-            <h2>Record Exercise</h2>
+        <div>
+            {!isRecording &&
             <input
+                className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10"
+                autoFocus
                 type="text"
-                placeholder="Correct Answer"
+                placeholder="Enter correct answer here"
                 value={correctAnswer}
                 onChange={(event) => setCorrectAnswer(event.target.value)}
             />
+        }
             {!isRecording ? (
-                <button onClick={startRecording}>Start Recording</button>
+                <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={startRecording}>Record!</button>
             ) : (
-                <button onClick={stopRecording}>Stop & Save</button>
+                <>
+                    <div className="flex justify-center items-center">
+                    <div className="w-5 h-5 rounded-full border-2 border-red-600 bg-red-600 mr-3"></div><p className="text-lg sm:text-xl md:text-2xl text-[#f8fafc]">Recording exercise...</p>
+                    <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={stopRecording}>Stop & Save</button>
+                    </div>
+                </>
             )}
+            </div>
         </>
     )
 }
