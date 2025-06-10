@@ -11,7 +11,7 @@ function ExerciseList({ exercises, onDelete}) {
                 <li key={ex._id}>
                     <p className="font-bold text-m sm:text-l md:text-xl mb-1 sm:mb-2 text-[#f8fafc]">Answer: {ex.correctAnswer}</p>
                 <div className="flex justify-center items-center mb-3 sm:mb-5">
-                <audio controls src={ex.audioData}></audio>
+                <audio controls src={ex.audioData} type="audio/mp4"></audio>
                 <button className="text-lg sm:text-xl md:text-2xl border-none rounded-full px-4 py-2 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c] ml-3" onClick={() => onDelete(ex._id)}>X</button>
                 </div>
                 
