@@ -5,15 +5,18 @@ import { useState, useEffect } from 'react'
 
 function TeacherPage() {
     const [exercises, setExercises] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL;
     // ^
     //  || "http://localhost:3000"
 
     const fetchExercises = async () => {
+        setLoading(true);
         const response = await fetch(`${API_URL}/exercises`);
         const stored = await response.json();
         setExercises(stored);
+        setLoading(false);
     }
 
     useEffect(() => {
@@ -47,9 +50,9 @@ function TeacherPage() {
     }
     return (
         <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
-        <ExerciseList exercises={exercises} onDelete={deleteExercise}/>
+        <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading}/>
         <RecordingComponent onSave={addExercise} />
-        <Link to="/"><p className="font-bold text-m sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
+        <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
         </div>
     )
 }

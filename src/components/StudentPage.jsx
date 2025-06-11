@@ -5,7 +5,8 @@ function StudentPage() {
     const [exercises, setExercises] = useState([]);
     const [inputValue, setInputValue] = useState("");
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(null);
-    const [feedback, setFeedback] = useState("")
+    const [feedback, setFeedback] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL;
 
@@ -54,12 +55,15 @@ function StudentPage() {
     let stored = [];
 
     const fetchExercises = async () => {
+        setLoading(true);
         const response = await fetch(`${API_URL}/exercises`);
         stored = await response.json();
         setExercises(stored);
 
         const randomIndex = getRandomIndex(stored.length);
         setCurrentExerciseIndex(randomIndex);
+
+        setLoading(false);
     }
 
     useEffect(() => {
@@ -79,7 +83,7 @@ function StudentPage() {
                     <audio controls src={exercises[currentExerciseIndex].audioData}></audio>
                     <div>
                     <input
-                        className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] mt-20 h-10"
+                        className="text-base text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] mt-20 h-10"
                         onChange={handleInputChange}
                         value={inputValue}
                         placeholder="Enter your answer here"
@@ -88,7 +92,7 @@ function StudentPage() {
                     className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" type="submit">Submit</button>
                     </div>
                 </form>)}
-            <Link to="/"><p className="font-bold text-m sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
+            <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
         </div>
     )
 }
