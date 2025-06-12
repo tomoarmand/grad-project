@@ -3,6 +3,9 @@ import mongoose from 'mongoose';
 import cors from "cors";
 import dotenv from 'dotenv';
 
+import userRoutes from './routes/userRoutes.js';
+import exerciseRoutes from './routes/exerciseRoutes.js';
+
 dotenv.config();
 
 const app = express();
@@ -23,69 +26,8 @@ mongoose.connection.on('error', (err) => {
   console.error('❌ Database connection error:', err);
 });
 
-// Define Student schema
-const exerciseSchema = new mongoose.Schema({
-  audioData: String,
-  correctAnswer: String,
-});
-
-const Exercise = mongoose.model('Exercise', exerciseSchema);
-
-// API Endpoints
-app.get('/exercises', async (req, res) => {
-  const exercises = await Exercise.find();
-  res.json(exercises);
-});
-
-app.post('/exercises', async (req, res) => {
-  const exercises = new Exercise(req.body);
-  await exercises.save();
-  res.json(exercises);
-});
-
-app.get('/exercises/:id', async (req, res) => {
-  const exercise = await Exercise.findById(req.params.id);
-  res.json(exercise);
-});
-
-app.delete('/exercises/:id', async (req, res) => {
-    const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
-    if (!deletedExercise) {
-        return res.status(404).json({ error: 'Exercise not found' });
-      }
-
-    const remainingExercises = await Exercise.find();
-    res.json(remainingExercises);
-})
-
-
-// Define User schema
-const userSchema = new mongoose.Schema({
-  email: String,
-  fullName: String,
-  userType: String,
-});
-
-
-const User = mongoose.model('User', userSchema);
-
-app.get('/users', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-
-app.post('/users', async (req, res) => {
-  const users = new User(req.body);
-  await users.save();
-  res.json(users);
-});
-
-app.get('/users/:id', async (req, res) => {
-  const user = await User.findById(req.params.id);
-  res.json(user);
-});
-
-
+app.use('/users', userRoutes);
+app.use('/exercises', exerciseRoutes);
 
 const PORT = process.env.PORT || 5000;
 
