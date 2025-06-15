@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
 
-function RecordingComponent({ onSave }) {
+function RecordingComponent({ onSave, students, teacherId }) {
     const [isRecording, setIsRecording] = useState(false);
     const [correctAnswer, setCorrectAnswer] = useState("");
+    const [selectedStudent, setSelectedStudent] = useState("");
+
     const mediaRecorderRef = useRef(null);
     // Stores the MediaRecorder object so it persists across renders
     const audioChunks = useRef([]);
@@ -47,9 +49,10 @@ function RecordingComponent({ onSave }) {
             reader.onloadend = () => {
                 const base64Audio = reader.result;
                 const newExercise = {
-                    id: Date.now(),
                     audioData: base64Audio,
-                    correctAnswer: correctAnswer,
+                    correctAnswer,
+                    userId: teacherId,
+                    studentId: selectedStudent
                 };
                 console.log(newExercise)
                 onSave(newExercise);
@@ -78,26 +81,38 @@ function RecordingComponent({ onSave }) {
 
     return (
         <>
-        <div>
-            {!isRecording &&
-            <input
-                className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10"
-                type="text"
-                placeholder="Enter correct answer here"
-                value={correctAnswer}
-                onChange={(event) => setCorrectAnswer(event.target.value)}
-            />
-        }
-            {!isRecording ? (
-                <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={startRecording}>Record!</button>
-            ) : (
-                <>
-                    <div className="flex justify-center items-center">
-                    <div className="w-5 h-5 rounded-full border-2 border-red-600 bg-red-600 mr-3"></div><p className="text-lg sm:text-xl md:text-2xl text-[#f8fafc]">Recording exercise...</p>
-                    <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={stopRecording}>Stop & Save</button>
-                    </div>
-                </>
-            )}
+            <div>
+                {!isRecording &&
+                    <>
+                        <input
+                            className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10"
+                            type="text"
+                            placeholder="Enter correct answer here"
+                            value={correctAnswer}
+                            onChange={(event) => setCorrectAnswer(event.target.value)}
+                        />
+                        <select
+                            className="text-black"
+                            value={selectedStudent}
+                            onChange={(e) => setSelectedStudent(e.target.value)}
+                        >
+                            <option value="">Select Student</option>
+                            {students.map((student) => (
+                                <option key={student._id} value={student._id}>{student.fullName}</option>
+                            ))}
+                        </select>
+                    </>
+                }
+                {!isRecording ? (
+                    <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={startRecording}>Record!</button>
+                ) : (
+                    <>
+                        <div className="flex justify-center items-center">
+                            <div className="w-5 h-5 rounded-full border-2 border-red-600 bg-red-600 mr-3"></div><p className="text-lg sm:text-xl md:text-2xl text-[#f8fafc]">Recording exercise...</p>
+                            <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={stopRecording}>Stop & Save</button>
+                        </div>
+                    </>
+                )}
             </div>
         </>
     )

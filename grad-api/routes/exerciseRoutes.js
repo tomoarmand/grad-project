@@ -9,8 +9,11 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const { userId } = req.query;
-  const filter = userId ? { userId } : {};
+  const { userId, studentId } = req.query;
+  const filter = {};
+  if (userId) filter.userId = userId;  
+  if (studentId) filter.studentId = studentId;
+  
   const exercises = await Exercise.find(filter);
   res.json(exercises);
 });

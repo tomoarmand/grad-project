@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   });
 
 router.post('/', async (req, res) => {
-    const { fullNAme, email, role = 'teacher' } = req.body;
+    const { fullName, email, role = 'teacher' } = req.body;
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ error: 'User already exist '});
     const user = await User.create({ fullName, email, role })
