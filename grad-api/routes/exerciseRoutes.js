@@ -4,11 +4,6 @@ import Exercise from '../models/Exercise.js';
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const exercises = await Exercise.find();
-  res.json(exercises);
-});
-
-router.get('/', async (req, res) => {
   const { userId, studentId } = req.query;
   const filter = {};
   if (userId) filter.userId = userId;  
@@ -32,9 +27,16 @@ router.get('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
+  const { userId } = req.query;
+
   const deletedExercise = await Exercise.findByIdAndDelete(req.params.id);
   if (!deletedExercise) return res.status(404).json({ error: 'Exercise not found' });
-  const remainingExercises = await Exercise.find();
+  
+  const filter = {};
+  if (userId) filter.userId = userId;
+
+  
+  const remainingExercises = await Exercise.find(filter);
   res.json(remainingExercises);
 });
 

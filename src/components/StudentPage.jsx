@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import useUserStore from '../store/userStore';
 
 function StudentPage() {
     const [exercises, setExercises] = useState([]);
@@ -7,6 +8,7 @@ function StudentPage() {
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(null);
     const [feedback, setFeedback] = useState("");
     const [loading, setLoading] = useState(false);
+    const { user } = useUserStore();
 
     const API_URL = import.meta.env.VITE_API_URL;
 
@@ -55,8 +57,10 @@ function StudentPage() {
     let stored = [];
 
     const fetchExercises = async () => {
+        if (!user) return;
+
         setLoading(true);
-        const response = await fetch(`${API_URL}/exercises`);
+        const response = await fetch(`${API_URL}/exercises?studentId=${user._id}`);
         stored = await response.json();
         setExercises(stored);
 
@@ -67,8 +71,10 @@ function StudentPage() {
     }
 
     useEffect(() => {
-        fetchExercises();
-    }, []);
+        if (user) {
+            fetchExercises();
+        }
+    }, [user]);
 
     if (currentExerciseIndex !== null && exercises[currentExerciseIndex]) {
         console.log("Current correct answer:", exercises[currentExerciseIndex].correctAnswer);

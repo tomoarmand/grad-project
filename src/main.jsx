@@ -5,6 +5,7 @@ import HomePage from './App.jsx'
 import StudentPage from "./components/StudentPage"
 import TeacherPage from "./components/TeacherPage"
 import CreateUserPage from "./components/CreateUserPage";
+import LoginPage from './components/LoginPage';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/StudentPage" element={<StudentPage />} />
         <Route path="/TeacherPage" element={<TeacherPage />} />
         <Route path="/CreateUserPage" element={<CreateUserPage />} />
+        <Route path="/LoginPage" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
