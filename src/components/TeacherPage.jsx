@@ -8,6 +8,7 @@ function TeacherPage() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(false);
     const [students, setStudents] = useState([]);
+    const [selectedStudentId, setSelectedStudentId] = useState("");
     const { user } = useUserStore();
 
     const API_URL = import.meta.env.VITE_API_URL;
@@ -54,7 +55,7 @@ function TeacherPage() {
         })
 
         const data = await response.json();
-        exerciseWithTeacherId._id = data._id;
+        exerciseWithTeacherAndStudent._id = data._id;
 
         const updatedExercises = [...exercises, exerciseWithTeacherAndStudent];
         setExercises(updatedExercises);
@@ -78,7 +79,7 @@ function TeacherPage() {
           </div>
         );
       }
-      
+
     return (
         <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
         <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading}/>

@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Exercise from '../models/Exercise.js';
 
 const router = express.Router();
@@ -14,9 +15,14 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { audioData, correctAnswer, userId } = req.body;
+  const { audioData, correctAnswer, userId, studentId } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId required' });
-  const exercise = new Exercise({ audioData, correctAnswer, userId });
+  const exercise = new Exercise({
+    audioData,
+    correctAnswer,
+    userId: new mongoose.Types.ObjectId(userId),
+    studentId: new mongoose.Types.ObjectId(studentId),
+  });
   await exercise.save();
   res.json(exercise);
 });
