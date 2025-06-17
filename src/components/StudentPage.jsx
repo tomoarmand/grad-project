@@ -9,6 +9,7 @@ function StudentPage() {
     const [feedback, setFeedback] = useState("");
     const [loading, setLoading] = useState(false);
     const { user } = useUserStore();
+    console.log(user)
 
     const API_URL = import.meta.env.VITE_API_URL;
 

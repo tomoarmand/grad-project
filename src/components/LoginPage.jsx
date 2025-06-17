@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/userStore';
+import { Link } from 'react-router-dom';
 
 function LoginPage() {
     const [email, setEmail] = useState('');
@@ -34,21 +35,25 @@ function LoginPage() {
         };
 
         return (
-            <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 p-4 text-white">
+            <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
+            <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 p-4">
       <input
+      className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10 placeholder-gray-500"
         name="email"
         type="email"
         placeholder="Enter your email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        className="text-black"
         required
       />
-      <button className="bg-[#64748b] hover:bg-[#fb923c] px-4 py-2 rounded">
+      <button className="bg-[#64748b] hover:bg-[#fb923c] text-white px-4 py-2 rounded">
         Log In
       </button>
     </form>
+    <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
+    </div>
         )
 }
+
 
 export default LoginPage;
