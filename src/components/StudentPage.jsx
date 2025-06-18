@@ -23,8 +23,9 @@ function StudentPage() {
 
         const correctAnswer = exercises[currentExerciseIndex].correctAnswer
 
+const trimmedInput = inputValue.replaceAll(" ", "");
 
-        if (inputValue === correctAnswer) {
+        if (trimmedInput === correctAnswer) {
             alert("Correct Answer");
             setInputValue("")
             refreshExercise();
