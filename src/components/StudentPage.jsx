@@ -20,7 +20,7 @@ function StudentPage() {
     const triggerSuccess = () => {
         // Show success message
         setShowCorrect(true);
-        
+
         // Hide success message
         setTimeout(() => {
             setShowCorrect(false);
@@ -31,15 +31,15 @@ function StudentPage() {
     const triggerTryAgain = () => {
         // Start screen shake
         setIsShaking(true);
-        
+
         // Show try again message
         setShowTryAgain(true);
-        
+
         // Stop screen shake after animation
         setTimeout(() => {
             setIsShaking(false);
         }, 600);
-        
+
         // Hide try again message
         setTimeout(() => {
             setShowTryAgain(false);
@@ -57,7 +57,7 @@ function StudentPage() {
             return Math.random() * (max - min) + min;
         }
 
-        const interval = setInterval(function() {
+        const interval = setInterval(function () {
             const timeLeft = animationEnd - Date.now();
 
             if (timeLeft <= 0) {
@@ -97,9 +97,9 @@ function StudentPage() {
             // Trigger confetti celebration
             celebrate();
             triggerSuccess();
-            
+
             setInputValue("");
-            
+
             // Delay refreshing exercise to let celebration play
             setTimeout(() => {
                 refreshExercise();
@@ -168,7 +168,7 @@ function StudentPage() {
                     </div>
                 </div>
             )}
-            
+
             {/* Try Again Message */}
             {showTryAgain && (
                 <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
@@ -178,37 +178,37 @@ function StudentPage() {
                     </div>
                 </div>
             )}
-            
+
             {currentExerciseIndex !== null && exercises[currentExerciseIndex] &&
-                (<form 
-                className="flex flex-col items-center"
-                onSubmit={handleSubmit}>
+                (<form
+                    className="flex flex-col items-center"
+                    onSubmit={handleSubmit}>
                     <audio controls src={exercises[currentExerciseIndex].audioData}></audio>
                     <div>
-                    <input
-                        className="text-base sm:text-l md:text-xl pl-3 rounded-sm text-bl bg-[#f8fafc] mt-20 h-11"
-                        onChange={handleInputChange}
-                        value={inputValue}
-                        placeholder="Enter your answer here..."
-                    />
-                    <button
-                    className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" type="submit">Submit</button>
+                        <input
+                            className="text-base sm:text-l md:text-xl pl-3 rounded-sm text-bl bg-[#f8fafc] mt-20 h-11"
+                            onChange={handleInputChange}
+                            value={inputValue}
+                            placeholder="Enter your answer here..."
+                        />
+                        <button
+                            className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" type="submit">Submit</button>
                     </div>
                 </form>)}
             <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
-            
+
             {/* CSS for shake animation */}
             <style jsx>{`
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
-                    20%, 40%, 60%, 80% { transform: translateX(8px); }
-                }
-                
-                .animate-shake {
-                    animation: shake 0.6s ease-in-out;
-                }
-            `}</style>
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+        20%, 40%, 60%, 80% { transform: translateX(4px); }
+    }
+
+    .animate-shake {
+        animation: shake 0.4s ease-in-out;
+    }
+`}</style>
         </div>
     );
 }
