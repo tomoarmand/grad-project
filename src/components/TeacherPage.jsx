@@ -10,7 +10,6 @@ function TeacherPage() {
     const [students, setStudents] = useState([]);
     const [selectedStudentId, setSelectedStudentId] = useState("");
     const { user } = useUserStore();
-    const [selectedStudent, setSelectedStudent] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
     // ^
@@ -36,7 +35,6 @@ function TeacherPage() {
 
     useEffect(() => {
         if (user) {
-            fetchExercises();
             fetchStudents();
         }
     }, [user]);
@@ -75,7 +73,7 @@ function TeacherPage() {
     }
 
     const handleStudentSelection = (event) => {
-        setSelectedStudent(event.target.value);
+        setSelectedStudentId(event.target.value);
         const studentId = event.target.value;
         fetchExercises(studentId);
         console.log(studentId)
@@ -92,9 +90,13 @@ function TeacherPage() {
     return (
         <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
             <select
-                className="text-black"
-                value={selectedStudent}
-                onChange={(e) => handleStudentSelection(e)}
+                className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] rounded-sm h-11 px-1"
+                value={selectedStudentId}
+                onChange={(e) => {
+                    const studentId = e.target.value;
+                    setSelectedStudentId(studentId);
+                    fetchExercises(studentId);
+                }}
             >
                 <option value="">Select Student</option>
                 {students.map((student) => (
@@ -102,7 +104,7 @@ function TeacherPage() {
                 ))}
             </select>
             <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
-            <RecordingComponent onSave={addExercise} students={students} teacherId={user._id} />
+            <RecordingComponent onSave={addExercise} students={students} teacherId={user._id} selectedStudentId={selectedStudentId} />
             <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
         </div>
     )

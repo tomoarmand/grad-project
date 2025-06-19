@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
 
-function RecordingComponent({ onSave, students, teacherId }) {
+function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) {
     const [isRecording, setIsRecording] = useState(false);
     const [correctAnswer, setCorrectAnswer] = useState("");
-    const [selectedStudent, setSelectedStudent] = useState("");
 
     const mediaRecorderRef = useRef(null);
     // Stores the MediaRecorder object so it persists across renders
@@ -47,12 +46,15 @@ function RecordingComponent({ onSave, students, teacherId }) {
             // Uses a Filereader to convert the blob to a base64 string
             // This format is useful for sending audio to a server or storing it in a databse
             reader.onloadend = () => {
+
+                
+
                 const base64Audio = reader.result;
                 const newExercise = {
                     audioData: base64Audio,
                     correctAnswer,
                     userId: teacherId,
-                    studentId: selectedStudent
+                    studentId: selectedStudentId
                 };
                 console.log(newExercise)
                 onSave(newExercise);
@@ -85,22 +87,12 @@ function RecordingComponent({ onSave, students, teacherId }) {
                 {!isRecording &&
                     <>
                         <input
-                            className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10"
+                            className="text-m rounded-sm text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-11"
                             type="text"
                             placeholder="Enter correct answer here"
                             value={correctAnswer}
                             onChange={(event) => setCorrectAnswer(event.target.value)}
                         />
-                        <select
-                            className="text-black"
-                            value={selectedStudent}
-                            onChange={(e) => setSelectedStudent(e.target.value)}
-                        >
-                            <option value="">Select Student</option>
-                            {students.map((student) => (
-                                <option key={student._id} value={student._id}>{student.fullName}</option>
-                            ))}
-                        </select>
                     </>
                 }
                 {!isRecording ? (

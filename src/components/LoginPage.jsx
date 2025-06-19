@@ -46,7 +46,7 @@ function LoginPage() {
         <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
             <form onSubmit={handleLogin} className="flex flex-col items-center gap-4 p-4">
                 <input
-                    className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-10 placeholder-gray-500"
+                    className="text-m sm:text-l md:text-xl  text-bl bg-[#f8fafc] pl-3 h-11 placeholder-gray-500 rounded-sm"
                     name="email"
                     type="email"
                     placeholder="Enter your email"
@@ -55,11 +55,12 @@ function LoginPage() {
                     required
                 />
                 <input 
+                className="text-m sm:text-l md:text-xl  text-bl bg-[#f8fafc] pl-3 h-11 placeholder-gray-500 rounded-sm"
                 value={teacherPIN}
                 onChange={(event) => setTeacherPIN(event.target.value)}
                 placeholder="Enter PIN (Teachers only)"
                 />
-                <button className="bg-[#64748b] hover:bg-[#fb923c] text-white px-4 py-2 rounded">
+                <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]">
                     Log In
                 </button>
             </form>
