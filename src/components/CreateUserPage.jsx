@@ -32,8 +32,8 @@ function CreateUserPage() {
     return (
         <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
         <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 p-4 text-white">
-      <input name="fullName" placeholder="Full Name" onChange={handleChange} className="text-m sm:text-l md:text-xl  text-bl bg-[#f8fafc] pl-3 h-11 rounded-sm placeholder-gray-500" required />
-      <input name="email" placeholder="Email" onChange={handleChange} className="text-m sm:text-l md:text-xl  text-bl bg-[#f8fafc] pl-3 h-11 rounded-sm placeholder-gray-500" required />
+      <input name="fullName" placeholder="Full Name" onChange={handleChange} className="text-m sm:text-l md:text-xl  text-black bg-[#f8fafc] pl-3 h-11 rounded-sm placeholder-gray-500" required />
+      <input name="email" placeholder="Email" onChange={handleChange} className="text-m sm:text-l md:text-xl  text-black bg-[#f8fafc] pl-3 h-11 rounded-sm placeholder-gray-500" required />
       <select name="role" onChange={handleChange} value={formData.role} className="text-m sm:text-l md:text-xl  text-black bg-[#f8fafc] pl-3 h-10 rounded-sm placeholder-gray-500 px-1">
         <option value="teacher">Teacher</option>
         <option value="student">Student</option>
