@@ -27,6 +27,13 @@ function TeacherPage() {
         if (!user) return; // protect against null
 
         setLoading(true);
+
+        if (!studentId) {
+            setExercises([]); // Clear the list if no student selected
+            setLoading(false);
+            return;
+        }
+
         const response = await fetch(`${API_URL}/exercises?userId=${user._id}&studentId=${studentId}`);
         const stored = await response.json();
         setExercises(stored);
@@ -67,8 +74,7 @@ function TeacherPage() {
             method: "DELETE",
         })
 
-        const remainingExercises = await response.json();
-        setExercises(remainingExercises);
+        fetchExercises(selectedStudentId);
 
     }
 
