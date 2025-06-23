@@ -92,8 +92,9 @@ function StudentPage() {
 
         const correctAnswer = exercises[currentExerciseIndex].correctAnswer;
         const trimmedInput = inputValue.replaceAll(" ", "");
+        const trimmedAnswer = correctAnswer.replaceAll(" ", "");
 
-        if (trimmedInput === correctAnswer) {
+        if (trimmedInput === trimmedAnswer) {
             // Trigger confetti celebration
             celebrate();
             triggerSuccess();
