@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import Buttons from "./Buttons"
 
 function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) {
     const [isRecording, setIsRecording] = useState(false);
@@ -81,6 +82,17 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
         // after all event handlers are set up
     };
 
+    const handleButtonPress = (text) => {
+        console.log(text)
+    }
+
+    function AppendingInput() {
+        const [inputValue, setInputValue] = useState('');
+      
+        const handleAppend = () => {
+          setInputValue(prevValue => prevValue + ' Appended Text');
+        };
+        
     return (
         <>
             <div>
@@ -106,6 +118,7 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
                     </>
                 )}
             </div>
+            <Buttons onClick={handleButtonPress}/>
         </>
     )
 }

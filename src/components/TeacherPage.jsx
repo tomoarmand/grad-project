@@ -3,7 +3,6 @@ import RecordingComponent from './RecordingComponent';
 import ExerciseList from './ExerciseList';
 import { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
-import Buttons from './Buttons';
 
 function TeacherPage() {
     const [exercises, setExercises] = useState([]);
@@ -79,6 +78,7 @@ function TeacherPage() {
 
     }
 
+
     const handleStudentSelection = (event) => {
         setSelectedStudentId(event.target.value);
         const studentId = event.target.value;
@@ -112,7 +112,6 @@ function TeacherPage() {
             </select>
             <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
             <RecordingComponent onSave={addExercise} students={students} teacherId={user._id} selectedStudentId={selectedStudentId} />
-            <Buttons />
             <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
         </div>
     )
