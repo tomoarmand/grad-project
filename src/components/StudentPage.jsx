@@ -11,7 +11,9 @@ function StudentPage() {
     const [loading, setLoading] = useState(false);
     const [showTryAgain, setShowTryAgain] = useState(false);
     const [showCorrect, setShowCorrect] = useState(false);
+    const [showAnswer, setShowAnswer] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
+    const [failedAttempts, setFailedAttempts] = useState(0);
     const { user } = useUserStore();
 
     const API_URL = import.meta.env.VITE_API_URL;
@@ -101,6 +103,8 @@ function StudentPage() {
 
             setInputValue("");
 
+            setShowAnswer(false);
+
             // Delay refreshing exercise to let celebration play
             setTimeout(() => {
                 refreshExercise();
@@ -108,8 +112,20 @@ function StudentPage() {
         } else {
             // Trigger screen shake and try again message
             triggerTryAgain();
+            setFailedAttempts(prev => {
+                const newAttempts = prev + 1;
+                if (newAttempts >= 3) {
+                    setShowAnswer(true);
+                }
+
+                if (newAttempts > 3) {
+                    setFeedback(correctAnswer);
+                }
+                return newAttempts;
+            });
             setInputValue("");
         }
+
     };
 
     const getRandomIndex = (length, except = null) => {
@@ -130,6 +146,8 @@ function StudentPage() {
     const refreshExercise = () => {
         const newIndex = getRandomIndex(exercises.length, currentExerciseIndex);
         setCurrentExerciseIndex(newIndex);
+        setShowAnswer(false);
+        setFailedAttempts(0);
     };
 
     let stored = [];
@@ -181,21 +199,40 @@ function StudentPage() {
             )}
 
             {currentExerciseIndex !== null && exercises[currentExerciseIndex] &&
-                (<form
-                    className="flex flex-col items-center"
-                    onSubmit={handleSubmit}>
-                    <audio controls src={exercises[currentExerciseIndex].audioData}></audio>
-                    <div>
-                        <input
-                            className="text-base sm:text-l md:text-xl pl-3 rounded-sm text-bl bg-[#f8fafc] mt-20 h-11"
-                            onChange={handleInputChange}
-                            value={inputValue}
-                            placeholder="Enter your answer here..."
-                        />
-                        <button
-                            className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" type="submit">Submit</button>
-                    </div>
-                </form>)}
+                (<>
+                    <form
+                        className="flex flex-col items-center"
+                        onSubmit={handleSubmit}>
+                        <p className="text-white text-s mb-4 ms-4 text-center">Listen to the recording and type your answer below (e.g., "Perfect Fifth")</p>
+                        <audio controls src={exercises[currentExerciseIndex].audioData}></audio>
+                        <div>
+                            <input
+                                className="text-base sm:text-l md:text-xl pl-3 rounded-sm text-bl bg-[#f8fafc] mt-20 h-11"
+                                onChange={handleInputChange}
+                                value={inputValue}
+                                placeholder="Enter your answer here..."
+                            />
+                            <button
+                                className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" type="submit">Submit</button>
+                        </div>
+                    </form>
+                    {showAnswer && (
+                        <div className="mt-4 flex flex-col items-center">
+                            {!feedback && (
+                                <button
+                                    onClick={() => setFeedback(exercises[currentExerciseIndex].correctAnswer)}
+                                    className="text-sm sm:text-base md:text-lg text-[#f8fafc] bg-[#f87171] hover:bg-[#ef4444] px-4 py-2 rounded shadow"
+                                >
+                                    Show Answer
+                                </button>
+                            )}
+                            {feedback && (
+                                <p className="mt-2 text-white text-lg">Answer: {feedback}</p>
+                            )}
+                        </div>
+                    )}
+                </>)
+            }
             <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
 
             {/* CSS for shake animation */}
