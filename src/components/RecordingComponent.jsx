@@ -48,7 +48,7 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
             // This format is useful for sending audio to a server or storing it in a databse
             reader.onloadend = () => {
 
-                
+
 
                 const base64Audio = reader.result;
                 const newExercise = {
@@ -88,11 +88,12 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
 
     function AppendingInput() {
         const [inputValue, setInputValue] = useState('');
-      
+
         const handleAppend = () => {
-          setInputValue(prevValue => prevValue + ' Appended Text');
+            setInputValue(prevValue => prevValue + ' Appended Text');
         };
-        
+    }
+
     return (
         <>
             <div>
@@ -118,7 +119,7 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
                     </>
                 )}
             </div>
-            <Buttons onClick={handleButtonPress}/>
+            <Buttons onClick={handleButtonPress} />
         </>
     )
 }
