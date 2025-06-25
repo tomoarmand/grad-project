@@ -82,9 +82,9 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
         // after all event handlers are set up
     };
 
-    const handleButtonPress = (text) => {
-        console.log(text)
-    }
+    const handleButtonPress = (number) => {
+        setCorrectAnswer(prev => prev + number.toString());
+    };
 
     function AppendingInput() {
         const [inputValue, setInputValue] = useState('');

@@ -16,6 +16,11 @@ function StudentPage() {
     const [failedAttempts, setFailedAttempts] = useState(0);
     const { user } = useUserStore();
 
+    const inputRef = useRef();
+    useEffect(() => {
+        if (inputRef.current) inputRef.current.focus();
+    }, [currentExerciseIndex]);
+
     const API_URL = import.meta.env.VITE_API_URL;
 
     // Success message function
@@ -147,6 +152,7 @@ function StudentPage() {
         const newIndex = getRandomIndex(exercises.length, currentExerciseIndex);
         setCurrentExerciseIndex(newIndex);
         setShowAnswer(false);
+        setFeedback("");
         setFailedAttempts(0);
     };
 
@@ -178,6 +184,13 @@ function StudentPage() {
 
     return (
         <div className={`min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden ${isShaking ? 'animate-shake' : ''}`}>
+
+            <h1 className="text-2xl text-white font-semibold mb-6">Welcome, {user?.name || 'Student'}!</h1>
+
+            {loading && (
+                <p className="text-white text-xl">Loading exercises...</p>
+            )}
+
             {/* Correct Answer Message */}
             {showCorrect && (
                 <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
@@ -207,13 +220,18 @@ function StudentPage() {
                         <audio controls src={exercises[currentExerciseIndex].audioData}></audio>
                         <div>
                             <input
-                                className="text-base sm:text-l md:text-xl pl-3 rounded-sm text-bl bg-[#f8fafc] mt-20 h-11"
+                                className="text-base sm:text-l md:text-xl pl-3 rounded-sm text-black bg-[#f8fafc] mt-20 h-11"
                                 onChange={handleInputChange}
                                 value={inputValue}
                                 placeholder="Enter your answer here..."
+                                ref={inputRef}
                             />
                             <button
-                                className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" type="submit">Submit</button>
+                                disabled={!inputValue.trim()}
+                                className={`text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] 
+    ${inputValue.trim() ? 'bg-[#64748b] hover:bg-[#fb923c]' : 'bg-gray-400 cursor-not-allowed'}`}>
+                                Submit
+                            </button>
                         </div>
                     </form>
                     {showAnswer && (
@@ -227,7 +245,9 @@ function StudentPage() {
                                 </button>
                             )}
                             {feedback && (
-                                <p className="mt-2 text-white text-lg">Answer: {feedback}</p>
+                                <p className="mt-2 text-white text-lg transition-opacity duration-500 ease-in opacity-100">
+                                    Answer: {feedback}
+                                </p>
                             )}
                         </div>
                     )}
