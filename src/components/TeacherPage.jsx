@@ -4,7 +4,6 @@ import ExerciseList from './ExerciseList';
 import { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
 
-
 function TeacherPage() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -13,109 +12,121 @@ function TeacherPage() {
     const { user } = useUserStore();
 
     const API_URL = import.meta.env.VITE_API_URL;
-    // ^
-    //  || "http://localhost:3000"
 
     const fetchStudents = async () => {
-        const response = await fetch(`${API_URL}/users`);
-        const allUsers = await response.json();
-        const studentUsers = allUsers.filter(user => user.role === 'student');
-        setStudents(studentUsers);
-        console.log(studentUsers)
+        try {
+            const response = await fetch(`${API_URL}/users`);
+            const allUsers = await response.json();
+            const studentUsers = allUsers.filter(u => u.role === 'student');
+            setStudents(studentUsers);
+        } catch (error) {
+            console.error("Failed to fetch students:", error);
+        }
     }
 
     const fetchExercises = async (studentId) => {
-        if (!user) return; // protect against null
+        if (!user) return;
 
         setLoading(true);
-
         if (!studentId) {
-            setExercises([]); // Clear the list if no student selected
+            setExercises([]);
             setLoading(false);
             return;
         }
 
-        const response = await fetch(`${API_URL}/exercises?userId=${user._id}&studentId=${studentId}`);
-        const stored = await response.json();
-        setExercises(stored);
-        setLoading(false);
+        try {
+            const response = await fetch(`${API_URL}/exercises?userId=${user._id}&studentId=${studentId}`);
+            const stored = await response.json();
+            setExercises(stored);
+        } catch (error) {
+            console.error("Failed to fetch exercises:", error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     useEffect(() => {
-        if (user) {
-            fetchStudents();
-        }
+        if (user) fetchStudents();
     }, [user]);
 
     const addExercise = async (exercise) => {
-
-        const exerciseWithTeacherAndStudent = {
-            ...exercise,
-            userId: user._id,
-            studentId: exercise.studentId,
-        };
-        const response = await fetch(`${API_URL}/exercises`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(exerciseWithTeacherAndStudent)
-        })
-
-        const data = await response.json();
-        exerciseWithTeacherAndStudent._id = data._id;
-
-        const updatedExercises = [...exercises, exerciseWithTeacherAndStudent];
-        setExercises(updatedExercises);
+        try {
+            const exerciseWithTeacherAndStudent = {
+                ...exercise,
+                userId: user._id,
+                studentId: exercise.studentId,
+            };
+            const response = await fetch(`${API_URL}/exercises`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(exerciseWithTeacherAndStudent),
+            });
+            const data = await response.json();
+            exerciseWithTeacherAndStudent._id = data._id;
+            setExercises(prev => [...prev, exerciseWithTeacherAndStudent]);
+        } catch (error) {
+            console.error("Failed to add exercise:", error);
+        }
     }
 
     const deleteExercise = async (id) => {
-        console.log(id)
-        const response = await fetch(`${API_URL}/exercises/${id}?userId=${user._id}`, {
-            method: "DELETE",
-        })
-
-        fetchExercises(selectedStudentId);
-
+        try {
+            await fetch(`${API_URL}/exercises/${id}?userId=${user._id}`, {
+                method: "DELETE",
+            });
+            fetchExercises(selectedStudentId);
+        } catch (error) {
+            console.error("Failed to delete exercise:", error);
+        }
     }
 
-
     const handleStudentSelection = (event) => {
-        setSelectedStudentId(event.target.value);
         const studentId = event.target.value;
+        setSelectedStudentId(studentId);
         fetchExercises(studentId);
-        console.log(studentId)
     }
 
     if (!user) {
         return (
-            <div className="min-h-screen w-screen flex justify-center items-center bg-[#475569] text-white">
+            <div className="min-h-screen w-screen flex justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 text-white px-4">
                 <p>Loading...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden">
-            <select
-                className="text-m text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] rounded-sm h-11 px-1"
-                value={selectedStudentId}
-                onChange={(e) => {
-                    const studentId = e.target.value;
-                    setSelectedStudentId(studentId);
-                    fetchExercises(studentId);
-                }}
-            >
-                <option value="">Select Student</option>
-                {students.map((student) => (
-                    <option key={student._id} value={student._id}>{student.fullName}</option>
-                ))}
-            </select>
-            <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
-            <RecordingComponent onSave={addExercise} students={students} teacherId={user._id} selectedStudentId={selectedStudentId} />
-            <Link to="/"><p className="font-bold text-base sm:text-l md:text-xl mb-1 sm:mb-2 mt-20 text-[#f8fafc]">Home Page</p></Link>
+        <div className="min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 overflow-auto">
+            <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
+
+                <select
+                    className="w-full text-center text-lg rounded bg-[#f8fafc] text-black h-11 px-3 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                    value={selectedStudentId}
+                    onChange={handleStudentSelection}
+                >
+                    <option value="">Select Student</option>
+                    {students.map(student => (
+                        <option key={student._id} value={student._id}>{student.fullName}</option>
+                    ))}
+                </select>
+
+                <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
+
+                <RecordingComponent
+                    onSave={addExercise}
+                    students={students}
+                    teacherId={user._id}
+                    selectedStudentId={selectedStudentId}
+                />
+
+                <Link
+                    to="/"
+                    className="mt-8 text-orange-200 text-lg font-semibold hover:underline"
+                >
+                    ← Back to Home
+                </Link>
+            </div>
         </div>
-    )
+    );
 }
 
-export default TeacherPage
+export default TeacherPage;

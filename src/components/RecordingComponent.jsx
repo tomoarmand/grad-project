@@ -1,135 +1,103 @@
 import { useState, useRef } from "react";
-import Buttons from "./Buttons"
-import { PuffLoader } from "react-spinners";
 
 function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) {
-    const [isRecording, setIsRecording] = useState(false);
-    const [correctAnswer, setCorrectAnswer] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [correctAnswer, setCorrectAnswer] = useState("");
 
-    const mediaRecorderRef = useRef(null);
-    // Stores the MediaRecorder object so it persists across renders
-    const audioChunks = useRef([]);
-    // An array that holds pieces of the audio as they are recorded
+  const mediaRecorderRef = useRef(null);
+  const audioChunks = useRef([]);
 
-    const getAudioMimeType = () => {
+  const getAudioMimeType = () => {
+    const preferred = "audio/mp4";
+    return MediaRecorder.isTypeSupported(preferred) ? preferred : "audio/webm";
+  };
 
-        const preferred = "audio/mp4";
-        if (MediaRecorder.isTypeSupported(preferred)) {
-            return preferred;
-        }
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = getAudioMimeType();
+    const options = { mimeType };
 
-        return "audio/webm";
-    }
+    mediaRecorderRef.current = new MediaRecorder(stream, options);
+    audioChunks.current = [];
 
-    const startRecording = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Asks the browser for permission to use microphone
-        // Stream is an audio stream from the mic
-        const mimeType = getAudioMimeType();
-
-        const options = { mimeType };
-
-        mediaRecorderRef.current = new MediaRecorder(stream, options)
-        // Creates a new MediaRecorder object to handle recording
-        audioChunks.current = [];
-        // Clears any previous chunks
-
-        mediaRecorderRef.current.ondataavailable = (event) => {
-            audioChunks.current.push(event.data);
-            // Every time a chunk of audio data becomes available, it gets pushed into audioChunks
-            console.log(event.data)
-        };
-
-        mediaRecorderRef.current.onstop = () => {
-            const blob = new Blob(audioChunks.current, { type: mimeType });
-            // Combines all the audio chunks into a single Blob, a binary object representing the audio file
-
-            const reader = new FileReader();
-            // Uses a Filereader to convert the blob to a base64 string
-            // This format is useful for sending audio to a server or storing it in a databse
-            reader.onloadend = () => {
-
-
-
-                const base64Audio = reader.result;
-                const newExercise = {
-                    audioData: base64Audio,
-                    correctAnswer,
-                    userId: teacherId,
-                    studentId: selectedStudentId
-                };
-                console.log(newExercise)
-                onSave(newExercise);
-                // Calls onSave to pass the data back to the parent component
-                setCorrectAnswer("")
-            };
-
-            reader.readAsDataURL(blob);
-            // Async file reading operation
-            // Tells FileReader to read the Blob object and convert it into 
-            // base64-encoded Data URL.  It triggers onloadend event handler.
-            // This is what reader.result becomes
-        };
-
-        mediaRecorderRef.current.start();
-        setIsRecording(true);
+    mediaRecorderRef.current.ondataavailable = (event) => {
+      audioChunks.current.push(event.data);
     };
 
-    const stopRecording = () => {
-        mediaRecorderRef.current.stop();
-        setIsRecording(false);
+    mediaRecorderRef.current.onstop = () => {
+      const blob = new Blob(audioChunks.current, { type: mimeType });
+      const reader = new FileReader();
 
-        // .start() and .stop() are defined at the bottom of the function 
-        // after all event handlers are set up
-    };
-
-    const handleButtonPress = (number) => {
-        setCorrectAnswer(prev => prev + number.toString());
-    };
-
-    function AppendingInput() {
-        const [inputValue, setInputValue] = useState('');
-
-        const handleAppend = () => {
-            setInputValue(prevValue => prevValue + ' Appended Text');
+      reader.onloadend = () => {
+        const base64Audio = reader.result;
+        const newExercise = {
+          audioData: base64Audio,
+          correctAnswer,
+          userId: teacherId,
+          studentId: selectedStudentId,
         };
-    }
+        onSave(newExercise);
+        setCorrectAnswer("");
+      };
 
-    return (
-        <>
-            <div>
-                {!isRecording &&
-                    <>
-                        <input
-                            className="text-m rounded-sm text-center sm:text-l md:text-xl  text-bl bg-[#f8fafc] h-11"
-                            type="text"
-                            placeholder="Enter correct answer here"
-                            value={correctAnswer}
-                            onChange={(event) => setCorrectAnswer(event.target.value)}
-                        />
-                    </>
-                }
-                {!isRecording ? (
-                    <button
-                    className={`text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] 
-                      ${correctAnswer.trim() ? 'bg-[#64748b] hover:bg-[#fb923c]' : 'bg-gray-400 cursor-not-allowed'}`}
-                    onClick={startRecording}
-                    disabled={!correctAnswer.trim()}
-                  >
-                    Record!
-                  </button>
-                ) : (
-                    <>
-                        <div className="flex justify-center items-center">
-                            <div className="w-5 h-5 rounded-full border-2 border-red-600 bg-red-600 mr-3"></div><p className="text-lg sm:text-xl md:text-2xl text-[#f8fafc]">Recording exercise...</p>
-                            <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={stopRecording}>Stop & Save</button>
-                        </div>
-                    </>
-                )}
+      reader.readAsDataURL(blob);
+    };
+
+    mediaRecorderRef.current.start();
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  };
+
+  return (
+    <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
+      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
+        <h2 className="text-3xl sm:text-4xl text-white font-bold text-center">
+          New Exercise
+        </h2>
+
+        {!isRecording && (
+          <input
+            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+            type="text"
+            placeholder="Enter correct answer here"
+            value={correctAnswer}
+            onChange={(e) => setCorrectAnswer(e.target.value)}
+          />
+        )}
+
+        {!isRecording ? (
+          <button
+            className={`w-full py-3 rounded text-lg sm:text-xl font-semibold text-white transition duration-200 ${
+              correctAnswer.trim()
+                ? "bg-[#64748b] hover:bg-[#fb923c]"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+            onClick={startRecording}
+            disabled={!correctAnswer.trim()}
+          >
+            Record!
+          </button>
+        ) : (
+          <div className="flex flex-col items-center gap-4 w-full">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 rounded-full border-2 border-red-600 bg-red-600 animate-pulse"></div>
+              <p className="text-lg sm:text-xl text-white">Recording exercise...</p>
             </div>
-            {/* <Buttons onClick={handleButtonPress} /> */}
-        </>
-    )
+            <button
+              onClick={stopRecording}
+              className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
+            >
+              Stop & Save
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default RecordingComponent
+export default RecordingComponent;
