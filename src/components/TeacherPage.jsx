@@ -4,6 +4,7 @@ import ExerciseList from './ExerciseList';
 import { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
 
+
 function TeacherPage() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(false);

@@ -1,16 +1,26 @@
 import { Link } from 'react-router-dom';
-import './App.css'
+import './App.css';
 
 function HomePage() {
-    return (
-        <div className="min-h-screen w-screen flex flex-col justify-center items-center gap-8 bg-[#475569] overflow-hidden">
-            <h1 className="font-bold text-4xl sm:text-5xl md:text-6xl mb-10 sm:mb-16 text-[#f8fafc]">KenTone</h1>
-            <div className="flex flex-col gap-4 w-full max-w-xs sm:max-w-sm text-center">
-                <Link to="/LoginPage"><h2 className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]">Login</h2></Link>
-                <Link to="/CreateUserPage"><h2 className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]">Create New User</h2></Link>
-            </div>
+  return (
+    <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
+      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-8 sm:p-10 text-center">
+        <h1 className="font-bold text-4xl sm:text-5xl mb-8 text-white">KenTone</h1>
+        <div className="flex flex-col gap-4">
+          <Link to="/LoginPage">
+            <button className="w-full text-lg sm:text-xl font-semibold text-white bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200">
+              Log In
+            </button>
+          </Link>
+          <Link to="/CreateUserPage">
+            <button className="w-full text-lg sm:text-xl font-semibold text-white bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200">
+              Create New User
+            </button>
+          </Link>
         </div>
-    )
+      </div>
+    </div>
+  );
 }
 
-export default HomePage
+export default HomePage;

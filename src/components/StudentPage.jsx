@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import useUserStore from '../store/userStore';
+import { PuffLoader } from "react-spinners";
 
 function StudentPage() {
     const [exercises, setExercises] = useState([]);
@@ -15,6 +16,8 @@ function StudentPage() {
     const [isShaking, setIsShaking] = useState(false);
     const [failedAttempts, setFailedAttempts] = useState(0);
     const { user } = useUserStore();
+
+
 
     const inputRef = useRef();
     useEffect(() => {
@@ -185,10 +188,12 @@ function StudentPage() {
     return (
         <div className={`min-h-screen w-screen flex flex-col justify-center items-center gap-6 bg-[#475569] overflow-hidden ${isShaking ? 'animate-shake' : ''}`}>
 
-            <h1 className="text-2xl text-white font-semibold mb-6">Welcome, {user?.name || 'Student'}!</h1>
-
+            <h1 className="text-2xl text-white font-semibold mb-6">Welcome, {user?.fullName || 'Student'}!</h1>
             {loading && (
-                <p className="text-white text-xl">Loading exercises...</p>
+                <div className="flex flex-col items-center justify-center text-white text-xl">
+                    <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
+                    <p className="mt-4">Loading exercises...</p>
+                </div>
             )}
 
             {/* Correct Answer Message */}

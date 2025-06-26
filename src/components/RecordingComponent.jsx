@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import Buttons from "./Buttons"
+import { PuffLoader } from "react-spinners";
 
 function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) {
     const [isRecording, setIsRecording] = useState(false);
@@ -109,7 +110,14 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
                     </>
                 }
                 {!isRecording ? (
-                    <button className="text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] bg-[#64748b] hover:bg-[#fb923c]" onClick={startRecording}>Record!</button>
+                    <button
+                    className={`text-lg sm:text-xl md:text-2xl border-none rounded px-4 py-2 ml-4 text-center inline-block text-[#f8fafc] 
+                      ${correctAnswer.trim() ? 'bg-[#64748b] hover:bg-[#fb923c]' : 'bg-gray-400 cursor-not-allowed'}`}
+                    onClick={startRecording}
+                    disabled={!correctAnswer.trim()}
+                  >
+                    Record!
+                  </button>
                 ) : (
                     <>
                         <div className="flex justify-center items-center">
@@ -119,7 +127,7 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
                     </>
                 )}
             </div>
-            <Buttons onClick={handleButtonPress} />
+            {/* <Buttons onClick={handleButtonPress} /> */}
         </>
     )
 }
