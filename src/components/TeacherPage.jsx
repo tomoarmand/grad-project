@@ -95,38 +95,42 @@ function TeacherPage() {
     }
 
     return (
-        <div className="min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 overflow-auto">
-            <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
+  <div className="min-h-screen w-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-12 overflow-auto">
+    <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
 
-                <select
-                    className="w-full text-center text-lg rounded bg-[#f8fafc] text-black h-11 px-3 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
-                    value={selectedStudentId}
-                    onChange={handleStudentSelection}
-                >
-                    <option value="">Select Student</option>
-                    {students.map(student => (
-                        <option key={student._id} value={student._id}>{student.fullName}</option>
-                    ))}
-                </select>
+      {/* Student Selector */}
+      <select
+        className="w-full text-center text-lg rounded bg-[#f8fafc] text-black h-11 px-3 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+        value={selectedStudentId}
+        onChange={handleStudentSelection}
+      >
+        <option value="">Select Student</option>
+        {students.map(student => (
+          <option key={student._id} value={student._id}>{student.fullName}</option>
+        ))}
+      </select>
 
-                <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
+      {/* ExerciseList */}
+      <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
 
-                <RecordingComponent
-                    onSave={addExercise}
-                    students={students}
-                    teacherId={user._id}
-                    selectedStudentId={selectedStudentId}
-                />
+      {/* RecordingComponent */}
+      <RecordingComponent
+        onSave={addExercise}
+        students={students}
+        teacherId={user._id}
+        selectedStudentId={selectedStudentId}
+      />
+    </div>
 
-                <Link
-                    to="/"
-                    className="mt-8 text-orange-200 text-lg font-semibold hover:underline"
-                >
-                    ← Back to Home
-                </Link>
-            </div>
-        </div>
-    );
+    {/* Move this OUTSIDE the card box */}
+    <Link
+      to="/"
+      className="mt-6 text-orange-200 text-lg font-semibold hover:underline"
+    >
+      ← Back to Home
+    </Link>
+  </div>
+);
 }
 
-export default TeacherPage;
+export default TeacherPage

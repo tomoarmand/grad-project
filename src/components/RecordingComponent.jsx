@@ -53,49 +53,45 @@ function RecordingComponent({ onSave, students, teacherId, selectedStudentId }) 
   };
 
   return (
-    <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
-      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
-        <h2 className="text-3xl sm:text-4xl text-white font-bold text-center">
-          New Exercise
-        </h2>
-
-        {!isRecording && (
-          <input
-            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
-            type="text"
-            placeholder="Enter correct answer here"
-            value={correctAnswer}
-            onChange={(e) => setCorrectAnswer(e.target.value)}
-          />
-        )}
-
-        {!isRecording ? (
-          <button
-            className={`w-full py-3 rounded text-lg sm:text-xl font-semibold text-white transition duration-200 ${
-              correctAnswer.trim()
-                ? "bg-[#64748b] hover:bg-[#fb923c]"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
-            onClick={startRecording}
-            disabled={!correctAnswer.trim()}
-          >
-            Record!
-          </button>
-        ) : (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 rounded-full border-2 border-red-600 bg-red-600 animate-pulse"></div>
-              <p className="text-lg sm:text-xl text-white">Recording exercise...</p>
-            </div>
-            <button
-              onClick={stopRecording}
-              className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
-            >
-              Stop & Save
-            </button>
+    <div className="w-full bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
+      <h2 className="text-3xl sm:text-4xl text-white font-bold text-center">New Exercise</h2>
+  
+      {!isRecording && (
+        <input
+          className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+          type="text"
+          placeholder="Enter correct answer here"
+          value={correctAnswer}
+          onChange={(e) => setCorrectAnswer(e.target.value)}
+        />
+      )}
+  
+      {!isRecording ? (
+        <button
+          className={`w-full py-3 rounded text-lg sm:text-xl font-semibold text-white transition duration-200 ${
+            correctAnswer.trim()
+              ? "bg-[#64748b] hover:bg-[#fb923c]"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
+          onClick={startRecording}
+          disabled={!correctAnswer.trim()}
+        >
+          Record!
+        </button>
+      ) : (
+        <div className="flex flex-col items-center gap-4 w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full border-2 border-red-600 bg-red-600 animate-pulse"></div>
+            <p className="text-lg sm:text-xl text-white">Recording exercise...</p>
           </div>
-        )}
-      </div>
+          <button
+            onClick={stopRecording}
+            className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
+          >
+            Stop & Save
+          </button>
+        </div>
+      )}
     </div>
   );
 }

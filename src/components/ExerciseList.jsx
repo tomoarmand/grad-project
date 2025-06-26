@@ -1,15 +1,15 @@
 import { PuffLoader } from "react-spinners";
 
 function ExerciseList({ exercises, onDelete, loading }) {
-  return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
-      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8">
-        <h2 className="font-bold text-3xl sm:text-4xl text-center mb-6 text-[#f8fafc]">Saved Exercises</h2>
-
+    return (
+      <div className="w-full">
+        <h2 className="font-bold text-3xl sm:text-4xl text-center mb-6 text-[#f8fafc]">
+          Saved Exercises
+        </h2>
         {loading ? (
           <div className="flex flex-col items-center justify-center mt-6">
             <PuffLoader color="#f8fafc" size={40} />
-            <p className="text-lg sm:text-xl md:text-2xl text-[#f8fafc] mt-4">Loading...</p>
+            <p className="text-lg sm:text-xl text-[#f8fafc] mt-4">Loading...</p>
           </div>
         ) : exercises.length === 0 ? (
           <p className="text-lg sm:text-xl text-center text-[#f8fafc]">No exercises saved yet...</p>
@@ -37,8 +37,7 @@ function ExerciseList({ exercises, onDelete, loading }) {
           </ul>
         )}
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 export default ExerciseList;
