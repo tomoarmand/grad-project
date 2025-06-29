@@ -179,7 +179,7 @@ function StudentPage() {
                                     </div>
                                     <button
                                             disabled={!inputValue.trim()}
-                                            className={`px-6 text-lg sm:text-xl rounded mt-5 h-10 w-30 font-semibold text-white transition duration-200 ${
+                                            className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${
                                                 inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"
                                             }`}
                                         >
