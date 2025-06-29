@@ -1,13 +1,14 @@
-## FIX
+## To Do
+ 
+- Fix student and teacher greetings to use only first name(string) from the user.fullName
+
+- Create folders and ability to assign exercises to students
 
 - Rename functionality
-- Create folders and be able to assign exercises to students
-- Input field restrictions in studentpage
-- Button inputs
+
+- Button inputs for flat and sharp
+
 - Next button
 
-- Shouldnt be able to subit empty answer in recording
-- Fix student greeting 
-
-
+- Input field restrictions in studentpage maybe
 

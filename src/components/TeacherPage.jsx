@@ -95,42 +95,52 @@ function TeacherPage() {
     }
 
     return (
-  <div className="min-h-screen w-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-12 overflow-auto">
-    <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
+        <div className="min-h-screen w-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-12 overflow-auto">
+            <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
+            <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
+                    Welcome, {user?.fullName || 'Teacher'}!
+                </h1>
+                {/* Student Selector */}
+                <select
+                    className="w-full text-center text-lg rounded bg-[#f8fafc] text-black h-11 px-3 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                    value={selectedStudentId}
+                    onChange={handleStudentSelection}
+                >
+                    <option value="">Select Student</option>
+                    {students.map(student => (
+                        <option key={student._id} value={student._id}>{student.fullName}</option>
+                    ))}
+                </select>
+                {!selectedStudentId && (
+                    <p className="text-white text-center text-sm sm:text-base">
+                        Please select a student to view or create exercises.
+                    </p>
+                )}
+                {/* ExerciseList */}
+                {selectedStudentId && (
+                    <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
+                )}
 
-      {/* Student Selector */}
-      <select
-        className="w-full text-center text-lg rounded bg-[#f8fafc] text-black h-11 px-3 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
-        value={selectedStudentId}
-        onChange={handleStudentSelection}
-      >
-        <option value="">Select Student</option>
-        {students.map(student => (
-          <option key={student._id} value={student._id}>{student.fullName}</option>
-        ))}
-      </select>
+                {/* RecordingComponent */}
+                {selectedStudentId && (
+                    <RecordingComponent
+                        onSave={addExercise}
+                        students={students}
+                        teacherId={user._id}
+                        selectedStudentId={selectedStudentId}
+                    />
+                )}
+            </div>
 
-      {/* ExerciseList */}
-      <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
-
-      {/* RecordingComponent */}
-      <RecordingComponent
-        onSave={addExercise}
-        students={students}
-        teacherId={user._id}
-        selectedStudentId={selectedStudentId}
-      />
-    </div>
-
-    {/* Move this OUTSIDE the card box */}
-    <Link
-      to="/"
-      className="mt-6 text-orange-200 text-lg font-semibold hover:underline"
-    >
-      ← Back to Home
-    </Link>
-  </div>
-);
+            {/* Move this OUTSIDE the card box */}
+            <Link
+                to="/"
+                className="mt-6 text-orange-200 text-lg font-semibold hover:underline"
+            >
+                ← Back to Home
+            </Link>
+        </div>
+    );
 }
 
 export default TeacherPage

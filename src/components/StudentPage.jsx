@@ -164,7 +164,7 @@ function StudentPage() {
                             <>
                                 <form className="flex flex-col items-center w-full" onSubmit={handleSubmit}>
                                     <p className="text-white text-center text-sm sm:text-base mb-4">
-                                        Listen to the recording and type your answer below (e.g., "Perfect Fifth")
+                                        Listen to the recording and type your answer below
                                     </p>
                                     <audio controls src={exercises[currentExerciseIndex].audioData} className="w-full mb-6 rounded" />
                                     <div className="flex w-full">
@@ -175,15 +175,16 @@ function StudentPage() {
                                             onChange={handleInputChange}
                                             value={inputValue}
                                         />
-                                        <button
+                                        
+                                    </div>
+                                    <button
                                             disabled={!inputValue.trim()}
-                                            className={`px-6 text-lg sm:text-xl rounded-r font-semibold text-white transition duration-200 ${
+                                            className={`px-6 text-lg sm:text-xl rounded mt-5 h-10 w-30 font-semibold text-white transition duration-200 ${
                                                 inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"
                                             }`}
                                         >
                                             Submit
                                         </button>
-                                    </div>
                                 </form>
 
                                 {showAnswer && (

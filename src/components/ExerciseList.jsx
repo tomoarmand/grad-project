@@ -26,11 +26,12 @@ function ExerciseList({ exercises, onDelete, loading }) {
                   >
                     X
                   </button>
-                  <button
+                  {/* Edit button */}
+                  {/* <button
                     className="bg-[#64748b] hover:bg-[#fb923c] text-white font-semibold rounded-full px-4 py-2 text-sm sm:text-base transition duration-200"
                   >
                     E
-                  </button>
+                  </button> */}
                 </div>
               </li>
             ))}
