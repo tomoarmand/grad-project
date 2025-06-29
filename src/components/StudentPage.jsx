@@ -170,7 +170,7 @@ function StudentPage() {
                                     <div className="flex w-full">
                                         <input
                                             ref={inputRef}
-                                            className="flex-grow text-base sm:text-lg rounded-l bg-[#f8fafc] text-black px-4 h-12 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                                            className="flex-grow text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                                             placeholder="Enter your answer here..."
                                             onChange={handleInputChange}
                                             value={inputValue}
