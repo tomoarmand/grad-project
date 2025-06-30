@@ -86,7 +86,6 @@ function StudentPage() {
                 if (newAttempts > 3) setFeedback(correctAnswer);
                 return newAttempts;
             });
-            setInputValue("");
         }
     };
 
