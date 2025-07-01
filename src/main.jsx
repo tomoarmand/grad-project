@@ -6,6 +6,7 @@ import StudentPage from "./components/StudentPage"
 import TeacherPage from "./components/TeacherPage"
 import CreateUserPage from "./components/CreateUserPage";
 import LoginPage from './components/LoginPage';
+import AssignmentPage from './components/AssignmentPage.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/TeacherPage" element={<TeacherPage />} />
         <Route path="/CreateUserPage" element={<CreateUserPage />} />
         <Route path="/LoginPage" element={<LoginPage />} />
+        <Route path="/AssignmentPage" element={<AssignmentPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

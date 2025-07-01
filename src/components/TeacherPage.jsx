@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import RecordingComponent from './RecordingComponent';
+import FolderManager from './FolderManager';
 import ExerciseList from './ExerciseList';
 import { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
@@ -7,9 +8,9 @@ import useUserStore from '../store/userStore';
 function TeacherPage() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [students, setStudents] = useState([]);
-    const [selectedStudentId, setSelectedStudentId] = useState("");
     const { user } = useUserStore();
+
+    const [selectedFolder, setSelectedFolder] = useState(null);
     const [folders, setFolders] = useState([]);
 
     const API_URL = import.meta.env.VITE_API_URL;
@@ -20,44 +21,30 @@ function TeacherPage() {
         setFolders(folderData);
     };
 
-    useEffect(() => {
-        if (user) {
-            fetchFolders();
-            fetchStudents();
-        }
-    }, [user]);
-
-    const fetchStudents = async () => {
+    const fetchExercisesForFolder = async (folderId) => {
         try {
-            const response = await fetch(`${API_URL}/users`);
-            const allUsers = await response.json();
-            const studentUsers = allUsers.filter(u => u.role === 'student');
-            setStudents(studentUsers);
-        } catch (error) {
-            console.error("Failed to fetch students:", error);
-        }
-    }
-
-    const fetchExercises = async (studentId) => {
-        if (!user) return;
-
-        setLoading(true);
-        if (!studentId) {
-            setExercises([]);
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_URL}/exercises?userId=${user._id}&studentId=${studentId}`);
-            const stored = await response.json();
-            setExercises(stored);
-        } catch (error) {
-            console.error("Failed to fetch exercises:", error);
+            setLoading(true);
+            const response = await fetch(`${API_URL}/exercises/folder/${folderId}`);
+            const data = await response.json();
+            setExercises(data);
+        } catch (err) {
+            console.error("Failed to fetch exercises:", err);
         } finally {
             setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchFolders();
+        }
+    }, [user]);
+
+    const handleFolderSelect = (folder) => {
+        setSelectedFolder(folder);
+        fetchExercisesForFolder(folder._id);
     }
+
 
     const addExercise = async (exercise) => {
         try {
@@ -78,17 +65,12 @@ function TeacherPage() {
             await fetch(`${API_URL}/exercises/${id}?userId=${user._id}`, {
                 method: "DELETE",
             });
-            fetchExercises(selectedStudentId);
+            fetchExercisesForFolder(selectedFolder._id);
         } catch (error) {
             console.error("Failed to delete exercise:", error);
         }
     }
 
-    const handleStudentSelection = (event) => {
-        const studentId = event.target.value;
-        setSelectedStudentId(studentId);
-        fetchExercises(studentId);
-    }
 
     if (!user) {
         return (
@@ -101,40 +83,35 @@ function TeacherPage() {
     return (
         <div className="min-h-screen w-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-12 overflow-auto">
             <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
-            <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
+                <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
                     Welcome, {user?.fullName || 'Teacher'}!
                 </h1>
-                {/* Student Selector */}
-                <select
-                    className="w-full text-center text-lg rounded bg-[#f8fafc] text-black h-11 px-3 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
-                    value={selectedStudentId}
-                    onChange={handleStudentSelection}
-                >
-                    <option value="">Select Student</option>
-                    {students.map(student => (
-                        <option key={student._id} value={student._id}>{student.fullName}</option>
-                    ))}
-                </select>
-                {!selectedStudentId && (
-                    <p className="text-white text-center text-sm sm:text-base">
-                        Please select a student to view or create exercises.
-                    </p>
-                )}
-                {/* ExerciseList */}
-                {selectedStudentId && (
-                    <ExerciseList exercises={exercises} onDelete={deleteExercise} loading={loading} />
+                {/* Folder Manager */}
+                <FolderManager teacherId={user._id} onFolderSelect={handleFolderSelect} />
+
+                {/* Show selected folder (optional) */}
+                {selectedFolder && (
+                    <p className="text-white text-center">Selected Folder: {selectedFolder.name}</p>
                 )}
 
-                {/* RecordingComponent */}
-                {selectedStudentId && (
-                    <RecordingComponent
-                    onSave={(exercise) =>
-                        addExercise({ ...exercise, studentId: selectedStudentId })
-                      }
-                        teacherId={user._id}
-                        folders={folders}
+                <RecordingComponent
+                    onSave={(exercise) => addExercise({ ...exercise, folderId: selectedFolder._id })}
+                    teacherId={user._id}
+                    folders={folders} // optional if needed for dropdown inside RecordingComponent
+                />
+                {selectedFolder && (
+                    <ExerciseList
+                        exercises={exercises}
+                        onDelete={deleteExercise}
+                        loading={loading}
                     />
                 )}
+                <Link
+                    to="/AssignmentPage"
+                    className="text-orange-300 underline text-center hover:text-orange-400 transition"
+                >
+                    Go to Assignment Page →
+                </Link>
             </div>
 
             {/* Move this OUTSIDE the card box */}
