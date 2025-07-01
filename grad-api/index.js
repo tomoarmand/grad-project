@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 
 import userRoutes from './routes/userRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
+import folderRoutes from './routes/folderRoutes.js';
+import assignmentRoutes from './routes/assignmentRoutes.js';
 
 dotenv.config();
 
@@ -28,6 +30,8 @@ mongoose.connection.on('error', (err) => {
 
 app.use('/users', userRoutes);
 app.use('/exercises', exerciseRoutes);
+app.use('/folders', folderRoutes);
+app.use('/assignments', assignmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 

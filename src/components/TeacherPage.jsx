@@ -10,8 +10,22 @@ function TeacherPage() {
     const [students, setStudents] = useState([]);
     const [selectedStudentId, setSelectedStudentId] = useState("");
     const { user } = useUserStore();
+    const [folders, setFolders] = useState([]);
 
     const API_URL = import.meta.env.VITE_API_URL;
+
+    const fetchFolders = async () => {
+        const response = await fetch(`${API_URL}/folders/${user._id}`);
+        const folderData = await response.json();
+        setFolders(folderData);
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchFolders();
+            fetchStudents();
+        }
+    }, [user]);
 
     const fetchStudents = async () => {
         try {
@@ -45,25 +59,15 @@ function TeacherPage() {
         }
     }
 
-    useEffect(() => {
-        if (user) fetchStudents();
-    }, [user]);
-
     const addExercise = async (exercise) => {
         try {
-            const exerciseWithTeacherAndStudent = {
-                ...exercise,
-                userId: user._id,
-                studentId: exercise.studentId,
-            };
             const response = await fetch(`${API_URL}/exercises`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(exerciseWithTeacherAndStudent),
+                body: JSON.stringify(exercise),
             });
             const data = await response.json();
-            exerciseWithTeacherAndStudent._id = data._id;
-            setExercises(prev => [...prev, exerciseWithTeacherAndStudent]);
+            setExercises(prev => [...prev, { ...exercise, _id: data._id }]);
         } catch (error) {
             console.error("Failed to add exercise:", error);
         }
@@ -124,10 +128,11 @@ function TeacherPage() {
                 {/* RecordingComponent */}
                 {selectedStudentId && (
                     <RecordingComponent
-                        onSave={addExercise}
-                        students={students}
+                    onSave={(exercise) =>
+                        addExercise({ ...exercise, studentId: selectedStudentId })
+                      }
                         teacherId={user._id}
-                        selectedStudentId={selectedStudentId}
+                        folders={folders}
                     />
                 )}
             </div>
