@@ -15,16 +15,23 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { audioData, correctAnswer, userId, studentId } = req.body;
+  const { audioData, correctAnswer, userId, studentId, folderId } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId required' });
   const exercise = new Exercise({
     audioData,
     correctAnswer,
     userId: new mongoose.Types.ObjectId(userId),
     studentId: new mongoose.Types.ObjectId(studentId),
+    folderId: folderId ? new mongoose.Types.ObjectId(folderId) : null,
   });
   await exercise.save();
   res.json(exercise);
+});
+
+router.get('/folder/:folderId', async (req, res) => {
+  console.log('API hit: get exercises for folder', req.params.folderId);
+  const exercises = await Exercise.find({ folderId: req.params.folderId });
+  res.json(exercises);
 });
 
 router.get('/:id', async (req, res) => {
@@ -41,9 +48,9 @@ router.delete('/:id', async (req, res) => {
   const filter = {};
   if (userId) filter.userId = userId;
 
-  
   const remainingExercises = await Exercise.find(filter);
   res.json(remainingExercises);
 });
+
 
 export default router;

@@ -51,14 +51,18 @@ function TeacherPage() {
             const response = await fetch(`${API_URL}/exercises`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(exercise),
+                body: JSON.stringify({
+                    ...exercise,
+                    teacherId: user._id
+                })
             });
-            const data = await response.json();
-            setExercises(prev => [...prev, { ...exercise, _id: data._id }]);
-        } catch (error) {
-            console.error("Failed to add exercise:", error);
-        }
-    }
+            if (response.ok && exercise.folderId) {
+                await fetchExercisesForFolder(exercise.folderId);
+              }
+            } catch (error) {
+              console.error("Failed to add exercise:", error);
+            }
+          };
 
     const deleteExercise = async (id) => {
         try {
@@ -95,7 +99,7 @@ function TeacherPage() {
                 )}
 
                 <RecordingComponent
-                    onSave={(exercise) => addExercise({ ...exercise, folderId: selectedFolder._id })}
+                    onSave={(exercise) => addExercise(exercise)}
                     teacherId={user._id}
                     folders={folders} // optional if needed for dropdown inside RecordingComponent
                 />

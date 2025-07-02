@@ -89,7 +89,7 @@ function AssignmentPage() {
             <select
                 value={selectedFolderId}
                 onChange={handleFolderChange}
-                className="text-black w-full mb-4 p-2 rounded"
+                className="bg-white text-black w-full mb-4 p-2 rounded"
             >
                 <option value="">Select Folder</option>
                 {folders.map(f => (
