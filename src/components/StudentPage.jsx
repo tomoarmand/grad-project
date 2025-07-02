@@ -126,6 +126,7 @@ function StudentPage() {
         } else {
           const randomIndex = getRandomIndex(stored.length);
           setCurrentExerciseIndex(randomIndex);
+          console.log("Correct answer:", stored[randomIndex].correctAnswer);
         }
         setLoading(false);
     };
