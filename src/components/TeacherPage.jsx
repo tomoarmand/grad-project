@@ -57,12 +57,17 @@ function TeacherPage() {
                 })
             });
             if (response.ok && exercise.folderId) {
+                // Find folder object by id
+                const folder = folders.find(f => f._id === exercise.folderId);
+                if (folder) {
+                    setSelectedFolder(folder);
+                }
                 await fetchExercisesForFolder(exercise.folderId);
-              }
-            } catch (error) {
-              console.error("Failed to add exercise:", error);
             }
-          };
+        } catch (error) {
+            console.error("Failed to add exercise:", error);
+        }
+    };
 
     const deleteExercise = async (id) => {
         try {

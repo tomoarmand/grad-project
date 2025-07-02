@@ -107,16 +107,26 @@ function StudentPage() {
     };
 
     const fetchExercises = async () => {
-        if (!user) return;
-
+        if (!user) {
+            console.log("No user found yet");
+            return;
+        }
+        console.log("Fetching exercises for user:", user._id);
+    
         setLoading(true);
         const response = await fetch(`${API_URL}/exercises?studentId=${user._id}`);
         const stored = await response.json();
+    
+        console.log("Exercises fetched:", stored);
         setExercises(stored);
-
-        const randomIndex = getRandomIndex(stored.length);
-        setCurrentExerciseIndex(randomIndex);
-
+    
+        if (stored.length === 0) {
+          console.log("No exercises found for this user");
+          setCurrentExerciseIndex(null);
+        } else {
+          const randomIndex = getRandomIndex(stored.length);
+          setCurrentExerciseIndex(randomIndex);
+        }
         setLoading(false);
     };
 
