@@ -16,3 +16,6 @@
 
 - Input field restrictions in studentpage maybe
 
+
+###### HOW TO RETRIEVE OLD EXERCISES AND PUT THEM IN CURRENT FOLDERS #####
+

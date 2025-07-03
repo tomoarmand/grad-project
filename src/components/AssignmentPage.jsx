@@ -146,6 +146,12 @@ function AssignmentPage() {
                 <Link to="/TeacherPage" className="text-orange-300 underline hover:text-orange-400 mr-4">
                     ← Back to Teacher Page
                 </Link>
+                <Link
+                                    to="/TeacherExercisesManager"
+                                    className="text-orange-300 underline text-center hover:text-orange-400 transition"
+                                >
+                                    Go to Exercise Manager →
+                                </Link>
                 <Link to="/" className="text-orange-300 underline hover:text-orange-400">
                     Home
                 </Link>
