@@ -17,5 +17,5 @@
 - Input field restrictions in studentpage maybe
 
 
-###### HOW TO RETRIEVE OLD EXERCISES AND PUT THEM IN CURRENT FOLDERS #####
+###### Use navlinks for components with navigation, as implemented in AssignmentPage
 
