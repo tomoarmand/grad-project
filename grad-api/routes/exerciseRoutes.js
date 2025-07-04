@@ -100,4 +100,31 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const { correctAnswer, audioData, folderId, studentIds } = req.body; // include whatever fields you allow updating
+
+    const updateFields = {};
+    if (correctAnswer !== undefined) updateFields.correctAnswer = correctAnswer;
+    if (audioData !== undefined) updateFields.audioData = audioData;
+    if (folderId !== undefined) updateFields.folderId = folderId;
+    if (studentIds !== undefined) updateFields.studentIds = studentIds;
+
+    const updatedExercise = await Exercise.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true } // return the updated doc
+    );
+
+    if (!updatedExercise) {
+      return res.status(404).json({ error: 'Exercise not found' });
+    }
+
+    res.json(updatedExercise);
+  } catch (err) {
+    console.error('PUT /exercises/:id error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

@@ -80,6 +80,18 @@ function TeacherPage() {
         }
     }
 
+    const handleRenameExercise = async (exerciseId, newName) => {
+        const res = await fetch(`${API_URL}/exercises/${exerciseId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json'},
+            body: JSON.stringify({ correctAnswer: newName }),
+        });
+
+        if (res.ok) {
+            fetchExercisesForFolder(selectedFolder._id);
+        }
+    }
+
 
     if (!user) {
         return (
@@ -113,6 +125,7 @@ function TeacherPage() {
                         exercises={exercises}
                         onDelete={deleteExercise}
                         loading={loading}
+                        onRename={handleRenameExercise}
                     />
                 )}
                 <Link

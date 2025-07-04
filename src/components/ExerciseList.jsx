@@ -1,44 +1,81 @@
-import { PuffLoader } from "react-spinners";
+import { useState } from 'react';
 
-function ExerciseList({ exercises, onDelete, loading }) {
-    return (
-      <div className="w-full">
-        <h2 className="font-bold text-3xl sm:text-4xl text-center mb-6 text-[#f8fafc]">
-          Saved Exercises
-        </h2>
-        {loading ? (
-          <div className="flex flex-col items-center justify-center mt-6">
-            <PuffLoader color="#f8fafc" size={40} />
-            <p className="text-lg sm:text-xl text-[#f8fafc] mt-4">Loading...</p>
-          </div>
-        ) : exercises.length === 0 ? (
-          <p className="text-lg sm:text-xl text-center text-[#f8fafc]">No exercises saved yet...</p>
-        ) : (
-          <ul className="flex flex-col gap-6 mt-2">
-            {exercises.map((ex) => (
-              <li key={ex._id} className="flex flex-col gap-3">
-                <p className="font-bold text-base sm:text-lg text-[#f8fafc]">Answer: {ex.correctAnswer}</p>
-                <div className="flex items-center gap-3">
-                  <audio controls src={ex.audioData} type="audio/mp4" className="w-full" />
-                  <button
-                    className="bg-[#64748b] hover:bg-[#fb923c] text-white font-semibold rounded-full px-4 py-2 text-sm sm:text-base transition duration-200"
-                    onClick={() => onDelete(ex._id)}
-                  >
-                    X
-                  </button>
-                  {/* Edit button */}
-                  {/* <button
-                    className="bg-[#64748b] hover:bg-[#fb923c] text-white font-semibold rounded-full px-4 py-2 text-sm sm:text-base transition duration-200"
-                  >
-                    E
-                  </button> */}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
+function ExerciseList({ exercises, onDelete, onRename, loading }) {
+  const [renamingId, setRenamingId] = useState(null);
+  const [newName, setNewName] = useState('');
+
+  if (loading) return <p className="text-white">Loading...</p>;
+
+  return (
+    <ul className="w-full">
+      {exercises.map((ex) => (
+        <li
+          key={ex._id}
+          className="bg-slate-600 p-4 rounded mb-2 flex flex-col gap-3"
+        >
+          {/* Replace the text with input if renaming */}
+          {renamingId === ex._id ? (
+            <div className="flex flex-col gap-2 w-full">
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="text-black p-3 rounded w-full text-lg"
+                autoFocus
+                placeholder="Enter new name"
+              />
+              <div className="flex gap-3 justify-end">
+                <button
+                  className="bg-green-600 text-white px-4 py-2 rounded"
+                  onClick={async () => {
+                    if (newName.trim() !== '') {
+                      await onRename(ex._id, newName.trim());
+                      setRenamingId(null);
+                      setNewName('');
+                    }
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  className="bg-gray-500 text-white px-4 py-2 rounded"
+                  onClick={() => {
+                    setRenamingId(null);
+                    setNewName('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-white text-lg font-medium">Correct Answer: {ex.correctAnswer}</p>
+              <audio controls src={ex.audioData}></audio>
+
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => {
+                    setRenamingId(ex._id);
+                    setNewName(ex.correctAnswer);
+                  }}
+                  className="text-blue-400 font-semibold"
+                >
+                  Rename
+                </button>
+                <button
+                  onClick={() => onDelete(ex._id)}
+                  className="text-red-500 font-semibold"
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default ExerciseList;
