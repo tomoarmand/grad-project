@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/userStore';
-import { Link } from 'react-router-dom';
+import NavLinks from './NavLinks';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -41,7 +41,8 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
-      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8">
+    
+      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 mt-4">
         <h1 className="text-3xl sm:text-4xl text-white font-bold text-center mb-6">Welcome Back</h1>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
@@ -66,11 +67,14 @@ function LoginPage() {
             Log In
           </button>
         </form>
-        <Link to="/" className="block text-center text-sm text-orange-200 hover:underline mt-6">
-          ← Back to Home
-        </Link>
+
+        {/* Additional contextual navigation inside card */}
+        {/* You can add more links here if needed */}
       </div>
+        {/* Home link outside the card */}
+        <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
     </div>
+    
   );
 }
 

@@ -17,5 +17,5 @@
 - Input field restrictions in studentpage maybe
 
 
-###### Use navlinks for components with navigation, as implemented in AssignmentPage
+###### Is link to exercisemanager needed in teacherpage(consider renaming), and is link to assignmentpage required in exercisesmanager?
 

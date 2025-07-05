@@ -1,10 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import RecordingComponent from './RecordingComponent';
 import FolderManager from './FolderManager';
 import ExerciseList from './ExerciseList';
-import { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
+import NavLinks from './NavLinks';
 
 function TeacherPage() {
   const [exercises, setExercises] = useState([]);
@@ -61,7 +62,6 @@ function TeacherPage() {
         }),
       });
       if (response.ok && exercise.folderId) {
-        // Find folder object by id
         const folder = folders.find((f) => f._id === exercise.folderId);
         if (folder) {
           setSelectedFolder(folder);
@@ -130,10 +130,13 @@ function TeacherPage() {
         <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
           Welcome, {user?.fullName || "Teacher"}!
         </h1>
-        {/* Folder Manager */}
-        <FolderManager teacherId={user._id} onFolderSelect={handleFolderSelect} selectedFolder={selectedFolder} />
 
-        {/* Show selected folder */}
+        <FolderManager
+          teacherId={user._id}
+          onFolderSelect={handleFolderSelect}
+          selectedFolder={selectedFolder}
+        />
+
         {selectedFolder && (
           <p className="text-white text-center font-medium mt-1 mb-3">
             Selected Folder: {selectedFolder.name}
@@ -161,21 +164,14 @@ function TeacherPage() {
           )
         )}
 
-        <Link
-          to="/AssignmentPage"
-          className="text-orange-300 underline text-center hover:text-orange-400 transition mt-6"
-        >
-          Go to Assignment Page →
-        </Link>
+        {/* In-card navigation links */}
+        <NavLinks links={[{ label: 'Go to Assignment Page →', to: '/AssignmentPage' }]} />
       </div>
 
-      {/* Back link outside card */}
-      <Link
-        to="/"
-        className="mt-6 text-orange-200 text-lg font-semibold hover:underline"
-      >
-        ← Back to Home
-      </Link>
+      {/* Global home link outside the card */}
+      <div className="w-full max-w-md px-4 mt-2">
+        <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+      </div>
     </div>
   );
 }

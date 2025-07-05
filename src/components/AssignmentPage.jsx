@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
+import NavLinks from './NavLinks';
 
 function AssignmentPage() {
   const { user } = useUserStore();
@@ -88,7 +89,7 @@ function AssignmentPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 text-white px-4 py-8 flex flex-col items-center">
-      <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 flex flex-col gap-6">
+      <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 flex flex-col gap-6 mt-4">
         <h1 className="text-3xl font-bold text-center">Assign Exercises</h1>
 
         <div>
@@ -161,18 +162,16 @@ function AssignmentPage() {
           Assign
         </button>
 
-        <div className="flex flex-col gap-2 text-center text-orange-200 text-sm font-semibold mt-4">
-          <Link to="/TeacherPage" className="hover:underline">
-            ← Back to Teacher Page
-          </Link>
-          <Link to="/TeacherExercisesManager" className="hover:underline">
-            Go to Exercise Manager →
-          </Link>
-          <Link to="/" className="hover:underline">
-            Home
-          </Link>
-        </div>
+        {/* Contextual navigation links inside card */}
+        <NavLinks
+          links={[
+            { label: '← Back to Teacher Page', to: '/TeacherPage' },
+            { label: 'Go to Exercise Manager →', to: '/TeacherExercisesManager' },
+          ]}
+        />
       </div>
+           {/* Home link outside the card */}
+           <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
     </div>
   );
 }

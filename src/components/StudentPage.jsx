@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from "react-spinners";
+import NavLinks from './NavLinks';
 
 function StudentPage() {
     const [exercises, setExercises] = useState([]);
@@ -24,13 +24,11 @@ function StudentPage() {
 
     const API_URL = import.meta.env.VITE_API_URL;
 
-    // Success message function
     const triggerSuccess = () => {
         setShowCorrect(true);
         setTimeout(() => setShowCorrect(false), 2000);
     };
 
-    // Screen shake and try again message function
     const triggerTryAgain = () => {
         setIsShaking(true);
         setShowTryAgain(true);
@@ -38,7 +36,6 @@ function StudentPage() {
         setTimeout(() => setShowTryAgain(false), 2000);
     };
 
-    // Confetti celebration function
     const celebrate = () => {
         const duration = 1500;
         const animationEnd = Date.now() + duration;
@@ -112,21 +109,21 @@ function StudentPage() {
             return;
         }
         console.log("Fetching exercises for user:", user._id);
-    
+
         setLoading(true);
         const response = await fetch(`${API_URL}/exercises?studentId=${user._id}`);
         const stored = await response.json();
-    
+
         console.log("Exercises fetched:", stored);
         setExercises(stored);
-    
+
         if (stored.length === 0) {
-          console.log("No exercises found for this user");
-          setCurrentExerciseIndex(null);
+            console.log("No exercises found for this user");
+            setCurrentExerciseIndex(null);
         } else {
-          const randomIndex = getRandomIndex(stored.length);
-          setCurrentExerciseIndex(randomIndex);
-          console.log("Correct answer:", stored[randomIndex].correctAnswer);
+            const randomIndex = getRandomIndex(stored.length);
+            setCurrentExerciseIndex(randomIndex);
+            console.log("Correct answer:", stored[randomIndex].correctAnswer);
         }
         setLoading(false);
     };
@@ -150,7 +147,6 @@ function StudentPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Correct Answer Message */}
                         {showCorrect && (
                             <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
                                 <div className="bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-green-600">
@@ -160,7 +156,6 @@ function StudentPage() {
                             </div>
                         )}
 
-                        {/* Try Again Message */}
                         {showTryAgain && (
                             <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
                                 <div className="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-red-600">
@@ -185,16 +180,14 @@ function StudentPage() {
                                             onChange={handleInputChange}
                                             value={inputValue}
                                         />
-                                        
                                     </div>
                                     <button
-                                            disabled={!inputValue.trim()}
-                                            className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${
-                                                inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"
+                                        disabled={!inputValue.trim()}
+                                        className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"
                                             }`}
-                                        >
-                                            Submit
-                                        </button>
+                                    >
+                                        Submit
+                                    </button>
                                 </form>
 
                                 {showAnswer && (
@@ -217,40 +210,26 @@ function StudentPage() {
                         )}
                     </>
                 )}
-
-                <Link
-                    to="/"
-                    className="mt-10 text-center text-lg sm:text-xl text-orange-200 hover:underline font-semibold"
-                >
-                    ← Back to Home
-                </Link>
             </div>
 
-            {/* CSS for shake animation */}
+            <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+
             <style jsx>{`
-                @keyframes shake {
-                    0%,
-                    100% {
-                        transform: translateX(0);
-                    }
-                    10%,
-                    30%,
-                    50%,
-                    70%,
-                    90% {
-                        transform: translateX(-4px);
-                    }
-                    20%,
-                    40%,
-                    60%,
-                    80% {
-                        transform: translateX(4px);
-                    }
-                }
-                .animate-shake {
-                    animation: shake 0.4s ease-in-out;
-                }
-            `}</style>
+        @keyframes shake {
+          0%, 100% {
+            transform: translateX(0);
+          }
+          10%, 30%, 50%, 70%, 90% {
+            transform: translateX(-4px);
+          }
+          20%, 40%, 60%, 80% {
+            transform: translateX(4px);
+          }
+        }
+        .animate-shake {
+          animation: shake 0.4s ease-in-out;
+        }
+      `}</style>
         </div>
     );
 }
