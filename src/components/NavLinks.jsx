@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-function NavLinks({ links, isBreadcrumb = false, isPrimary = false }) {
+function NavLinks({ links, isBreadcrumb = false, isPrimary = false, isSubtle = false }) {
   if (isBreadcrumb) {
     return (
       <nav className="text-white text-xs sm:text-sm flex flex-wrap items-center gap-1 truncate px-2 sm:px-0">
@@ -24,14 +24,20 @@ function NavLinks({ links, isBreadcrumb = false, isPrimary = false }) {
   return (
     <div
       className={`mt-6 flex flex-col gap-2 text-center ${
-        isPrimary ? 'text-lg font-semibold' : 'text-orange-200 text-sm sm:text-base font-medium'
+        isPrimary
+          ? 'text-lg font-semibold'
+          : isSubtle
+          ? 'text-slate-400 text-sm' // subtle styling
+          : 'text-orange-200 text-sm sm:text-base font-medium'
       }`}
     >
       {links.map(({ label, to }) => (
         <Link
           key={to}
           to={to}
-          className="hover:underline focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1"
+          className={`hover:underline focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1 ${
+            isSubtle ? 'hover:text-slate-200' : ''
+          }`}
         >
           {label}
         </Link>

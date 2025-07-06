@@ -95,7 +95,7 @@ function CreateUserPage() {
       </div>
 
       {/* Home link outside the card */}
-      <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+      <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
     </div>
   );
 }

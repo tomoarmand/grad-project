@@ -57,9 +57,20 @@ function TeacherExercisesManager() {
   };
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-12 overflow-auto">
-      <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
-        <h1 className="text-3xl sm:text-4xl text-white font-bold text-center">
+    <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-8 overflow-auto">
+      <div className="w-full max-w-md sm:max-w-xl mb-4">
+        <NavLinks
+          links={[
+            { label: 'Home', to: '/' },
+            { label: 'Teacher Dashboard', to: '/TeacherPage' },
+            { label: 'Manage Assignments', to: '/TeacherExercisesManager' }
+          ]}
+          isBreadcrumb
+        />
+      </div>
+
+      <div className="w-full max-w-md sm:max-w-xl bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-6">
+        <h1 className="text-2xl sm:text-3xl text-white font-bold text-center">
           Manage Assigned Exercises
         </h1>
 
@@ -69,14 +80,14 @@ function TeacherExercisesManager() {
             const student = students.find(s => s._id === e.target.value);
             handleSelectStudent(student);
           }}
-          className="w-full bg-slate-700 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="w-full bg-slate-600 text-white rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
           defaultValue=""
         >
           <option value="" disabled>
             Select a student
           </option>
           {students.map(student => (
-            <option key={student._id} value={student._id}>
+            <option key={student._id} value={student._id} className="text-black">
               {student.fullName}
             </option>
           ))}
@@ -97,11 +108,13 @@ function TeacherExercisesManager() {
                 key={ex._id}
                 className="bg-slate-600 p-4 rounded-xl shadow text-white"
               >
-                <p className="font-semibold mb-2">Correct Answer: {ex.correctAnswer}</p>
-                <audio controls src={ex.audioData} className="w-full mb-3" />
+                <p className="font-semibold mb-2 text-sm">
+                  Correct Answer: <span className="text-orange-300">{ex.correctAnswer}</span>
+                </p>
+                <audio controls src={ex.audioData} className="w-full mb-3 rounded" />
                 <button
                   onClick={() => handleUnassign(ex._id)}
-                  className="text-yellow-300 font-medium hover:text-yellow-400 transition"
+                  className="text-yellow-300 font-medium hover:text-yellow-400 transition text-sm"
                 >
                   Unassign
                 </button>
@@ -111,18 +124,26 @@ function TeacherExercisesManager() {
         )}
 
         {!loading && selectedStudent && exercises.length === 0 && (
-          <p className="text-white text-center">No exercises assigned to this student.</p>
+          <p className="text-white text-center text-sm">
+            No exercises assigned to this student.
+          </p>
         )}
 
         {/* In-card navigation links */}
-        <NavLinks
-          links={[
-            { label: '← Back to Teacher Page', to: '/TeacherPage' },
-          ]}
-        />
+        <div className="pt-4">
+          <NavLinks
+            links={[{ label: '← Back to Teacher Page', to: '/TeacherPage' }]}
+            isPrimary={false}
+          />
+        </div>
       </div>
 
-      <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+      <div className="w-full max-w-md sm:max-w-xl mt-4">
+        <NavLinks
+          links={[{ label: '← Back to Home', to: '/' }]}
+          isSubtle
+        />
+      </div>
     </div>
   );
 }

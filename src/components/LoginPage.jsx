@@ -72,7 +72,7 @@ function LoginPage() {
         {/* You can add more links here if needed */}
       </div>
         {/* Home link outside the card */}
-        <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+        <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
     </div>
     
   );
