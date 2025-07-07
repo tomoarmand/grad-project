@@ -12,6 +12,8 @@
 
 ### Button inputs for flat and sharp
 
+### Question if removing the folder select dropdown for recording is ideal - relying on the folders buttons for recording into folder navigation
+
 ### Test on compass and student login to see if all exercises within folder are deleted when folder is deleted.
 
 ### Check to see why Luke Liu has 2 profiles
