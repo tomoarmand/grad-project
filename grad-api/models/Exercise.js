@@ -7,6 +7,10 @@ const exerciseSchema = new mongoose.Schema({
     studentIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     folderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder' },
   });
+
   
+  exerciseSchema.index({ folderId: 1 });
+
+
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 export default Exercise;
