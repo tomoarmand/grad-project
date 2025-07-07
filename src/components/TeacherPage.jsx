@@ -38,6 +38,11 @@ function TeacherPage() {
     }
   };
 
+  // New function to handle folder updates from FolderManager
+  const handleFoldersUpdate = (updatedFolders) => {
+    setFolders(updatedFolders);
+  };
+
   const fetchStudents = async () => {
     try {
       const response = await fetch(`${API_URL}/users`);
@@ -63,7 +68,11 @@ function TeacherPage() {
 
   const handleFolderSelect = (folder) => {
     setSelectedFolder(folder);
-    fetchExercisesForFolder(folder._id);
+    if (folder) {
+      fetchExercisesForFolder(folder._id);
+    } else {
+      setExercises([]);
+    }
     setSelectedExerciseIds([]);
   };
 
@@ -209,6 +218,7 @@ function TeacherPage() {
           onFolderSelect={handleFolderSelect}
           selectedFolder={selectedFolder}
           folders={folders}
+          onFoldersUpdate={handleFoldersUpdate}
         />
 
         {selectedFolder && (
