@@ -6,6 +6,10 @@
 
 - Input field restrictions in studentpage maybe
 
+- Change tab title from vite + react
+
+- Follow up/change breadcrumb weird compact display on mobile
+
 ### Button inputs for flat and sharp
 
 ### Test on compass and student login to see if all exercises within folder are deleted when folder is deleted.
