@@ -212,7 +212,7 @@ function StudentPage() {
                 )}
             </div>
 
-            <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+            <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
 
             <style jsx>{`
         @keyframes shake {
