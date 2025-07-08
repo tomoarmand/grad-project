@@ -1,17 +1,47 @@
-# PROJECT PROPOSAL: KENTONE
+# PROJECT PROPOSAL: KenTone
 
 
 ## PROBLEM STATEMENT
 - Teacher: Spends too much time playing exercises to individual students repeatedly
-- Teacher: Can't remotely provide learning interval identificaiton exercises to individual students
+- Teacher: Can't remotely provide learning interval identificaiton exercises*(describe) to individual students
+
+Music teachers spend excessive time repeatedly playing interval identification exercises for individual students and lack an efficient way to remotely assign and manage personalized listening exercises, limiting both teaching flexibility and student practice opportunities.
 
 ## WOW FACTOR
+- Doesn't exist yet
+- Students learn at their own pace
+- Can be used for online teaching anywhere in the world
+- Kebab menus for cleaner UI, allow more advanced attributes for folders
+- Ability to have multiple exercise folders, allowing the teacher increased scope for planning and organisation
+- Multiple assignments to multiple students, increased efficiency
+
+A sleek, global-ready music teaching platform that empowers students to learn at their own pace from anywhere in the world. With smart UI features like kebab menus, multi-folder organization, and bulk assignment tools, teachers can effortlessly manage, customize, and scale lessons—boosting both efficiency and planning power like never before.
 
 
 ## TEST USERS
+- Beck
+- Sylvia    
+- Kenji
 
 ## USER STORIES
+1. As a teacher, I want to organise exercises by type.
+2. As a teacher, I want a way to record exercises with customizable answers for students to learn outside the classroom.
+3. As a teacher, I want to be able to learn scales, chords, intervals and modes that my teacher requires.
+4. As a child student, I want to have an interactive and engaging platform to learn my exercises.
+
 ### Acceptance Criteria
+1. 
+- I can create folders
+- I can place exercises into folders
+- I can name folders
+- I can name exercises
+
+2. 
+- I can record exercises
+- I can rename exercises
+- I can assign exercises to students
+- Students can access exercises
+ 
 
 
 
