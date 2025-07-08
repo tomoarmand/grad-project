@@ -83,11 +83,9 @@ function TeacherPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...exercise, teacherId: user._id })
       });
-
-      if (response.ok && exercise.folderId) {
-        const folder = folders.find((f) => f._id === exercise.folderId);
-        if (folder) setSelectedFolder(folder);
-        await fetchExercisesForFolder(exercise.folderId);
+  
+      if (response.ok && selectedFolder) {
+        await fetchExercisesForFolder(selectedFolder._id);
         await fetchFolders();
       }
     } catch (error) {
@@ -202,11 +200,10 @@ function TeacherPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 text-xs sm:text-sm px-3 py-2 font-medium transition focus:outline-none ${
-                activeTab === tab
+              className={`flex-1 text-xs sm:text-sm px-3 py-2 font-medium transition focus:outline-none ${activeTab === tab
                   ? 'bg-orange-400 text-black'
                   : 'text-white hover:bg-slate-500'
-              }`}
+                }`}
             >
               {tab === 'create' ? 'Create & Organize' : 'Assign Exercises'}
             </button>
@@ -235,7 +232,7 @@ function TeacherPage() {
             <RecordingComponent
               onSave={addExercise}
               teacherId={user._id}
-              folders={folders}
+              selectedFolder={selectedFolder}  // Pass selectedFolder instead of folders array
             />
 
             {loading ? (
@@ -325,11 +322,10 @@ function TeacherPage() {
                   <button
                     onClick={handleAssign}
                     disabled={selectedExerciseIds.length === 0 || selectedStudentIds.length === 0 || assignmentLoading}
-                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
-                      selectedExerciseIds.length === 0 || selectedStudentIds.length === 0 || assignmentLoading
+                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${selectedExerciseIds.length === 0 || selectedStudentIds.length === 0 || assignmentLoading
                         ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                         : 'bg-orange-500 hover:bg-orange-600 text-white'
-                    }`}
+                      }`}
                   >
                     {assignmentLoading ? (
                       <div className="flex items-center gap-2 justify-center">

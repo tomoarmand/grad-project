@@ -20,6 +20,6 @@
 
 ### Make unassign instant
 
-## Question kebab menu positioning for folders
+### Question kebab menu positioning for folders
 
 ### Logo
