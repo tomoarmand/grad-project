@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
 
-function RecordingComponent({ onSave, teacherId, folders }) {
+function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const [isRecording, setIsRecording] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState("");
-  const [selectedFolderId, setSelectedFolderId] = useState("");
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
@@ -35,12 +34,11 @@ function RecordingComponent({ onSave, teacherId, folders }) {
           audioData: base64Audio,
           correctAnswer,
           userId: teacherId,
-          folderId: selectedFolderId,
+          folderId: selectedFolder._id,
         };
 
         onSave(newExercise);
         setCorrectAnswer("");
-        setSelectedFolderId("");
       };
 
       reader.readAsDataURL(blob);
@@ -55,22 +53,25 @@ function RecordingComponent({ onSave, teacherId, folders }) {
     setIsRecording(false);
   };
 
+  // Don't render if no folder is selected
+  if (!selectedFolder) {
+    return (
+      <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
+        <p className="text-white text-lg">
+          📁 Select a folder above to create a new exercise
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
-      <h2 className="text-3xl sm:text-4xl text-white font-bold text-center">New Exercise</h2>
-
-      {/* Folder selector */}
-      <select
-        className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
-        value={selectedFolderId}
-        onChange={(e) => setSelectedFolderId(e.target.value)}
-        required
-      >
-        <option value="">Select Folder</option>
-        {folders.map(folder => (
-          <option key={folder._id} value={folder._id}>{folder.name}</option>
-        ))}
-      </select>
+      <div className="text-center">
+        <h2 className="text-3xl sm:text-4xl text-white font-bold">New Exercise</h2>
+        <p className="text-orange-400 text-lg mt-2">
+          Recording to: <span className="font-semibold">{selectedFolder.name}</span>
+        </p>
+      </div>
 
       {!isRecording && (
         <input
@@ -90,7 +91,7 @@ function RecordingComponent({ onSave, teacherId, folders }) {
               : "bg-gray-400 cursor-not-allowed"
           }`}
           onClick={startRecording}
-          disabled={!correctAnswer.trim() || !selectedFolderId}
+          disabled={!correctAnswer.trim()}
         >
           Record!
         </button>
