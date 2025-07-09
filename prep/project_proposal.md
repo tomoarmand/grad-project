@@ -24,10 +24,21 @@ A sleek, global-ready music teaching platform that empowers students to learn at
 - Kenji
 
 ## USER STORIES
-1. As a teacher, I want to organise exercises by type.
-2. As a teacher, I want a way to record exercises with customizable answers for students to learn outside the classroom.
-3. As a student, I want to be able to learn scales, chords, intervals and modes that my teacher requires.
-4. As a child student, I want to have an interactive and engaging platform to learn my exercises.
+Teacher
+As a teacher, I want to record and save audio exercises with correct answers.
+
+As a teacher, I want to view and manage (edit/delete) my list of exercises.
+
+As a teacher, I want to organize exercises into folders or types.
+
+As a teacher, I want to assign exercises to individual students.
+
+Student
+As a student, I want to play a random exercise assigned to me.
+
+As a student, I want to submit my answer and get immediate feedback.
+
+As a student, I want to review exercises I’ve previously answered (optional MVP+).
 
 ### Acceptance Criteria
 1. 
@@ -50,8 +61,7 @@ A sleek, global-ready music teaching platform that empowers students to learn at
 
 4. 
 - I see a confetti animation when my answer is correct
-- My scree
-
+- 
 
 
 

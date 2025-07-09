@@ -5,11 +5,11 @@ import NavLinks from './NavLinks';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
-  const [teacherPIN, setTeacherPIN] = useState('');
+  // const [teacherPIN, setTeacherPIN] = useState('');
   const { setUser } = useUserStore();
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
-  const TEACHER_KEY = "0000";
+  // const TEACHER_KEY = "0000";
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -25,11 +25,12 @@ function LoginPage() {
       setUser(user);
 
       if (user.role === 'teacher') {
-        if (teacherPIN === TEACHER_KEY) {
+        // Uncomment below to enable PIN check for teachers
+        // if (teacherPIN === TEACHER_KEY) {
           navigate('/TeacherPage');
-        } else {
-          alert("Incorrect PIN");
-        }
+        // } else {
+        //   alert("Incorrect PIN");
+        // }
       } else if (user.role === 'student') {
         navigate('/StudentPage');
       }
@@ -41,7 +42,6 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
-    
       <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 mt-4">
         <h1 className="text-3xl sm:text-4xl text-white font-bold text-center mb-6">Welcome Back</h1>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -53,6 +53,7 @@ function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+          {/*
           <input
             className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
             type="text"
@@ -60,6 +61,7 @@ function LoginPage() {
             value={teacherPIN}
             onChange={(e) => setTeacherPIN(e.target.value)}
           />
+          */}
           <button
             type="submit"
             className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
@@ -67,14 +69,9 @@ function LoginPage() {
             Log In
           </button>
         </form>
-
-        {/* Additional contextual navigation inside card */}
-        {/* You can add more links here if needed */}
       </div>
-        {/* Home link outside the card */}
-        <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
+      <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
     </div>
-    
   );
 }
 
