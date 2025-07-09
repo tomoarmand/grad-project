@@ -5,11 +5,11 @@ import NavLinks from './NavLinks';
 
 function CreateUserPage() {
   const [formData, setFormData] = useState({ fullName: '', email: '', role: 'teacher' });
-  const [teacherPIN, setTeacherPIN] = useState('');
+  // const [teacherPIN, setTeacherPIN] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const { setUser } = useUserStore();
-  const TEACHER_KEY = "0000";
+  // const TEACHER_KEY = "0000";
 
   const handleChange = (event) => {
     setFormData({ ...formData, [event.target.name]: event.target.value });
@@ -28,12 +28,13 @@ function CreateUserPage() {
       setUser(user);
 
       if (user.role === 'teacher') {
-        if (teacherPIN === TEACHER_KEY) {
+        // Uncomment to re-enable PIN verification
+        // if (teacherPIN === TEACHER_KEY) {
           navigate('/TeacherPage');
-        } else {
-          alert("Account created, but incorrect PIN. Please log in again.");
-          navigate('/');
-        }
+        // } else {
+        //   alert("Account created, but incorrect PIN. Please log in again.");
+        //   navigate('/');
+        // }
       } else if (user.role === 'student') {
         navigate('/StudentPage');
       }
@@ -74,6 +75,8 @@ function CreateUserPage() {
             <option value="teacher">Teacher</option>
             <option value="student">Student</option>
           </select>
+
+          {/* 
           {formData.role === 'teacher' && (
             <input
               type="text"
@@ -83,6 +86,8 @@ function CreateUserPage() {
               className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
             />
           )}
+          */}
+
           <button
             type="submit"
             className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
@@ -90,11 +95,8 @@ function CreateUserPage() {
             Create Account
           </button>
         </form>
-
-        {/* You can add additional contextual links inside card here if needed */}
       </div>
 
-      {/* Home link outside the card */}
       <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
     </div>
   );
