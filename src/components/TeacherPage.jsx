@@ -5,6 +5,8 @@ import ExerciseList from './ExerciseList';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
+import MusicSymbolFAB from './MusicSymbolFAB';
+import useFABStore from '../store/fabStore';
 
 function TeacherPage() {
   const [exercises, setExercises] = useState([]);
@@ -20,6 +22,8 @@ function TeacherPage() {
   const [assignmentLoading, setAssignmentLoading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
+
+  const { insertSymbol, isVisible } = useFABStore();
 
   useEffect(() => {
     if (user) {
@@ -38,7 +42,6 @@ function TeacherPage() {
     }
   };
 
-  // New function to handle folder updates from FolderManager
   const handleFoldersUpdate = (updatedFolders) => {
     setFolders(updatedFolders);
   };
@@ -83,7 +86,7 @@ function TeacherPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...exercise, teacherId: user._id })
       });
-  
+
       if (response.ok && selectedFolder) {
         await fetchExercisesForFolder(selectedFolder._id);
         await fetchFolders();
@@ -232,7 +235,7 @@ function TeacherPage() {
             <RecordingComponent
               onSave={addExercise}
               teacherId={user._id}
-              selectedFolder={selectedFolder}  // Pass selectedFolder instead of folders array
+              selectedFolder={selectedFolder}
             />
 
             {loading ? (
@@ -253,8 +256,10 @@ function TeacherPage() {
         ) : (
           <div className="space-y-6">
             {!selectedFolder ? (
-              <div className="text-white text-center text-sm bg-slate-600 rounded p-4">
-                Select a folder above to begin assigning exercises
+              <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
+                <p className="text-white text-lg">
+                  📁 Select a folder above to begin assigning exercises
+                </p>
               </div>
             ) : (
               <>
@@ -321,11 +326,18 @@ function TeacherPage() {
                 <div className="flex justify-center">
                   <button
                     onClick={handleAssign}
-                    disabled={selectedExerciseIds.length === 0 || selectedStudentIds.length === 0 || assignmentLoading}
-                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${selectedExerciseIds.length === 0 || selectedStudentIds.length === 0 || assignmentLoading
+                    disabled={
+                      selectedExerciseIds.length === 0 ||
+                      selectedStudentIds.length === 0 ||
+                      assignmentLoading
+                    }
+                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
+                      selectedExerciseIds.length === 0 ||
+                      selectedStudentIds.length === 0 ||
+                      assignmentLoading
                         ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                         : 'bg-orange-500 hover:bg-orange-600 text-white'
-                      }`}
+                    }`}
                   >
                     {assignmentLoading ? (
                       <div className="flex items-center gap-2 justify-center">
@@ -333,7 +345,11 @@ function TeacherPage() {
                         Assigning...
                       </div>
                     ) : (
-                      `Assign ${selectedExerciseIds.length || 0} Exercise${selectedExerciseIds.length !== 1 ? 's' : ''} to ${selectedStudentIds.length || 0} Student${selectedStudentIds.length !== 1 ? 's' : ''}`
+                      `Assign ${selectedExerciseIds.length || 0} Exercise${
+                        selectedExerciseIds.length !== 1 ? 's' : ''
+                      } to ${selectedStudentIds.length || 0} Student${
+                        selectedStudentIds.length !== 1 ? 's' : ''
+                      }`
                     )}
                   </button>
                 </div>
@@ -343,14 +359,14 @@ function TeacherPage() {
         )}
 
         {/* Navigation */}
-        <NavLinks
-          links={[{ label: 'Manage Assignments →', to: '/TeacherExercisesManager' }]}
-        />
+        <NavLinks links={[{ label: 'Manage Assignments →', to: '/TeacherExercisesManager' }]} />
       </div>
 
       <div className="w-full max-w-md sm:max-w-4xl mt-4">
         <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
       </div>
+
+      {isVisible && insertSymbol && <MusicSymbolFAB onInsert={insertSymbol} />}
     </div>
   );
 }

@@ -1,67 +1,118 @@
 # PROJECT PROPOSAL: KenTone
 
-
 ## PROBLEM STATEMENT
-- Teacher: Spends too much time playing exercises to individual students repeatedly
-- Teacher: Can't remotely provide learning interval identificaiton exercises*(describe) to individual students
 
-Music teachers spend excessive time repeatedly playing interval identification exercises for individual students and lack an efficient way to remotely assign and manage personalized listening exercises, limiting both teaching flexibility and student practice opportunities.
+Music teachers often spend excessive time repeatedly playing and explaining various listening exercises for individual students, where students must identify what they hear. This process is time-consuming and limits the teacher's ability to focus on other aspects of instruction. Additionally, there is no efficient way to remotely assign and manage personalized listening exercises, restricting both teaching flexibility and student practice opportunities. A streamlined solution is needed to empower teachers to create, organize, and assign custom listening exercises while enabling students to practice independently and receive immediate feedback.
+
+---
 
 ## WOW FACTOR
-- Doesn't exist yet
-- Students learn at their own pace
-- Can be used for online teaching anywhere in the world
-- Kebab menus for cleaner UI, allow more advanced attributes for folders
-- Ability to have multiple exercise folders, allowing the teacher increased scope for planning and organisation
-- Multiple assignments to multiple students, increased efficiency
+- **Empowers personalised learning**: Students can practice interval identification exercises tailored to their needs, anytime, anywhere.
+- **Streamlined teacher workflow**: Teachers can record, organise, and assign exercises effortlessly, saving time and improving efficiency.
+- **Global accessibility**: The platform is designed for remote teaching, enabling teachers and students to connect from anywhere in the world.
+- **Smart organization tools**: Features like folders and tagging allow teachers to organise exercises for better planning and scalability.
+- **Gamified feedback**: Students receive instant feedback with engaging visuals (e.g., confetti for correct answers), making learning fun and interactive.
 
-A sleek, global-ready music teaching platform that empowers students to learn at their own pace from anywhere in the world. With smart UI features like kebab menus, multi-folder organization, and bulk assignment tools, teachers can effortlessly manage, customize, and scale lessons—boosting both efficiency and planning power like never before.
+A sleek music teaching platform that combines personalised learning, efficient exercise management, and engaging feedback to revolutionize how music teachers and students interact.
 
+---
 
 ## TEST USERS
-- Beck
-- Sylvia    
-- Kenji
+- Beck  
+- Victor 
+- Kenji  
+
+---
 
 ## USER STORIES
-Teacher
-As a teacher, I want to record and save audio exercises with correct answers.
 
-As a teacher, I want to view and manage (edit/delete) my list of exercises.
+### **Teacher User Stories**
 
-As a teacher, I want to organize exercises into folders or types.
+1. **As a teacher, I want to record and save audio exercises with correct answers.**
+   - I can record audio directly in the app using my microphone.
+   - I can play back the recording before saving it. (?)
+   - I can assign a correct answer to each exercise.
+   - I can save the exercise to a database for future use.
+   - I receive a confirmation message when the exercise is successfully saved.
 
-As a teacher, I want to assign exercises to individual students.
+2. **As a teacher, I want to view and manage (edit/delete) my list of exercises.**
+   - I can see a list of all my saved exercises.
+   - I can rename an exercise.
+   - I can delete an exercise from the list.
+   - I receive a confirmation prompt before deleting an exercise. (incomplete)
+   - The list updates in real-time after any changes.
 
-Student
-As a student, I want to play a random exercise assigned to me.
+3. **As a teacher, I want to organize exercises into folders or types.**
+   - I can create folders to group exercises.
+   - I can rename or delete folders.
+   - I can filter exercises by folder or type.
+   - The folder structure is saved and persists across sessions.
 
-As a student, I want to submit my answer and get immediate feedback.
+4. **As a teacher, I want to assign exercises to individual students.**
+   - I can select one or more exercises to assign to a student.
+   - I can view a list of students and select one to assign exercises to.
+   - I can unassign exercises from a student.
+   - I receive a confirmation message when an exercise is successfully assigned.
+   - Students only see exercises assigned to them.
 
-As a student, I want to review exercises I’ve previously answered (optional MVP+).
+---
 
-### Acceptance Criteria
-1. 
-- I can create folders
-- I can place exercises into folders
-- I can name folders
-- I can name exercises
+### **Student User Stories**
 
-2. 
-- I can record exercises
-- I can rename exercises
-- I can assign exercises to students
-- Students can access exercises
+1. **As a student, I want to play a random exercise assigned to me.**
+   - I can see a random exercise assigned by my teacher.
+   - I can play the audio recording for the exercise.
+   - I can replay the audio as many times as I need.
+   - I can skip to another random exercise if allowed by the teacher. (incomplete)
+   - I receive a message if there are no exercises assigned to me.
 
-3.
-- I can see exercises assigned to me
-- I can listen to the exercises assigned to me
-- My answer can be evaluated
-- I receive a message that shows my answer is correct
+2. **As a student, I want to submit my answer and get immediate feedback.**
+   - I can select or type my answer for an exercise.
+   - I can submit my answer with a single click.
+   - I receive immediate feedback indicating whether my answer is correct or incorrect.
+   - I see a confetti animation or similar visual for correct answers.
+   - I can view the correct answer if my submission is incorrect.
 
-4. 
-- I see a confetti animation when my answer is correct
-- 
+3. **As a student, I want a simple and intuitive interface for completing exercises.**
+   - I can easily navigate to my assigned exercises.
+   - I can see clear instructions for each exercise.
+   - I can access playback and answer submission buttons without confusion.
+   - I receive error messages if I try to submit an incomplete answer.
+   - The interface is responsive and works on both desktop and mobile devices.
+
+---
+
+### **Acceptance Criteria Summary**
+
+#### Teacher
+1. Record and save exercises:
+   - Record, playback, assign correct answer, save, confirmation message.
+
+2. Manage exercises:
+   - View, rename, delete, confirmation prompts, real-time updates.
+
+3. Organize exercises:
+   - Create, rename, delete folders, move exercises, filter by folder/type.
+
+4. Assign exercises:
+   - Select exercises, assign/unassign to students, confirmation messages.
+
+5. Track progress (Optional):
+   - View completed exercises, filter results, export data, notifications.
+
+#### Student
+1. Play random exercises:
+   - View random exercise, play/replay audio, skip, no exercises message.
+
+2. Submit answers:
+   - Select/submit answer, immediate feedback, confetti for correct answers.
+
+3. Intuitive interface:
+   - Easy navigation, clear instructions, responsive design.
+
+
+---
+
 
 
 
@@ -124,4 +175,6 @@ To be added if multiple teacher profiles exist:
 
 - Teacher login page with create new profile option
 
+
+---
 

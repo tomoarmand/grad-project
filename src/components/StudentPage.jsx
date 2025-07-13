@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from "react-spinners";
 import NavLinks from './NavLinks';
+import MusicSymbolFAB from './MusicSymbolFAB';
 
 function StudentPage() {
     const [exercises, setExercises] = useState([]);
@@ -59,9 +60,12 @@ function StudentPage() {
         setInputValue(event.target.value);
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
+    const handleSymbolInsert = (symbol) => {
+        setInputValue((prev) => prev + symbol);
+        if (inputRef.current) inputRef.current.focus();
+    };
 
+    const handleSubmit = () => {
         const correctAnswer = exercises[currentExerciseIndex].correctAnswer;
         const trimmedInput = inputValue.replaceAll(" ", "");
         const trimmedAnswer = correctAnswer.replaceAll(" ", "");
@@ -167,28 +171,33 @@ function StudentPage() {
 
                         {currentExerciseIndex !== null && exercises[currentExerciseIndex] && (
                             <>
-                                <form className="flex flex-col items-center w-full" onSubmit={handleSubmit}>
+                                <div className="flex flex-col items-center w-full">
                                     <p className="text-white text-center text-sm sm:text-base mb-4">
                                         Listen to the recording and type your answer below
                                     </p>
                                     <audio controls src={exercises[currentExerciseIndex].audioData} className="w-full mb-6 rounded" />
-                                    <div className="flex w-full">
+                                    <div className="flex flex-col gap-3 w-full">
                                         <input
                                             ref={inputRef}
                                             className="flex-grow text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                                             placeholder="Enter your answer here..."
                                             onChange={handleInputChange}
                                             value={inputValue}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter' && inputValue.trim()) {
+                                                    handleSubmit();
+                                                }
+                                            }}
                                         />
                                     </div>
                                     <button
                                         disabled={!inputValue.trim()}
-                                        className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"
-                                            }`}
+                                        onClick={handleSubmit}
+                                        className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"}`}
                                     >
                                         Submit
                                     </button>
-                                </form>
+                                </div>
 
                                 {showAnswer && (
                                     <div className="mt-4 flex flex-col items-center">
@@ -214,22 +223,29 @@ function StudentPage() {
 
             <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
 
+            {currentExerciseIndex !== null && exercises[currentExerciseIndex] && (
+                <MusicSymbolFAB 
+                    onInsert={handleSymbolInsert}
+                    activeInputRef={inputRef}
+                />
+            )}
+
             <style jsx>{`
-        @keyframes shake {
-          0%, 100% {
-            transform: translateX(0);
-          }
-          10%, 30%, 50%, 70%, 90% {
-            transform: translateX(-4px);
-          }
-          20%, 40%, 60%, 80% {
-            transform: translateX(4px);
-          }
-        }
-        .animate-shake {
-          animation: shake 0.4s ease-in-out;
-        }
-      `}</style>
+                @keyframes shake {
+                    0%, 100% {
+                        transform: translateX(0);
+                    }
+                    10%, 30%, 50%, 70%, 90% {
+                        transform: translateX(-4px);
+                    }
+                    20%, 40%, 60%, 80% {
+                        transform: translateX(4px);
+                    }
+                }
+                .animate-shake {
+                    animation: shake 0.4s ease-in-out;
+                }
+            `}</style>
         </div>
     );
 }

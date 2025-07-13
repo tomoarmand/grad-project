@@ -1,11 +1,40 @@
+
+
 import { useState, useRef } from "react";
+import useFABStore from '../store/fabStore';
 
 function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const [isRecording, setIsRecording] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState("");
+  const inputRef = useRef(null);
+  const { setInsertSymbol, showFAB, hideFAB } = useFABStore();
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
+
+  const handleInputFocus = () => {
+    setInsertSymbol((symbol) => {
+      if (inputRef.current) {
+        const cursorPos = inputRef.current.selectionStart;
+        const currentValue = inputRef.current.value;
+        const newValue = currentValue.slice(0, cursorPos) + symbol + currentValue.slice(cursorPos);
+        setCorrectAnswer(newValue);
+        setTimeout(() => {
+          inputRef.current.setSelectionRange(cursorPos + symbol.length, cursorPos + symbol.length);
+          inputRef.current.focus();
+        }, 0);
+      }
+    });
+    showFAB();
+  };
+
+  const handleInputBlur = (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
+      setTimeout(() => {
+        hideFAB();
+      }, 150);
+    }
+  };
 
   const getAudioMimeType = () => {
     const preferred = "audio/mp4";
@@ -39,6 +68,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
 
         onSave(newExercise);
         setCorrectAnswer("");
+        hideFAB();
       };
 
       reader.readAsDataURL(blob);
@@ -53,10 +83,9 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
     setIsRecording(false);
   };
 
-  // Don't render if no folder is selected
   if (!selectedFolder) {
     return (
-      <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
+      <div className="w-full bg-slate-600 rounded-md p-6 text-center">
         <p className="text-white text-lg">
           📁 Select a folder above to create a new exercise
         </p>
@@ -65,45 +94,49 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   }
 
   return (
-    <div className="w-full bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
-      <div className="text-center">
-        <h2 className="text-3xl sm:text-4xl text-white font-bold">New Exercise</h2>
-        <p className="text-orange-400 text-lg mt-2">
+    <div className="w-full max-w-md mx-auto bg-slate-600 rounded-md shadow-md p-6 flex flex-col gap-4">
+      <div className="text-left">
+        <h2 className="text-2xl font-bold text-white">New Exercise</h2>
+        <p className="text-orange-400 mt-1">
           Recording to: <span className="font-semibold">{selectedFolder.name}</span>
         </p>
       </div>
 
       {!isRecording && (
         <input
-          className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+          ref={inputRef}
+          className="w-full px-3 py-2 rounded bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-base"
           type="text"
           placeholder="Enter correct answer here"
           value={correctAnswer}
           onChange={(e) => setCorrectAnswer(e.target.value)}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
         />
       )}
-  
+
       {!isRecording ? (
         <button
-          className={`w-full py-3 rounded text-lg sm:text-xl font-semibold text-white transition duration-200 ${
+          className={`w-full py-2 rounded text-white font-semibold transition duration-200 ${
             correctAnswer.trim()
-              ? "bg-[#64748b] hover:bg-[#fb923c]"
+              ? "bg-orange-500 hover:bg-orange-600"
               : "bg-gray-400 cursor-not-allowed"
           }`}
           onClick={startRecording}
           disabled={!correctAnswer.trim()}
+          onMouseDown={(e) => e.preventDefault()}
         >
           Record!
         </button>
       ) : (
-        <div className="flex flex-col items-center gap-4 w-full">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full border-2 border-red-600 bg-red-600 animate-pulse"></div>
-            <p className="text-lg sm:text-xl text-white">Recording exercise...</p>
+            <p className="text-white text-base">Recording exercise...</p>
           </div>
           <button
             onClick={stopRecording}
-            className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded font-semibold transition duration-200"
           >
             Stop & Save
           </button>
@@ -114,3 +147,4 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
 }
 
 export default RecordingComponent;
+
