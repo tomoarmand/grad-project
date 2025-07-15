@@ -83,7 +83,7 @@ function MusicSymbolFAB({ onInsert }) {
           if (keyboardOpen) {
             const keyboardHeight = window.innerHeight - visualViewport.height;
             // Add extra padding for toolbar
-            const toolbarPadding = 60;
+            const toolbarPadding = 85;
             setKeyboardHeight(keyboardHeight + toolbarPadding);
           } else {
             setKeyboardHeight(0);
