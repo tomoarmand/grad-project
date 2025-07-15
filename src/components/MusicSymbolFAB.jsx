@@ -6,12 +6,14 @@ function MusicSymbolFAB({ onInsert }) {
   const containerRef = useRef(null);
 
   const symbols = [
-    { symbol: '♪', name: 'Eighth Note' },
-    { symbol: '♫', name: 'Beamed Eighth Notes' },
-    { symbol: '♬', name: 'Beamed Sixteenth Notes' },
+    { symbol: '♯', name: 'Sharp' },
     { symbol: '♭', name: 'Flat' },
     { symbol: '♮', name: 'Natural' },
-    { symbol: '♯', name: 'Sharp' },
+    { symbol: '𝅝', name: 'Whole Note' },
+    { symbol: '𝅗𝅥', name: 'Half Note' },
+    { symbol: '𝅘𝅥', name: 'Quarter Note' },
+    { symbol: '𝅘𝅥𝅮', name: 'Eighth Note' },
+    { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note' },
     { symbol: '𝄞', name: 'Treble Clef' },
     { symbol: '𝄢', name: 'Bass Clef' },
     { symbol: '𝄡', name: 'C Clef' },
@@ -33,7 +35,13 @@ function MusicSymbolFAB({ onInsert }) {
 
   // Track keyboard visibility and height
   useEffect(() => {
+    let timeoutId;
+    let initialKeyboardHeight = 0;
+    
     const handleResize = () => {
+      // Clear any pending timeout
+      if (timeoutId) clearTimeout(timeoutId);
+      
       // Only run on mobile devices
       if (window.innerWidth <= 768) {
         const initialHeight = window.screen.height;
@@ -42,12 +50,31 @@ function MusicSymbolFAB({ onInsert }) {
         
         // If height difference is significant, keyboard is likely open
         if (heightDifference > 150) {
+          // Store initial keyboard height
+          initialKeyboardHeight = heightDifference;
           setKeyboardHeight(heightDifference);
+          
+          // Check again after delay to see if toolbar appeared
+          timeoutId = setTimeout(() => {
+            const newCurrentHeight = window.innerHeight;
+            const newHeightDifference = initialHeight - newCurrentHeight;
+            
+            // If height difference increased, toolbar likely appeared
+            if (newHeightDifference > initialKeyboardHeight + 20) {
+              setKeyboardHeight(newHeightDifference);
+            }
+            // If no significant change, add minimal padding for safety
+            else {
+              setKeyboardHeight(initialKeyboardHeight + 20);
+            }
+          }, 500); // Increased delay to catch toolbar appearance
         } else {
           setKeyboardHeight(0);
+          initialKeyboardHeight = 0;
         }
       } else {
         setKeyboardHeight(0);
+        initialKeyboardHeight = 0;
       }
     };
 
@@ -62,17 +89,34 @@ function MusicSymbolFAB({ onInsert }) {
     if ('visualViewport' in window) {
       const visualViewport = window.visualViewport;
       const handleViewportChange = () => {
+        // Clear any pending timeout
+        if (timeoutId) clearTimeout(timeoutId);
+        
         const keyboardOpen = visualViewport.height < window.innerHeight;
         if (keyboardOpen) {
-          setKeyboardHeight(window.innerHeight - visualViewport.height);
+          const keyboardHeight = window.innerHeight - visualViewport.height;
+          initialKeyboardHeight = keyboardHeight;
+          setKeyboardHeight(keyboardHeight);
+          
+          // Check for toolbar after delay
+          timeoutId = setTimeout(() => {
+            const newKeyboardHeight = window.innerHeight - visualViewport.height;
+            if (newKeyboardHeight > initialKeyboardHeight + 20) {
+              setKeyboardHeight(newKeyboardHeight);
+            } else {
+              setKeyboardHeight(initialKeyboardHeight + 20);
+            }
+          }, 500);
         } else {
           setKeyboardHeight(0);
+          initialKeyboardHeight = 0;
         }
       };
       
       visualViewport.addEventListener('resize', handleViewportChange);
       
       return () => {
+        if (timeoutId) clearTimeout(timeoutId);
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('orientationchange', handleResize);
         visualViewport.removeEventListener('resize', handleViewportChange);
@@ -80,6 +124,7 @@ function MusicSymbolFAB({ onInsert }) {
     }
     
     return () => {
+      if (timeoutId) clearTimeout(timeoutId);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
     };
