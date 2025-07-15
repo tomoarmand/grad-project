@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 function MusicSymbolFAB({ onInsert }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const containerRef = useRef(null);
 
   const symbols = [
@@ -29,6 +30,60 @@ function MusicSymbolFAB({ onInsert }) {
     { symbol: '𝄾', name: 'Fp' },
     { symbol: '𝄿', name: 'Sfp' },
   ];
+
+  // Track keyboard visibility and height
+  useEffect(() => {
+    const handleResize = () => {
+      // Only run on mobile devices
+      if (window.innerWidth <= 768) {
+        const initialHeight = window.screen.height;
+        const currentHeight = window.innerHeight;
+        const heightDifference = initialHeight - currentHeight;
+        
+        // If height difference is significant, keyboard is likely open
+        if (heightDifference > 150) {
+          setKeyboardHeight(heightDifference);
+        } else {
+          setKeyboardHeight(0);
+        }
+      } else {
+        setKeyboardHeight(0);
+      }
+    };
+
+    // Initial check
+    handleResize();
+    
+    // Listen for viewport changes
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    // Visual viewport API for better keyboard detection (if supported)
+    if ('visualViewport' in window) {
+      const visualViewport = window.visualViewport;
+      const handleViewportChange = () => {
+        const keyboardOpen = visualViewport.height < window.innerHeight;
+        if (keyboardOpen) {
+          setKeyboardHeight(window.innerHeight - visualViewport.height);
+        } else {
+          setKeyboardHeight(0);
+        }
+      };
+      
+      visualViewport.addEventListener('resize', handleViewportChange);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleResize);
+        visualViewport.removeEventListener('resize', handleViewportChange);
+      };
+    }
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
 
   // Close on escape key
   useEffect(() => {
@@ -63,8 +118,16 @@ function MusicSymbolFAB({ onInsert }) {
     setIsOpen(false);
   };
 
+  // Calculate dynamic bottom position
+  const bottomPosition = keyboardHeight > 0 ? keyboardHeight + 24 : 24; // 24px = 1.5rem
+
   return (
-    <div ref={containerRef} className="fixed bottom-6 right-6 z-50" data-fab>
+    <div 
+      ref={containerRef} 
+      className="fixed right-6 z-50 transition-all duration-300 ease-out" 
+      style={{ bottom: `${bottomPosition}px` }}
+      data-fab
+    >
       {/* Backdrop for mobile */}
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-25 -z-10 md:hidden" data-fab />
@@ -72,7 +135,14 @@ function MusicSymbolFAB({ onInsert }) {
       
       {/* Symbol menu */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-2xl border border-gray-200 transform transition-all duration-200 ease-out" data-fab>
+        <div 
+          className="absolute right-0 bg-white rounded-lg shadow-2xl border border-gray-200 transform transition-all duration-200 ease-out" 
+          style={{ 
+            bottom: '70px', // Always position above the FAB
+            maxHeight: keyboardHeight > 0 ? '200px' : '320px' // Reduce height when keyboard is open
+          }}
+          data-fab
+        >
           {/* Arrow pointing to FAB */}
           <div className="absolute -bottom-2 right-6 w-4 h-4 bg-white border-r border-b border-gray-200 transform rotate-45" data-fab></div>
           
@@ -91,7 +161,7 @@ function MusicSymbolFAB({ onInsert }) {
               </button>
             </div>
             
-            <div className="max-h-80 overflow-y-auto">
+            <div className="overflow-y-auto" style={{ maxHeight: keyboardHeight > 0 ? '140px' : '280px' }}>
               <div className="grid grid-cols-6 gap-1">
                 {symbols.map((item, index) => (
                   <button
@@ -127,6 +197,8 @@ function MusicSymbolFAB({ onInsert }) {
       >
         {isOpen ? '×' : '♪'}
       </button>
+      
+
     </div>
   );
 }
