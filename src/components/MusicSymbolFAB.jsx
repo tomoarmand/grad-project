@@ -36,46 +36,31 @@ function MusicSymbolFAB({ onInsert }) {
   // Track keyboard visibility and height
   useEffect(() => {
     let timeoutId;
-    let initialKeyboardHeight = 0;
     
     const handleResize = () => {
       // Clear any pending timeout
       if (timeoutId) clearTimeout(timeoutId);
       
-      // Only run on mobile devices
-      if (window.innerWidth <= 768) {
-        const initialHeight = window.screen.height;
-        const currentHeight = window.innerHeight;
-        const heightDifference = initialHeight - currentHeight;
-        
-        // If height difference is significant, keyboard is likely open
-        if (heightDifference > 150) {
-          // Store initial keyboard height
-          initialKeyboardHeight = heightDifference;
-          setKeyboardHeight(heightDifference);
+      // Add a small delay to account for toolbar appearing after keyboard
+      timeoutId = setTimeout(() => {
+        // Only run on mobile devices
+        if (window.innerWidth <= 768) {
+          const initialHeight = window.screen.height;
+          const currentHeight = window.innerHeight;
+          const heightDifference = initialHeight - currentHeight;
           
-          // Check again after delay to see if toolbar appeared
-          timeoutId = setTimeout(() => {
-            const newCurrentHeight = window.innerHeight;
-            const newHeightDifference = initialHeight - newCurrentHeight;
-            
-            // If height difference increased, toolbar likely appeared
-            if (newHeightDifference > initialKeyboardHeight + 20) {
-              setKeyboardHeight(newHeightDifference);
-            }
-            // If no significant change, add minimal padding for safety
-            else {
-              setKeyboardHeight(initialKeyboardHeight + 20);
-            }
-          }, 500); // Increased delay to catch toolbar appearance
+          // If height difference is significant, keyboard is likely open
+          if (heightDifference > 150) {
+            // Add extra padding for mobile keyboard toolbar (typically 40-50px)
+            const toolbarPadding = 60; // Adjust this value if needed
+            setKeyboardHeight(heightDifference + toolbarPadding);
+          } else {
+            setKeyboardHeight(0);
+          }
         } else {
           setKeyboardHeight(0);
-          initialKeyboardHeight = 0;
         }
-      } else {
-        setKeyboardHeight(0);
-        initialKeyboardHeight = 0;
-      }
+      }, 300); // 300ms delay to account for toolbar animation
     };
 
     // Initial check
@@ -92,25 +77,18 @@ function MusicSymbolFAB({ onInsert }) {
         // Clear any pending timeout
         if (timeoutId) clearTimeout(timeoutId);
         
-        const keyboardOpen = visualViewport.height < window.innerHeight;
-        if (keyboardOpen) {
-          const keyboardHeight = window.innerHeight - visualViewport.height;
-          initialKeyboardHeight = keyboardHeight;
-          setKeyboardHeight(keyboardHeight);
-          
-          // Check for toolbar after delay
-          timeoutId = setTimeout(() => {
-            const newKeyboardHeight = window.innerHeight - visualViewport.height;
-            if (newKeyboardHeight > initialKeyboardHeight + 20) {
-              setKeyboardHeight(newKeyboardHeight);
-            } else {
-              setKeyboardHeight(initialKeyboardHeight + 20);
-            }
-          }, 500);
-        } else {
-          setKeyboardHeight(0);
-          initialKeyboardHeight = 0;
-        }
+        // Add delay for toolbar
+        timeoutId = setTimeout(() => {
+          const keyboardOpen = visualViewport.height < window.innerHeight;
+          if (keyboardOpen) {
+            const keyboardHeight = window.innerHeight - visualViewport.height;
+            // Add extra padding for toolbar
+            const toolbarPadding = 60;
+            setKeyboardHeight(keyboardHeight + toolbarPadding);
+          } else {
+            setKeyboardHeight(0);
+          }
+        }, 300);
       };
       
       visualViewport.addEventListener('resize', handleViewportChange);
