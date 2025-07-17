@@ -1,39 +1,26 @@
-
-
 import { useState, useRef } from "react";
-import useFABStore from '../store/fabStore';
+import MusicSymbolButton from './MusicSymbolButton'; // No longer importing useFABStore
 
 function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const [isRecording, setIsRecording] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState("");
   const inputRef = useRef(null);
-  const { setInsertSymbol, showFAB, hideFAB } = useFABStore();
+  const [isInputFocused, setIsInputFocused] = useState(false); // Local state for input focus
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
 
   const handleInputFocus = () => {
-    setInsertSymbol((symbol) => {
-      if (inputRef.current) {
-        const cursorPos = inputRef.current.selectionStart;
-        const currentValue = inputRef.current.value;
-        const newValue = currentValue.slice(0, cursorPos) + symbol + currentValue.slice(cursorPos);
-        setCorrectAnswer(newValue);
-        setTimeout(() => {
-          inputRef.current.setSelectionRange(cursorPos + symbol.length, cursorPos + symbol.length);
-          inputRef.current.focus();
-        }, 0);
-      }
-    });
-    showFAB();
+    setIsInputFocused(true);
   };
 
   const handleInputBlur = (e) => {
-    if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
-      setTimeout(() => {
-        hideFAB();
-      }, 150);
-    }
+    // Check if focus is truly leaving the input AND the MusicSymbolButton
+    setTimeout(() => {
+      if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
+        setIsInputFocused(false);
+      }
+    }, 150); // Small delay to allow MusicSymbolButton's click to register
   };
 
   const getAudioMimeType = () => {
@@ -68,7 +55,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
 
         onSave(newExercise);
         setCorrectAnswer("");
-        hideFAB();
+        setIsInputFocused(false); // Reset focus state after saving
       };
 
       reader.readAsDataURL(blob);
@@ -103,16 +90,21 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       </div>
 
       {!isRecording && (
-        <input
-          ref={inputRef}
-          className="w-full px-3 py-2 rounded bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-base"
-          type="text"
-          placeholder="Enter correct answer here"
-          value={correctAnswer}
-          onChange={(e) => setCorrectAnswer(e.target.value)}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-        />
+        <div className="flex flex-row gap-2 w-full items-center">
+          <input
+            ref={inputRef}
+            // Added min-w-0 here to allow input to shrink
+            className="flex-grow min-w-0 px-3 py-2 rounded bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-base"
+            type="text"
+            placeholder="Enter correct answer here..."
+            value={correctAnswer}
+            onChange={(e) => setCorrectAnswer(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+          />
+          {/* Pass inputRef and the setterFunction directly to MusicSymbolButton */}
+          {isInputFocused && <MusicSymbolButton inputRef={inputRef} setterFunction={setCorrectAnswer} />}
+        </div>
       )}
 
       {!isRecording ? (
@@ -124,7 +116,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
           }`}
           onClick={startRecording}
           disabled={!correctAnswer.trim()}
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.preventDefault()} // Prevent input blur when clicking record
         >
           Record!
         </button>
@@ -147,4 +139,3 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
 }
 
 export default RecordingComponent;
-

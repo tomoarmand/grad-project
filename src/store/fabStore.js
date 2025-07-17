@@ -1,12 +1,9 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+// import { create } from 'zustand';
 
-const useFABStore = create((set) => ({
-    insertSymbol: () => {},
-    setInsertSymbol: (fn) => set({ insertSymbol: fn }),
-    isVisible: false,
-    showFAB: () => set({ isVisible: true }),
-    hideFAB: () => set({ isVisible: false }),
-  }));
-  
-  export default useFABStore;
+// const useFABStore = create((set) => ({
+//     insertSymbol: null, // Initialize with null, or a no-op function that explicitly does nothing
+//     setInsertSymbol: (fn) => set({ insertSymbol: fn }),
+//     // Removed: isVisible, showFAB, hideFAB
+// }));
+
+// export default useFABStore;

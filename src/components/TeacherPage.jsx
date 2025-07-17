@@ -5,8 +5,8 @@ import ExerciseList from './ExerciseList';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
-import MusicSymbolFAB from './MusicSymbolFAB';
-import useFABStore from '../store/fabStore';
+// Removed: import MusicSymbolButton from './MusicSymbolButton'; // No longer needed here
+// Removed: import useFABStore from '../store/fabStore'; // No longer needed here
 
 function TeacherPage() {
   const [exercises, setExercises] = useState([]);
@@ -23,7 +23,7 @@ function TeacherPage() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const { insertSymbol, isVisible } = useFABStore();
+  // Removed: const { insertSymbol, isVisible } = useFABStore(); // No longer needed here
 
   useEffect(() => {
     if (user) {
@@ -204,8 +204,8 @@ function TeacherPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 text-xs sm:text-sm px-3 py-2 font-medium transition focus:outline-none ${activeTab === tab
-                  ? 'bg-orange-400 text-black'
-                  : 'text-white hover:bg-slate-500'
+                ? 'bg-orange-400 text-black'
+                : 'text-white hover:bg-slate-500'
                 }`}
             >
               {tab === 'create' ? 'Create & Organize' : 'Assign Exercises'}
@@ -331,13 +331,12 @@ function TeacherPage() {
                       selectedStudentIds.length === 0 ||
                       assignmentLoading
                     }
-                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
-                      selectedExerciseIds.length === 0 ||
+                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${selectedExerciseIds.length === 0 ||
                       selectedStudentIds.length === 0 ||
                       assignmentLoading
-                        ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-                        : 'bg-orange-500 hover:bg-orange-600 text-white'
-                    }`}
+                      ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+                      : 'bg-orange-500 hover:bg-orange-600 text-white'
+                      }`}
                   >
                     {assignmentLoading ? (
                       <div className="flex items-center gap-2 justify-center">
@@ -345,10 +344,8 @@ function TeacherPage() {
                         Assigning...
                       </div>
                     ) : (
-                      `Assign ${selectedExerciseIds.length || 0} Exercise${
-                        selectedExerciseIds.length !== 1 ? 's' : ''
-                      } to ${selectedStudentIds.length || 0} Student${
-                        selectedStudentIds.length !== 1 ? 's' : ''
+                      `Assign ${selectedExerciseIds.length || 0} Exercise${selectedExerciseIds.length !== 1 ? 's' : ''
+                      } to ${selectedStudentIds.length || 0} Student${selectedStudentIds.length !== 1 ? 's' : ''
                       }`
                     )}
                   </button>
@@ -365,8 +362,7 @@ function TeacherPage() {
       <div className="w-full max-w-md sm:max-w-4xl mt-4">
         <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
       </div>
-
-      {isVisible && insertSymbol && <MusicSymbolFAB onInsert={insertSymbol} />}
+      {/* Removed the MusicSymbolButton rendering from here */}
     </div>
   );
 }
