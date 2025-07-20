@@ -1,11 +1,9 @@
-
-
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from "react-spinners";
 import NavLinks from './NavLinks';
-import MusicSymbolButton from './MusicSymbolButton'; // updated with smoother animation
+import MusicSymbolButton from './MusicSymbolButton';
 
 function StudentPage() {
   const [exercises, setExercises] = useState([]);
@@ -18,7 +16,7 @@ function StudentPage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [isInputFocused, setIsInputFocused] = useState(false); // NEW STATE for local input focus
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const inputRef = useRef();
   useEffect(() => {
@@ -56,20 +54,16 @@ function StudentPage() {
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
-  // Renamed and simplified: MusicSymbolButton now handles insertion directly
-  // const handleSymbolInsert = (symbol) => { ... }; // NO LONGER NEEDED HERE
-
   const handleInputFocus = () => {
     setIsInputFocused(true);
   };
 
   const handleInputBlur = (e) => {
-    // Check if focus is truly leaving the input AND the MusicSymbolButton
     setTimeout(() => {
       if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
         setIsInputFocused(false);
       }
-    }, 150); // Small delay to allow MusicSymbolButton's click to register
+    }, 150);
   };
 
   const handleSubmit = () => {
@@ -82,14 +76,14 @@ function StudentPage() {
       triggerSuccess();
       setInputValue("");
       setShowAnswer(false);
-      setIsInputFocused(false); // Reset focus state
+      setFeedback("");
+      setIsInputFocused(false);
       setTimeout(refreshExercise, 1000);
     } else {
       triggerTryAgain();
       setFailedAttempts((prev) => {
         const newAttempts = prev + 1;
-        if (newAttempts >= 3) setShowAnswer(true);
-        if (newAttempts > 3) setFeedback(correctAnswer);
+        if (newAttempts >= 3) setShowAnswer(true); // Show button after 1st fail
         return newAttempts;
       });
     }
@@ -178,11 +172,10 @@ function StudentPage() {
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && inputValue.trim()) handleSubmit();
                         }}
-                        onFocus={handleInputFocus} // Added focus handler
-                        onBlur={handleInputBlur}   // Added blur handler
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
                       />
                     </div>
-                    {/* Conditionally render MusicSymbolButton based on local isInputFocused state */}
                     {isInputFocused && <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />}
                   </div>
 

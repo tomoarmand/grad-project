@@ -219,6 +219,7 @@ function TeacherPage() {
           selectedFolder={selectedFolder}
           folders={folders}
           onFoldersUpdate={handleFoldersUpdate}
+          activeTab={activeTab} // Add this prop
         />
 
         {selectedFolder && (

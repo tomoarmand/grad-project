@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-function FolderManager({ teacherId, onFolderSelect, selectedFolder, folders, onFoldersUpdate }) {
+function FolderManager({ teacherId, onFolderSelect, selectedFolder, folders, onFoldersUpdate, activeTab }) {
   const [localFolders, setLocalFolders] = useState([]);
   const [newFolderName, setNewFolderName] = useState('');
   const [creating, setCreating] = useState(false);
@@ -129,29 +129,31 @@ function FolderManager({ teacherId, onFolderSelect, selectedFolder, folders, onF
 
   return (
     <div className="w-full mb-4">
-      {/* Folder creation input */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="New folder name"
-          value={newFolderName}
-          onChange={(e) => setNewFolderName(e.target.value)}
-          className="w-full rounded-md px-3 py-2 bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          disabled={creating}
-          onKeyDown={(e) => { if (e.key === 'Enter') createFolder(); }}
-        />
-        <button
-          onClick={createFolder}
-          disabled={creating || !newFolderName.trim()}
-          className="rounded-md px-4 py-2 bg-orange-400 text-black font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-500"
-          type="button"
-        >
-          {creating ? 'Adding...' : 'Add'}
-        </button>
-      </div>
+      {/* Only show folder creation input when in 'create' tab */}
+      {activeTab === 'create' && (
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="New folder name"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            className="w-full rounded-md px-3 py-2 bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            disabled={creating}
+            onKeyDown={(e) => { if (e.key === 'Enter') createFolder(); }}
+          />
+          <button
+            onClick={createFolder}
+            disabled={creating || !newFolderName.trim()}
+            className="rounded-md px-4 py-2 bg-orange-400 text-black font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-500"
+            type="button"
+          >
+            {creating ? 'Adding...' : 'Add'}
+          </button>
+        </div>
+      )}
 
       {/* Folder list */}
-      <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+      <div className="flex flex-wrap gap-3 justify-start">
         {localFolders.length === 0 && (
           <p className="text-slate-300 text-center w-full">No folders found</p>
         )}
@@ -193,58 +195,63 @@ function FolderManager({ teacherId, onFolderSelect, selectedFolder, folders, onF
               ) : (
                 <div className="flex items-center gap-1">
                   <button
+                    title={folder.name}
                     onClick={() => onFolderSelect(folder)}
                     disabled={isDeleting}
                     type="button"
-                    className={`rounded-md px-4 py-2 whitespace-nowrap transition focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
+                    className={`rounded-md px-4 py-2 transition focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed
                       ${
                         isSelected
                           ? 'bg-orange-400 text-black shadow-md'
                           : 'bg-slate-600 hover:bg-slate-700 text-white'
                       }
+                      w-[160px] sm:w-auto sm:max-w-xs text-left truncate
                     `}
                   >
                     {isDeleting ? 'Deleting...' : folder.name}
                   </button>
 
-                  <div className="relative" ref={openMenuId === folder._id ? menuRef : null}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMenu(folder._id);
-                      }}
-                      disabled={isDeleting}
-                      className={`p-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed
-                        ${
-                          isSelected
-                            ? 'text-black hover:bg-orange-500'
-                            : 'text-white hover:bg-slate-700'
-                        }
-                      `}
-                      title="Folder options"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                      </svg>
-                    </button>
+                  {/* Only show folder options (rename/delete) when in 'create' tab */}
+                  {activeTab === 'create' && (
+                    <div className="relative" ref={openMenuId === folder._id ? menuRef : null}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMenu(folder._id);
+                        }}
+                        disabled={isDeleting}
+                        className={`p-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed
+                          ${
+                            isSelected
+                              ? 'text-black hover:bg-orange-500'
+                              : 'text-white hover:bg-slate-700'
+                          }
+                        `}
+                        title="Folder options"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                        </svg>
+                      </button>
 
-                    {openMenuId === folder._id && (
-                      <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-md shadow-lg border border-slate-200 z-50">
-                        <button
-                          onClick={() => startRename(folder)}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-t-md"
-                        >
-                          Rename
-                        </button>
-                        <button
-                          onClick={() => deleteFolder(folder._id)}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-md"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      {openMenuId === folder._id && (
+                        <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-md shadow-lg border border-slate-200 z-50">
+                          <button
+                            onClick={() => startRename(folder)}
+                            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-t-md"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            onClick={() => deleteFolder(folder._id)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-md"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
