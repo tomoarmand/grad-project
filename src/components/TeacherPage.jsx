@@ -50,7 +50,15 @@ function TeacherPage() {
     try {
       const response = await fetch(`${API_URL}/users`);
       const allUsers = await response.json();
-      setStudents(allUsers.filter((u) => u.role === 'student'));
+      // Sort students alphabetically by fullName
+      const sortedStudents = allUsers
+        .filter((u) => u.role === 'student')
+        .sort((a, b) => {
+          const nameA = (a.fullName || 'Unnamed Student').toLowerCase();
+          const nameB = (b.fullName || 'Unnamed Student').toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+      setStudents(sortedStudents);
     } catch (error) {
       console.error('Failed to fetch students:', error);
     }
@@ -61,7 +69,13 @@ function TeacherPage() {
       setLoading(true);
       const response = await fetch(`${API_URL}/exercises/folder/${folderId}`);
       const data = await response.json();
-      setExercises(data);
+      // Sort exercises alphabetically by correctAnswer (exercise name)
+      const sortedExercises = data.sort((a, b) => {
+        const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
+        const nameB = (b.correctAnswer?.trim() || b.question?.trim() || 'Exercise name missing').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      setExercises(sortedExercises);
     } catch (error) {
       console.error('Failed to fetch exercises:', error);
     } finally {
@@ -113,6 +127,12 @@ function TeacherPage() {
   const handleRenameExercise = async (exerciseId, newName) => {
     setExercises((prev) =>
       prev.map((ex) => (ex._id === exerciseId ? { ...ex, correctAnswer: newName } : ex))
+        .sort((a, b) => {
+          // Re-sort after rename to maintain alphabetical order
+          const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
+          const nameB = (b.correctAnswer?.trim() || b.question?.trim() || 'Exercise name missing').toLowerCase();
+          return nameA.localeCompare(nameB);
+        })
     );
 
     try {

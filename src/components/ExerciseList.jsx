@@ -1,29 +1,23 @@
 import { PuffLoader } from "react-spinners";
 import { useState, useRef } from 'react';
-// import useFABStore from '../store/fabStore'; // REMOVE THIS IMPORT
 import MusicSymbolButton from './MusicSymbolButton';
 
 function ExerciseList({ exercises, onDelete, onRename, loading }) {
   const [renamingId, setRenamingId] = useState(null);
   const [newName, setNewName] = useState('');
   const inputRef = useRef(null);
-  const [isInputFocused, setIsInputFocused] = useState(false); // Local state for input focus
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
-  // REMOVED useFABStore destructuring
-
-  // The symbol insertion logic moves into MusicSymbolButton itself
-  // so this component just needs to manage its own focus state.
   const handleInputFocus = () => {
     setIsInputFocused(true);
   };
 
   const handleInputBlur = (e) => {
-    // Check if focus is truly leaving the input AND the MusicSymbolButton
     setTimeout(() => {
       if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
         setIsInputFocused(false);
       }
-    }, 150); // Small delay to allow MusicSymbolButton's click to register
+    }, 150);
   };
 
   const handleSave = async () => {
@@ -31,14 +25,14 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
       await onRename(renamingId, newName.trim());
       setRenamingId(null);
       setNewName('');
-      setIsInputFocused(false); // Reset focus state on save
+      setIsInputFocused(false);
     }
   };
 
   const handleCancel = () => {
     setRenamingId(null);
     setNewName('');
-    setIsInputFocused(false); // Reset focus state on cancel
+    setIsInputFocused(false);
   };
 
   if (loading) {
@@ -49,9 +43,14 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     );
   }
 
+  // Sort exercises alphabetically by correctAnswer (case-insensitive)
+  const sortedExercises = [...exercises].sort((a, b) =>
+    a.correctAnswer.localeCompare(b.correctAnswer, undefined, { sensitivity: 'base' })
+  );
+
   return (
     <ul className="w-full">
-      {exercises.map((ex) => (
+      {sortedExercises.map((ex) => (
         <li
           key={ex._id}
           className="bg-slate-600 p-4 rounded mb-4 flex flex-col gap-4"
@@ -70,8 +69,12 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                   autoFocus
                   placeholder="Enter new name"
                 />
-                {/* Pass inputRef and the setterFunction directly to MusicSymbolButton */}
-                {isInputFocused && <MusicSymbolButton inputRef={inputRef} setterFunction={setNewName} />}
+                {isInputFocused && (
+                  <MusicSymbolButton
+                    inputRef={inputRef}
+                    setterFunction={setNewName}
+                  />
+                )}
               </div>
 
               <div className="flex gap-3 justify-end">
