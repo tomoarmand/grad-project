@@ -5,8 +5,6 @@ import ExerciseList from './ExerciseList';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
-// Removed: import MusicSymbolButton from './MusicSymbolButton'; // No longer needed here
-// Removed: import useFABStore from '../store/fabStore'; // No longer needed here
 
 function TeacherPage() {
   const [exercises, setExercises] = useState([]);
@@ -23,8 +21,6 @@ function TeacherPage() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Removed: const { insertSymbol, isVisible } = useFABStore(); // No longer needed here
-
   useEffect(() => {
     if (user) {
       fetchFolders();
@@ -36,21 +32,23 @@ function TeacherPage() {
     try {
       const response = await fetch(`${API_URL}/folders/${user._id}`);
       const folderData = await response.json();
-      setFolders(folderData);
+      handleFoldersUpdate(folderData);
     } catch (error) {
       console.error('Failed to fetch folders:', error);
     }
   };
 
   const handleFoldersUpdate = (updatedFolders) => {
-    setFolders(updatedFolders);
+    const sorted = [...updatedFolders].sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+    setFolders(sorted);
   };
 
   const fetchStudents = async () => {
     try {
       const response = await fetch(`${API_URL}/users`);
       const allUsers = await response.json();
-      // Sort students alphabetically by fullName
       const sortedStudents = allUsers
         .filter((u) => u.role === 'student')
         .sort((a, b) => {
@@ -69,7 +67,6 @@ function TeacherPage() {
       setLoading(true);
       const response = await fetch(`${API_URL}/exercises/folder/${folderId}`);
       const data = await response.json();
-      // Sort exercises alphabetically by correctAnswer (exercise name)
       const sortedExercises = data.sort((a, b) => {
         const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
         const nameB = (b.correctAnswer?.trim() || b.question?.trim() || 'Exercise name missing').toLowerCase();
@@ -98,7 +95,7 @@ function TeacherPage() {
       const response = await fetch(`${API_URL}/exercises`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...exercise, teacherId: user._id })
+        body: JSON.stringify({ ...exercise, teacherId: user._id }),
       });
 
       if (response.ok && selectedFolder) {
@@ -114,7 +111,7 @@ function TeacherPage() {
     setExercises((prev) => prev.filter((ex) => ex._id !== id));
     try {
       const response = await fetch(`${API_URL}/exercises/${id}?userId=${user._id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete exercise on server');
       await fetchFolders();
@@ -126,11 +123,11 @@ function TeacherPage() {
 
   const handleRenameExercise = async (exerciseId, newName) => {
     setExercises((prev) =>
-      prev.map((ex) => (ex._id === exerciseId ? { ...ex, correctAnswer: newName } : ex))
+      prev
+        .map((ex) => (ex._id === exerciseId ? { ...ex, correctAnswer: newName } : ex))
         .sort((a, b) => {
-          // Re-sort after rename to maintain alphabetical order
-          const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
-          const nameB = (b.correctAnswer?.trim() || b.question?.trim() || 'Exercise name missing').toLowerCase();
+          const nameA = (a.correctAnswer?.trim() || a.question?.trim() || '').toLowerCase();
+          const nameB = (b.correctAnswer?.trim() || b.question?.trim() || '').toLowerCase();
           return nameA.localeCompare(nameB);
         })
     );
@@ -139,7 +136,7 @@ function TeacherPage() {
       const response = await fetch(`${API_URL}/exercises/${exerciseId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correctAnswer: newName })
+        body: JSON.stringify({ correctAnswer: newName }),
       });
       if (!response.ok) throw new Error('Failed to rename exercise on server');
     } catch (error) {
@@ -171,8 +168,8 @@ function TeacherPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           exerciseIds: selectedExerciseIds,
-          studentIds: selectedStudentIds
-        })
+          studentIds: selectedStudentIds,
+        }),
       });
 
       if (response.ok) {
@@ -206,7 +203,7 @@ function TeacherPage() {
           links={[
             { label: 'Home', to: '/' },
             { label: 'Teacher Dashboard', to: '/TeacherPage' },
-            selectedFolder ? { label: selectedFolder.name, to: '#' } : null
+            selectedFolder ? { label: selectedFolder.name, to: '#' } : null,
           ].filter(Boolean)}
           isBreadcrumb
         />
@@ -223,10 +220,9 @@ function TeacherPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 text-xs sm:text-sm px-3 py-2 font-medium transition focus:outline-none ${activeTab === tab
-                ? 'bg-orange-400 text-black'
-                : 'text-white hover:bg-slate-500'
-                }`}
+              className={`flex-1 text-xs sm:text-sm px-3 py-2 font-medium transition focus:outline-none ${
+                activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500'
+              }`}
             >
               {tab === 'create' ? 'Create & Organize' : 'Assign Exercises'}
             </button>
@@ -239,12 +235,13 @@ function TeacherPage() {
           selectedFolder={selectedFolder}
           folders={folders}
           onFoldersUpdate={handleFoldersUpdate}
-          activeTab={activeTab} // Add this prop
+          activeTab={activeTab}
         />
 
         {selectedFolder && (
           <div className="text-center text-white text-sm">
-            Selected Folder: <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
+            Selected Folder:{' '}
+            <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
             <span className="ml-2 opacity-75">
               ({exercises.length} exercise{exercises.length !== 1 ? 's' : ''})
             </span>
@@ -278,15 +275,13 @@ function TeacherPage() {
           <div className="space-y-6">
             {!selectedFolder ? (
               <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
-                <p className="text-white text-lg">
-                  📁 Select a folder above to begin assigning exercises
-                </p>
+                <p className="text-white text-lg">📁 Select a folder above to begin assigning exercises</p>
               </div>
             ) : (
               <>
                 <div className="bg-slate-600 rounded-lg p-3">
                   <h3 className="text-white text-sm font-semibold mb-2">
-                    Select Exercises from "{selectedFolder.name}"
+                    Select Exercises from &quot;{selectedFolder.name}&quot;
                   </h3>
                   {loading ? (
                     <div className="flex justify-center py-4">
@@ -297,7 +292,10 @@ function TeacherPage() {
                   ) : (
                     <div className="space-y-1 max-h-40 overflow-y-auto">
                       {exercises.map((ex) => (
-                        <label key={ex._id} className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700">
+                        <label
+                          key={ex._id}
+                          className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
+                        >
                           <input
                             type="checkbox"
                             checked={selectedExerciseIds.includes(ex._id)}
@@ -313,7 +311,8 @@ function TeacherPage() {
                   )}
                   {selectedExerciseIds.length > 0 && (
                     <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
-                      {selectedExerciseIds.length} exercise{selectedExerciseIds.length !== 1 ? 's' : ''} selected
+                      {selectedExerciseIds.length} exercise
+                      {selectedExerciseIds.length !== 1 ? 's' : ''} selected
                     </div>
                   )}
                 </div>
@@ -325,7 +324,10 @@ function TeacherPage() {
                   ) : (
                     <div className="space-y-1 max-h-40 overflow-y-auto">
                       {students.map((st) => (
-                        <label key={st._id} className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700">
+                        <label
+                          key={st._id}
+                          className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
+                        >
                           <input
                             type="checkbox"
                             checked={selectedStudentIds.includes(st._id)}
@@ -339,7 +341,8 @@ function TeacherPage() {
                   )}
                   {selectedStudentIds.length > 0 && (
                     <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
-                      {selectedStudentIds.length} student{selectedStudentIds.length !== 1 ? 's' : ''} selected
+                      {selectedStudentIds.length} student
+                      {selectedStudentIds.length !== 1 ? 's' : ''} selected
                     </div>
                   )}
                 </div>
@@ -352,12 +355,13 @@ function TeacherPage() {
                       selectedStudentIds.length === 0 ||
                       assignmentLoading
                     }
-                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${selectedExerciseIds.length === 0 ||
+                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
+                      selectedExerciseIds.length === 0 ||
                       selectedStudentIds.length === 0 ||
                       assignmentLoading
-                      ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-                      : 'bg-orange-500 hover:bg-orange-600 text-white'
-                      }`}
+                        ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+                        : 'bg-orange-500 hover:bg-orange-600 text-white'
+                    }`}
                   >
                     {assignmentLoading ? (
                       <div className="flex items-center gap-2 justify-center">
@@ -365,8 +369,10 @@ function TeacherPage() {
                         Assigning...
                       </div>
                     ) : (
-                      `Assign ${selectedExerciseIds.length || 0} Exercise${selectedExerciseIds.length !== 1 ? 's' : ''
-                      } to ${selectedStudentIds.length || 0} Student${selectedStudentIds.length !== 1 ? 's' : ''
+                      `Assign ${selectedExerciseIds.length || 0} Exercise${
+                        selectedExerciseIds.length !== 1 ? 's' : ''
+                      } to ${selectedStudentIds.length || 0} Student${
+                        selectedStudentIds.length !== 1 ? 's' : ''
                       }`
                     )}
                   </button>
@@ -376,14 +382,12 @@ function TeacherPage() {
           </div>
         )}
 
-        {/* Navigation */}
         <NavLinks links={[{ label: 'Manage Assignments →', to: '/TeacherExercisesManager' }]} />
       </div>
 
       <div className="w-full max-w-md sm:max-w-4xl mt-4">
         <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
       </div>
-      {/* Removed the MusicSymbolButton rendering from here */}
     </div>
   );
 }

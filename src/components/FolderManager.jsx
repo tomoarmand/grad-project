@@ -54,7 +54,8 @@ function FolderManager({
     if (!window.confirm('Are you sure you want to delete this folder?')) return;
     try {
       await fetch(`${API_URL}/folders/${folderId}`, {
-        method: 'DELETE' });
+        method: 'DELETE'
+      });
       onFoldersUpdate(folders.filter((f) => f._id !== folderId));
       if (selectedFolder && selectedFolder._id === folderId) {
         onFolderSelect(null);
@@ -64,102 +65,130 @@ function FolderManager({
     }
   };
 
-  const showMenuFor = (folderId) => {
-    return folderId === selectedFolder?._id && (activeTab === 'create' || activeTab === 'organise');
-  };
-
   const sortedFolders = [...folders].sort((a, b) => a.name.localeCompare(b.name));
+
+  const tabColor = activeTab === 'create' ? 'orange-400' : 'slate-500';
+  const tabColorHover = activeTab === 'create' ? 'orange-500' : 'slate-600';
 
   return (
     <div className="bg-slate-600 p-4 rounded-lg">
-      <h2 className="text-white text-lg font-semibold mb-2">Create & Organise Folders</h2>
+      <h2 className="text-white text-lg font-semibold mb-2">
+        {activeTab === 'create' ? 'Organize Your Folders' : 'Choose a Folder to Assign From'}
+      </h2>
 
-      <div className="flex mb-4 gap-2">
-        <input
-          type="text"
-          placeholder="New folder name"
-          value={newFolderName}
-          onChange={(e) => setNewFolderName(e.target.value)}
-          className="flex-1 p-2 rounded bg-slate-100 text-black"
-        />
-        <button
-          onClick={handleAddFolder}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
-        >
-          Add
-        </button>
-      </div>
-
-      <ul className="space-y-2 max-h-60 md:max-h-48 overflow-y-auto">
-        {sortedFolders.map((folder) => (
-          <li
-            key={folder._id}
-            className={`flex items-center justify-between p-2 md:p-1 rounded cursor-pointer transition-colors text-sm md:text-xs ${
-              selectedFolder?._id === folder._id ? 'bg-orange-300 text-black' : 'bg-slate-500 text-white hover:bg-slate-400'
-            }`}
-            onClick={() => onFolderSelect(folder)}
+      {activeTab === 'create' && (
+        <div className="flex mb-4 gap-2">
+          <input
+            type="text"
+            placeholder="New folder name"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            className={`flex-1 p-2 rounded focus:outline-none focus:ring-2 focus:ring-${tabColor} border border-transparent bg-slate-100 text-black`}
+          />
+          <button
+            onClick={handleAddFolder}
+            className={`bg-${tabColor} hover:bg-${tabColorHover} text-white px-4 py-2 rounded`}
           >
-            <div className="flex-1">
-              {renamingFolderId === folder._id ? (
-                <input
-                  type="text"
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  onBlur={() => handleRenameFolder(folder._id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRenameFolder(folder._id);
-                  }}
-                  className="w-full p-1 rounded text-black"
-                  autoFocus
-                />
-              ) : (
-                <span>{folder.name}</span>
-              )}
-            </div>
+            Add
+          </button>
+        </div>
+      )}
 
-            {showMenuFor(folder._id) && (
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpenId(menuOpenId === folder._id ? null : folder._id);
-                  }}
-                  className="p-1 text-white hover:text-orange-300"
-                >
-                  <MoreVertical size={18} />
-                </button>
-                {menuOpenId === folder._id && (
-                  <div className="absolute right-0 mt-1 w-28 bg-white text-black rounded shadow-lg z-10">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRenamingFolderId(folder._id);
-                        setEditedName(folder.name);
-                        setMenuOpenId(null);
-                      }}
-                      className="block w-full text-left px-3 py-2 hover:bg-gray-200"
-                    >
-                      Rename
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteFolder(folder._id);
-                        setMenuOpenId(null);
-                      }}
-                      className="block w-full text-left px-3 py-2 hover:bg-gray-200"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+      {folders.length === 0 ? (
+        <p className="text-white text-sm">No folders available.</p>
+      ) : (
+        <ul className="max-h-48 overflow-y-auto space-y-1">
+          {sortedFolders.map((folder) => (
+            <li
+              key={folder._id}
+              className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors duration-150 ${
+                selectedFolder?._id === folder._id
+                  ? 'bg-orange-400 text-black'
+                  : 'text-white hover:bg-slate-700'
+              }`}
+              onClick={() => onFolderSelect(folder)}
+            >
+              {renamingFolderId === folder._id ? (
+                <div className="flex items-center gap-2 flex-grow">
+                  <input
+                    type="text"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameFolder(folder._id);
+                      if (e.key === 'Escape') setRenamingFolderId(null);
+                    }}
+                    autoFocus
+                    className="flex-grow p-1 rounded text-black border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRenameFolder(folder._id);
+                    }}
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white whitespace-nowrap"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRenamingFolderId(null);
+                    }}
+                    className="px-3 py-1 bg-gray-300 rounded text-black whitespace-nowrap"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <span className="truncate">{folder.name || 'Untitled Folder'}</span>
+              )}
+
+              {activeTab === 'create' && selectedFolder?._id === folder._id && (
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() =>
+                      setMenuOpenId(menuOpenId === folder._id ? null : folder._id)
+                    }
+                    className="p-1 rounded hover:bg-slate-700 text-white"
+                    aria-label="Folder options"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+
+                  {menuOpenId === folder._id && (
+                    <div className="absolute right-0 mt-1 w-28 bg-white text-black rounded shadow-lg z-10">
+                      <button
+                        onClick={() => {
+                          setRenamingFolderId(folder._id);
+                          setEditedName(folder.name);
+                          setMenuOpenId(null);
+                        }}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-200"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMenuOpenId(null);
+                          handleDeleteFolder(folder._id);
+                        }}
+                        className="block w-full text-left px-3 py-2 text-red-600 hover:bg-gray-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 export default FolderManager;
+
