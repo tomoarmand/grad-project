@@ -1,7 +1,7 @@
 ## To Do
 
 
-- Edit home page (3 hours)
+
 
 - Move link to teacherexercisemanager into teacherpage tabs (1 day)
 
@@ -14,6 +14,9 @@
 - Rename home page link (5 minutes)
 
 - Dropdown display in foldermanager issue (30 minutes)
+
+- Edit home page (3 hours)
+
 
 
 - FAB display issue (4 hours) *Done
