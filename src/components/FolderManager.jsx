@@ -83,7 +83,7 @@ function FolderManager({
             placeholder="New folder name"
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
-            className={`flex-1 p-2 rounded focus:outline-none focus:ring-2 focus:ring-${tabColor} border border-transparent bg-slate-100 text-black`}
+            className="flex-1 p-2 rounded border border-slate-300 bg-slate-100 text-black focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
           />
           <button
             onClick={handleAddFolder}
@@ -120,7 +120,7 @@ function FolderManager({
                       if (e.key === 'Escape') setRenamingFolderId(null);
                     }}
                     autoFocus
-                    className="flex-grow p-1 rounded text-black border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="flex-grow p-1 rounded text-black border border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
                   />
                   <button
                     onClick={(e) => {

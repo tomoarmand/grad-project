@@ -46,7 +46,7 @@ function LoginPage() {
         <h1 className="text-3xl sm:text-4xl text-white font-bold text-center mb-6">Welcome Back</h1>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
-            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
             type="email"
             placeholder="Enter your email"
             value={email}
@@ -55,7 +55,7 @@ function LoginPage() {
           />
           {/*
           <input
-            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(251,146,60,0.8),0_0_10px_rgba(251,146,60,0.4)] focus:border-transparent transition"
             type="text"
             placeholder="Enter PIN (Teachers only)"
             value={teacherPIN}

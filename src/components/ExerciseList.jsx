@@ -43,7 +43,6 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     );
   }
 
-  // Sort exercises alphabetically by correctAnswer (case-insensitive)
   const sortedExercises = [...exercises].sort((a, b) =>
     a.correctAnswer.localeCompare(b.correctAnswer, undefined, { sensitivity: 'base' })
   );
@@ -65,7 +64,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                   onChange={(e) => setNewName(e.target.value)}
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
-                  className="flex-grow bg-white text-black border border-slate-300 p-3 rounded w-full text-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="flex-grow bg-white text-black border border-slate-300 p-3 rounded w-full text-lg focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
                   autoFocus
                   placeholder="Enter new name"
                 />
