@@ -13,7 +13,7 @@
 
 - Rename home page link (5 minutes)
 
-- Dropdown display in foldermanager issue (30 minutes)
+- Dropdown display in foldermanager issue (30 minutes) [5 minutes]
 
 - Edit home page (3 hours)
 
@@ -22,3 +22,6 @@
 - FAB display issue (4 hours) *Done
 
 - Comment out breadcrumb
+
+
+- Move student selector in assign exercises tab to top **(maybe)

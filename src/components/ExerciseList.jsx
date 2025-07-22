@@ -1,5 +1,6 @@
 import { PuffLoader } from "react-spinners";
 import { useState, useRef } from 'react';
+import { Check, X } from 'lucide-react';
 import MusicSymbolButton from './MusicSymbolButton';
 
 function ExerciseList({ exercises, onDelete, onRename, loading }) {
@@ -35,6 +36,14 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     setIsInputFocused(false);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-10">
@@ -54,88 +63,90 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
           key={ex._id}
           className="bg-slate-600 p-4 rounded mb-4 flex flex-col gap-4"
         >
-          {renamingId === ex._id ? (
-            <div className="flex flex-col gap-3 w-full">
-              <div className="flex flex-row gap-2 w-full items-center">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  className="flex-grow bg-white text-black border border-slate-300 p-3 rounded w-full text-lg focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
-                  autoFocus
-                  placeholder="Enter new name"
-                />
-                {isInputFocused && (
-                  <MusicSymbolButton
-                    inputRef={inputRef}
-                    setterFunction={setNewName}
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              {renamingId === ex._id ? (
+                <div className="flex items-center gap-2 flex-grow mr-4">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                    onKeyDown={handleKeyDown}
+                    className="flex-grow bg-white text-black border border-slate-300 p-2 rounded focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
+                    autoFocus
+                    placeholder="Enter new name"
                   />
-                )}
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <button
-                  className="bg-green-600 text-white px-4 py-2 rounded text-sm"
-                  onClick={handleSave}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  Save
-                </button>
-                <button
-                  className="bg-gray-500 text-white px-4 py-2 rounded text-sm"
-                  onClick={handleCancel}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <p className="text-white text-lg font-medium">
-                  Correct Answer: {ex.correctAnswer}
-                </p>
-                <div className="flex gap-4">
+                  {isInputFocused && (
+                    <MusicSymbolButton
+                      inputRef={inputRef}
+                      setterFunction={setNewName}
+                    />
+                  )}
                   <button
-                    onClick={() => {
-                      setRenamingId(ex._id);
-                      setNewName(ex.correctAnswer);
-                    }}
-                    aria-label="Rename exercise"
-                    className="text-orange-400 hover:text-orange-500 focus:outline-none"
+                    onClick={handleSave}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="p-1.5 bg-green-600 hover:bg-green-700 rounded text-white flex items-center justify-center flex-shrink-0"
+                    title="Save changes"
+                    aria-label="Save changes"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
-                      viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                        d="M15.232 5.232l3.536 3.536M16.768 4.768a2.5 2.5 0 113.536
-                        3.536L7 21H3v-4L16.768 4.768z" />
-                    </svg>
+                    <Check size={16} />
                   </button>
-
                   <button
-                    onClick={() => onDelete(ex._id)}
-                    aria-label="Delete exercise"
-                    className="text-red-500 hover:text-red-600 focus:outline-none"
+                    onClick={handleCancel}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="p-1.5 bg-gray-400 hover:bg-gray-500 rounded text-white flex items-center justify-center flex-shrink-0"
+                    title="Cancel editing"
+                    aria-label="Cancel editing"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
-                      viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2
-                        0 01-1.995-1.858L5 7m5-4h4m-4
-                        0a1 1 0 00-1 1v1h6V4a1 1
-                        0 00-1-1m-4 0h4" />
-                    </svg>
+                    <X size={16} />
                   </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <p className="text-white text-lg font-medium">
+                    Correct Answer: {ex.correctAnswer}
+                  </p>
+                  <div className="flex gap-3 flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        setRenamingId(ex._id);
+                        setNewName(ex.correctAnswer);
+                      }}
+                      aria-label="Rename exercise"
+                      className="text-orange-400 hover:text-orange-500 focus:outline-none p-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M15.232 5.232l3.536 3.536M16.768 4.768a2.5 2.5 0 113.536
+                          3.536L7 21H3v-4L16.768 4.768z" />
+                      </svg>
+                    </button>
 
-              <audio controls src={ex.audioData}></audio>
+                    <button
+                      onClick={() => onDelete(ex._id)}
+                      aria-label="Delete exercise"
+                      className="text-red-500 hover:text-red-600 focus:outline-none p-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2
+                          0 01-1.995-1.858L5 7m5-4h4m-4
+                          0a1 1 0 00-1 1v1h6V4a1 1
+                          0 00-1-1m-4 0h4" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+
+            <audio controls src={ex.audioData}></audio>
+          </div>
         </li>
       ))}
     </ul>
