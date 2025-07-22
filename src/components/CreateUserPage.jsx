@@ -54,7 +54,7 @@ function CreateUserPage() {
             placeholder="Full Name"
             value={formData.fullName}
             onChange={handleChange}
-            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
             required
           />
           <input
@@ -63,14 +63,14 @@ function CreateUserPage() {
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
             required
           />
           <select
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+            className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black border-2 border-gray-300 focus:outline-none focus:border-orange-400 transition"
           >
             <option value="teacher">Teacher</option>
             <option value="student">Student</option>
@@ -83,7 +83,7 @@ function CreateUserPage() {
               placeholder="Enter PIN (Teachers only)"
               value={teacherPIN}
               onChange={(e) => setTeacherPIN(e.target.value)}
-              className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+              className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
             />
           )}
           */}

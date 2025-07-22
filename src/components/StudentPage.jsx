@@ -54,9 +54,7 @@ function StudentPage() {
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
-  const handleInputFocus = () => {
-    setIsInputFocused(true);
-  };
+  const handleInputFocus = () => setIsInputFocused(true);
 
   const handleInputBlur = (e) => {
     setTimeout(() => {
@@ -83,7 +81,7 @@ function StudentPage() {
       triggerTryAgain();
       setFailedAttempts((prev) => {
         const newAttempts = prev + 1;
-        if (newAttempts >= 3) setShowAnswer(true); // Show button after 1st fail
+        if (newAttempts >= 3) setShowAnswer(true);
         return newAttempts;
       });
     }
@@ -165,7 +163,7 @@ function StudentPage() {
                     <div className="relative flex-grow">
                       <input
                         ref={inputRef}
-                        className="w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                        className="w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
                         placeholder="Enter your answer here..."
                         onChange={handleInputChange}
                         value={inputValue}
@@ -176,7 +174,9 @@ function StudentPage() {
                         onBlur={handleInputBlur}
                       />
                     </div>
-                    {isInputFocused && <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />}
+                    <div data-fab>
+                      <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
+                    </div>
                   </div>
 
                   <button
