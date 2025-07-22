@@ -7,7 +7,7 @@
 
 
 
-- Rename feature for foldermanager no cancel button on mobile (could be non responsive to mobile) (10 minutes)
+- Rename feature for foldermanager no cancel button on mobile (could be non responsive to mobile) (10 minutes) [10 mins]
 
 - Fix student and teacher greetings to use only first name(string) from the user.fullName (30 mins)
 
