@@ -148,7 +148,7 @@ function FolderManager({
         <p className="text-white text-sm">No folders available.</p>
       ) : (
         <div className="relative" ref={containerRef}>
-          <ul className="max-h-48 overflow-y-auto space-y-1 pr-2">
+          <ul className="max-h-48 overflow-y-auto space-y-1">
             {sortedFolders.map((folder) => (
               <li
                 key={folder._id}
