@@ -65,8 +65,8 @@ function StudentPage() {
   };
 
   const handleSubmit = () => {
-    const correctAnswer = exercises[currentExerciseIndex].correctAnswer;
-    const trimmedInput = inputValue.replaceAll(" ", "");
+    const correctAnswer = exercises[currentExerciseIndex].correctAnswer.toLowerCase();
+    const trimmedInput = inputValue.replaceAll(" ", "").toLowerCase();
     const trimmedAnswer = correctAnswer.replaceAll(" ", "");
 
     if (trimmedInput === trimmedAnswer) {
@@ -123,7 +123,7 @@ function StudentPage() {
     <div className={`min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 ${isShaking ? 'animate-shake' : ''}`}>
       <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
         <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
-          Welcome, {user?.fullName || 'Student'}!
+          Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
         </h1>
 
         {loading ? (
@@ -136,7 +136,7 @@ function StudentPage() {
             {showCorrect && (
               <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
                 <div className="bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-green-600">
-                  <p className="text-2xl font-bold text-center">🎉 Correct!</p>
+                  <p className="text-2xl font-bold text-center"> Correct!</p>
                   <p className="text-sm text-center mt-1 opacity-90">Excellent work!</p>
                 </div>
               </div>
@@ -145,7 +145,7 @@ function StudentPage() {
             {showTryAgain && (
               <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
                 <div className="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-red-600">
-                  <p className="text-2xl font-bold text-center">❌ Try Again!</p>
+                  <p className="text-2xl font-bold text-center"> Try Again!</p>
                   <p className="text-sm text-center mt-1 opacity-90">Keep going, you've got this!</p>
                 </div>
               </div>

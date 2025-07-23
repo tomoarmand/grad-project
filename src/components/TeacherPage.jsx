@@ -211,7 +211,7 @@ function TeacherPage() {
 
       <div className="w-full max-w-md sm:max-w-4xl bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-6">
         <h1 className="text-2xl sm:text-3xl text-white font-bold text-center">
-          Welcome, {user?.fullName || 'Teacher'}!
+          Welcome, {user?.fullName?.split(' ')[0] || 'Teacher'}!
         </h1>
 
         {/* Tabs */}
