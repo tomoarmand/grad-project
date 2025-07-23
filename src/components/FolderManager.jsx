@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, Check, X } from 'lucide-react';
 
 function FolderManager({
   teacherId,
@@ -160,7 +160,7 @@ function FolderManager({
                 onClick={() => onFolderSelect(folder)}
               >
                 {renamingFolderId === folder._id ? (
-                  <div className="flex items-center gap-2 flex-grow">
+                  <div className="flex items-center gap-2 flex-grow pr-2">
                     <input
                       type="text"
                       value={editedName}
@@ -178,18 +178,22 @@ function FolderManager({
                         e.stopPropagation();
                         handleRenameFolder(folder._id);
                       }}
-                      className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white whitespace-nowrap"
+                      className="p-1.5 bg-green-600 hover:bg-green-700 rounded text-white flex items-center justify-center"
+                      title="Save changes"
+                      aria-label="Save changes"
                     >
-                      Save
+                      <Check size={14} />
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setRenamingFolderId(null);
                       }}
-                      className="px-3 py-1 bg-gray-300 rounded text-black whitespace-nowrap"
+                      className="p-1.5 bg-gray-400 hover:bg-gray-500 rounded text-white flex items-center justify-center"
+                      title="Cancel editing"
+                      aria-label="Cancel editing"
                     >
-                      Cancel
+                      <X size={14} />
                     </button>
                   </div>
                 ) : (
