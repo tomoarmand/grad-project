@@ -12,10 +12,16 @@ function HomePage() {
           <img
             src={logo}
             alt="KenTone logo"
-            className="w-32 h-32 sm:w-36 sm:h-36 object-contain mb-4"
+            className="w-32 h-32 sm:w-36 sm:h-36 object-contain mb-4 drop-shadow-md"
+            style={{
+              filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))'
+            }}
           />
           <h1
-            style={{ fontFamily: "'Merriweather', serif" }}
+            style={{ 
+              fontFamily: "'Merriweather', serif",
+              textShadow: '2px 4px 6px rgba(0, 0, 0, 0.3)'
+            }}
             className="text-[#f5f0e6] text-4xl sm:text-5xl font-semibold tracking-wide"
           >
             KenTone
@@ -25,12 +31,12 @@ function HomePage() {
         {/* Buttons */}
         <div className="flex flex-col gap-4 mt-12">
           <Link to="/LoginPage">
-            <button className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200">
+            <button className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg">
               Log In
             </button>
           </Link>
           <Link to="/CreateUserPage">
-            <button className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200">
+            <button className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg">
               Create New User
             </button>
           </Link>
