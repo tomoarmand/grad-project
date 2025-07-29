@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@font-face {
+    font-family: 'Bravura';
+    src: url('/fonts/Bravura.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'BravuraText';
+    src: url('/fonts/BravuraText.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}

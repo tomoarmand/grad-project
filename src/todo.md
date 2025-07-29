@@ -1,6 +1,14 @@
 ## To Do
 
 
+- FORK PROJECT
+
+- Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections
+
+- Walkthroughs for new users
+
+- Break down components and create smoother work flow
+
 
 
 - Move link to teacherexercisemanager into teacherpage tabs (1 day)

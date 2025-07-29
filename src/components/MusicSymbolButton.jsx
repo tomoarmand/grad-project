@@ -19,7 +19,6 @@ const symbols = [
   { symbol: '𝄿', name: 'Sfp' },
 ];
 
-// Modified onInsert prop to accept the inputRef and the setter function
 export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState(null);
@@ -48,14 +47,12 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
     };
   }, [menuOpen]);
 
-  // Define the actual insertion logic within MusicSymbolButton,
-  // using the props passed from the parent.
   const handleSymbolInsertion = (symbol) => {
     if (inputRef && inputRef.current) {
       const cursorPos = inputRef.current.selectionStart;
       const currentValue = inputRef.current.value;
       const newValue = currentValue.slice(0, cursorPos) + symbol + currentValue.slice(cursorPos);
-      setterFunction(newValue); // Use the setter function from props
+      setterFunction(newValue);
       setTimeout(() => {
         inputRef.current.setSelectionRange(cursorPos + symbol.length, cursorPos + symbol.length);
         inputRef.current.focus();
@@ -108,17 +105,16 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
                 {symbols.map((item) => (
                   <button
                     key={item.symbol}
-                    // Call the local handler
                     onClick={() => {
                       handleSymbolInsertion(item.symbol);
                       setSelectedSymbol(item.symbol);
-                      setMenuOpen(false); // Close menu after selection
+                      setMenuOpen(false);
                     }}
                     data-fab
-                    className={`p-3 text-2xl hover:bg-gray-100 rounded-md transition ${
+                    title={item.name}
+                    className={`p-3 text-2xl font-bravura hover:bg-gray-100 rounded-md transition ${
                       selectedSymbol === item.symbol ? 'border-2 border-white bg-gray-200' : ''
                     }`}
-                    title={item.name}
                   >
                     {item.symbol}
                   </button>
