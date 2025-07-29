@@ -5,6 +5,7 @@
     src: url('/fonts/Bravura.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
@@ -12,4 +13,10 @@
     src: url('/fonts/BravuraText.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
+}
+
+/* Ensure Bravura loads with better fallbacks */
+.font-bravura {
+    font-family: 'Bravura', 'Apple Symbols', 'Noto Music', 'Lucida Grande', serif !important;
 }

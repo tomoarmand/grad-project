@@ -3,26 +3,46 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { FaMusic, FaTimes } from 'react-icons/fa';
 
 const symbols = [
-  { symbol: '♯', name: 'Sharp', useBravura: false },
-  { symbol: '♭', name: 'Flat', useBravura: false },
-  { symbol: '♮', name: 'Natural', useBravura: false },
-  { symbol: '𝅝', name: 'Whole Note', useBravura: true },
-  { symbol: '𝅗𝅥', name: 'Half Note', useBravura: true },
-  { symbol: '𝅘𝅥', name: 'Quarter Note', useBravura: true },
-  { symbol: '𝅘𝅥𝅮', name: 'Eighth Note', useBravura: true },
-  { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note', useBravura: true },
-  { symbol: '𝄺', name: 'Fortissimo', useBravura: true },
-  { symbol: '𝄻', name: 'Pianissimo', useBravura: true },
-  { symbol: '𝄼', name: 'Sforzando', useBravura: true },
-  { symbol: '𝄽', name: 'Rinforzando', useBravura: true },
-  { symbol: '𝄾', name: 'Fp', useBravura: true },
-  { symbol: '𝄿', name: 'Sfp', useBravura: true },
+  { symbol: '♯', name: 'Sharp', useBravura: false, mobileSymbol: '♯' },
+  { symbol: '♭', name: 'Flat', useBravura: false, mobileSymbol: '♭' },
+  { symbol: '♮', name: 'Natural', useBravura: false, mobileSymbol: '♮' },
+  { symbol: '𝅝', name: 'Whole Note', useBravura: true, mobileSymbol: 'o' },
+  { symbol: '𝅗𝅥', name: 'Half Note', useBravura: true, mobileSymbol: '♩' },
+  { symbol: '𝅘𝅥', name: 'Quarter Note', useBravura: true, mobileSymbol: '♩' },
+  { symbol: '𝅘𝅥𝅮', name: 'Eighth Note', useBravura: true, mobileSymbol: '♪' },
+  { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note', useBravura: true, mobileSymbol: '♬' },
+  { symbol: '𝄺', name: 'Fortissimo', useBravura: true, mobileSymbol: 'ff' },
+  { symbol: '𝄻', name: 'Pianissimo', useBravura: true, mobileSymbol: 'pp' },
+  { symbol: '𝄼', name: 'Sforzando', useBravura: true, mobileSymbol: 'sf' },
+  { symbol: '𝄽', name: 'Rinforzando', useBravura: true, mobileSymbol: 'rf' },
+  { symbol: '𝄾', name: 'Fp', useBravura: true, mobileSymbol: 'fp' },
+  { symbol: '𝄿', name: 'Sfp', useBravura: true, mobileSymbol: 'sfp' },
 ];
 
 export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+
+    // Test if Bravura font is available (temporary debug)
+    const testDiv = document.createElement('div');
+    testDiv.style.fontFamily = 'Bravura';
+    testDiv.innerHTML = '𝅝';
+    testDiv.style.position = 'absolute';
+    testDiv.style.visibility = 'hidden';
+    document.body.appendChild(testDiv);
+    console.log('Bravura font test - Font width:', testDiv.offsetWidth);
+    console.log('Is mobile detected:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    document.body.removeChild(testDiv);
+  }, []);
 
   const toggleMenu = (e) => {
     e.stopPropagation();
@@ -114,9 +134,9 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
                     title={item.name}
                     className={`p-3 text-2xl hover:bg-gray-100 rounded-md transition ${
                       selectedSymbol === item.symbol ? 'border-2 border-white bg-gray-200' : ''
-                    } ${item.useBravura ? 'font-bravura' : ''}`}
+                    } ${item.useBravura && !isMobile ? 'font-bravura' : ''}`}
                   >
-                    {item.symbol}
+                    {isMobile && item.mobileSymbol ? item.mobileSymbol : item.symbol}
                   </button>
                 ))}
               </div>
