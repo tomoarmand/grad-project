@@ -6,17 +6,17 @@ const symbols = [
   { symbol: '♯', name: 'Sharp', useBravura: false, mobileSymbol: '♯' },
   { symbol: '♭', name: 'Flat', useBravura: false, mobileSymbol: '♭' },
   { symbol: '♮', name: 'Natural', useBravura: false, mobileSymbol: '♮' },
-  { symbol: '𝅝', name: 'Whole Note', useBravura: true, mobileSymbol: 'o' },
-  { symbol: '𝅗𝅥', name: 'Half Note', useBravura: true, mobileSymbol: '♩' },
-  { symbol: '𝅘𝅥', name: 'Quarter Note', useBravura: true, mobileSymbol: '♩' },
-  { symbol: '𝅘𝅥𝅮', name: 'Eighth Note', useBravura: true, mobileSymbol: '♪' },
-  { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note', useBravura: true, mobileSymbol: '♬' },
-  { symbol: '𝄺', name: 'Fortissimo', useBravura: true, mobileSymbol: 'ff' },
-  { symbol: '𝄻', name: 'Pianissimo', useBravura: true, mobileSymbol: 'pp' },
-  { symbol: '𝄼', name: 'Sforzando', useBravura: true, mobileSymbol: 'sf' },
-  { symbol: '𝄽', name: 'Rinforzando', useBravura: true, mobileSymbol: 'rf' },
-  { symbol: '𝄾', name: 'Fp', useBravura: true, mobileSymbol: 'fp' },
-  { symbol: '𝄿', name: 'Sfp', useBravura: true, mobileSymbol: 'sfp' },
+  { symbol: '𝅝', name: 'Whole Note', useBravura: false, mobileSymbol: 'o' },
+  { symbol: '𝅗𝅥', name: 'Half Note', useBravura: false, mobileSymbol: '1/2' },
+  { symbol: '𝅘𝅥', name: 'Quarter Note', useBravura: false, mobileSymbol: '♩' },
+  { symbol: '𝅘𝅥𝅮', name: 'Eighth Note', useBravura: false, mobileSymbol: '♪' },
+  { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note', useBravura: false, mobileSymbol: '♬' },
+  { symbol: '𝄺', name: 'Fortissimo', useBravura: false, mobileSymbol: 'ff' },
+  { symbol: '𝄻', name: 'Pianissimo', useBravura: false, mobileSymbol: 'pp' },
+  { symbol: '𝄼', name: 'Sforzando', useBravura: false, mobileSymbol: 'sf' },
+  { symbol: '𝄽', name: 'Rinforzando', useBravura: false, mobileSymbol: 'rf' },
+  { symbol: '𝄾', name: 'Fp', useBravura: false, mobileSymbol: 'fp' },
+  { symbol: '𝄿', name: 'Sfp', useBravura: false, mobileSymbol: 'sfp' },
 ];
 
 export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }) {
@@ -147,7 +147,6 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
     </div>
   );
 }
-
 
 // const symbols = [
 //   { symbol: '♯', name: 'Sharp' },
