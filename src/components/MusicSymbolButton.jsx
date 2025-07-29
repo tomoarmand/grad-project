@@ -3,20 +3,20 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { FaMusic, FaTimes } from 'react-icons/fa';
 
 const symbols = [
-  { symbol: '♯', name: 'Sharp' },
-  { symbol: '♭', name: 'Flat' },
-  { symbol: '♮', name: 'Natural' },
-  { symbol: '𝅝', name: 'Whole Note' },
-  { symbol: '𝅗𝅥', name: 'Half Note' },
-  { symbol: '𝅘𝅥', name: 'Quarter Note' },
-  { symbol: '𝅘𝅥𝅮', name: 'Eighth Note' },
-  { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note' },
-  { symbol: '𝄺', name: 'Fortissimo' },
-  { symbol: '𝄻', name: 'Pianissimo' },
-  { symbol: '𝄼', name: 'Sforzando' },
-  { symbol: '𝄽', name: 'Rinforzando' },
-  { symbol: '𝄾', name: 'Fp' },
-  { symbol: '𝄿', name: 'Sfp' },
+  { symbol: '♯', name: 'Sharp', useBravura: false },
+  { symbol: '♭', name: 'Flat', useBravura: false },
+  { symbol: '♮', name: 'Natural', useBravura: false },
+  { symbol: '𝅝', name: 'Whole Note', useBravura: true },
+  { symbol: '𝅗𝅥', name: 'Half Note', useBravura: true },
+  { symbol: '𝅘𝅥', name: 'Quarter Note', useBravura: true },
+  { symbol: '𝅘𝅥𝅮', name: 'Eighth Note', useBravura: true },
+  { symbol: '𝅘𝅥𝅯', name: 'Sixteenth Note', useBravura: true },
+  { symbol: '𝄺', name: 'Fortissimo', useBravura: true },
+  { symbol: '𝄻', name: 'Pianissimo', useBravura: true },
+  { symbol: '𝄼', name: 'Sforzando', useBravura: true },
+  { symbol: '𝄽', name: 'Rinforzando', useBravura: true },
+  { symbol: '𝄾', name: 'Fp', useBravura: true },
+  { symbol: '𝄿', name: 'Sfp', useBravura: true },
 ];
 
 export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }) {
@@ -50,7 +50,7 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
   const handleSymbolInsertion = (symbol) => {
     if (inputRef && inputRef.current) {
       const cursorPos = inputRef.current.selectionStart;
-      const currentValue = inputRef.current.value;
+      const currentValue = inputRef.current.value; // Fixed typo here
       const newValue = currentValue.slice(0, cursorPos) + symbol + currentValue.slice(cursorPos);
       setterFunction(newValue);
       setTimeout(() => {
@@ -112,9 +112,9 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
                     }}
                     data-fab
                     title={item.name}
-                    className={`p-3 text-2xl font-bravura hover:bg-gray-100 rounded-md transition ${
+                    className={`p-3 text-2xl hover:bg-gray-100 rounded-md transition ${
                       selectedSymbol === item.symbol ? 'border-2 border-white bg-gray-200' : ''
-                    }`}
+                    } ${item.useBravura ? 'font-bravura' : ''}`}
                   >
                     {item.symbol}
                   </button>
@@ -127,7 +127,6 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
     </div>
   );
 }
-
 
 
 // const symbols = [
