@@ -1,53 +1,63 @@
 import { useState, useRef } from "react";
-import MusicSymbolButton from './MusicSymbolButton'; // No longer importing useFABStore
+import axios from "axios";
+import MusicSymbolButton from './MusicSymbolButton';
+
+const CLOUD_NAME = "deac4pk5l"; // replace with your Cloudinary cloud name
+const UPLOAD_PRESET = "web_audio_upload"; // the preset you created
+const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`; // use 'video' for mp4
 
 function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const [isRecording, setIsRecording] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState("");
   const inputRef = useRef(null);
-  const [isInputFocused, setIsInputFocused] = useState(false); // Local state for input focus
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
 
-  const handleInputFocus = () => {
-    setIsInputFocused(true);
-  };
+  const handleInputFocus = () => setIsInputFocused(true);
 
   const handleInputBlur = (e) => {
-    // Check if focus is truly leaving the input AND the MusicSymbolButton
     setTimeout(() => {
       if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
         setIsInputFocused(false);
       }
-    }, 150); // Small delay to allow MusicSymbolButton's click to register
+    }, 150);
   };
 
   const getAudioMimeType = () => {
-    const preferred = "audio/mp4";
-    return MediaRecorder.isTypeSupported(preferred) ? preferred : "audio/webm";
+    return MediaRecorder.isTypeSupported("audio/mp4")
+      ? "audio/mp4"
+      : "audio/webm";
   };
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mimeType = getAudioMimeType();
-    const options = { mimeType };
 
-    mediaRecorderRef.current = new MediaRecorder(stream, options);
+    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
     audioChunks.current = [];
 
     mediaRecorderRef.current.ondataavailable = (event) => {
       audioChunks.current.push(event.data);
     };
 
-    mediaRecorderRef.current.onstop = () => {
+    mediaRecorderRef.current.onstop = async () => {
       const blob = new Blob(audioChunks.current, { type: mimeType });
-      const reader = new FileReader();
 
-      reader.onloadend = () => {
-        const base64Audio = reader.result;
+      const formData = new FormData();
+      formData.append("file", blob);
+      formData.append("upload_preset", UPLOAD_PRESET);
+
+      try {
+        const res = await axios.post(UPLOAD_URL, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        const audioData = res.data.secure_url;
+
         const newExercise = {
-          audioData: base64Audio,
+          audioData,
           correctAnswer,
           userId: teacherId,
           folderId: selectedFolder._id,
@@ -55,10 +65,11 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
 
         onSave(newExercise);
         setCorrectAnswer("");
-        setIsInputFocused(false); // Reset focus state after saving
-      };
-
-      reader.readAsDataURL(blob);
+        setIsInputFocused(false);
+      } catch (err) {
+        console.error("Cloudinary upload failed", err);
+        alert("Upload failed.");
+      }
     };
 
     mediaRecorderRef.current.start();
@@ -93,7 +104,6 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
         <div className="flex flex-row gap-2 w-full items-center">
           <input
             ref={inputRef}
-            // Added min-w-0 here to allow input to shrink
             className="flex-grow min-w-0 px-3 py-2 rounded bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition text-base"
             type="text"
             placeholder="Enter correct answer here..."
@@ -102,21 +112,21 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
           />
-          {/* Pass inputRef and the setterFunction directly to MusicSymbolButton */}
-          {isInputFocused && <MusicSymbolButton inputRef={inputRef} setterFunction={setCorrectAnswer} />}
+          {isInputFocused && (
+            <MusicSymbolButton inputRef={inputRef} setterFunction={setCorrectAnswer} />
+          )}
         </div>
       )}
 
       {!isRecording ? (
         <button
-          className={`w-full py-2 rounded text-white font-semibold transition duration-200 ${
-            correctAnswer.trim()
+          className={`w-full py-2 rounded text-white font-semibold transition duration-200 ${correctAnswer.trim()
               ? "bg-orange-500 hover:bg-orange-600"
               : "bg-gray-400 cursor-not-allowed"
-          }`}
+            }`}
           onClick={startRecording}
           disabled={!correctAnswer.trim()}
-          onMouseDown={(e) => e.preventDefault()} // Prevent input blur when clicking record
+          onMouseDown={(e) => e.preventDefault()}
         >
           Record!
         </button>
