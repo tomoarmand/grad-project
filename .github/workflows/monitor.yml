@@ -1,0 +1,39 @@
+
+name: Site Health Monitor
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health Check
+        run: |
+          echo "Checking site health..."
+          
+          # Check main health endpoint
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://grad-project-al5i.onrender.com/)
+          
+          if [ $response == "200" ]; then
+            echo "✅ Health check passed - Site is UP (Status: $response)"
+          else
+            echo "❌ Health check failed - Site may be DOWN (Status: $response)"
+            exit 1
+          fi
+          
+          # Optional: Check API endpoint too
+          api_response=$(curl -s -o /dev/null -w "%{http_code}" https://grad-project-al5i.onrender.com/exercises)
+          
+          if [ $api_response == "200" ]; then
+            echo "✅ API check passed - API is UP (Status: $api_response)"
+          else
+            echo "⚠️  API check failed (Status: $api_response) - but health endpoint is OK"
+          fi
+          
+      - name: Get Response Details
+        run: |
+          echo "Getting detailed response..."
+          curl -s https://grad-project-al5i.onrender.com/ | jq '.'
