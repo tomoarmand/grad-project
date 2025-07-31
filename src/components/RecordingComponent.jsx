@@ -57,7 +57,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
         const audioData = res.data.secure_url;
 
         const newExercise = {
-          audioUrl: audioData,
+          audioData,
           correctAnswer,
           userId: teacherId,
           folderId: selectedFolder._id,

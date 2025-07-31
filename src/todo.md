@@ -10,6 +10,14 @@
 
 - Fix blurry logo on mobile
 
+- Unassign all feature
+
+- Select all in assign tab
+
+- Lag in manage assignment tab
+
+- Address lag after recording exercise
+
 
 - Move link to teacherexercisemanager into teacherpage tabs (1 day)
 
