@@ -57,7 +57,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
         const audioData = res.data.secure_url;
 
         const newExercise = {
-          audioData,
+          audioUrl: audioData,
           correctAnswer,
           userId: teacherId,
           folderId: selectedFolder._id,
@@ -121,8 +121,8 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       {!isRecording ? (
         <button
           className={`w-full py-2 rounded text-white font-semibold transition duration-200 ${correctAnswer.trim()
-              ? "bg-orange-500 hover:bg-orange-600"
-              : "bg-gray-400 cursor-not-allowed"
+            ? "bg-orange-500 hover:bg-orange-600"
+            : "bg-gray-400 cursor-not-allowed"
             }`}
           onClick={startRecording}
           disabled={!correctAnswer.trim()}

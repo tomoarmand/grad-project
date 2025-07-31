@@ -52,7 +52,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
       {sortedExercises.map((ex) => (
         <li
           key={ex._id}
-          className="bg-slate-600 p-4 rounded mb-4 flex flex-col gap-4"
+          className="bg-slate-600 p-4 rounded-lg mb-4 flex flex-col gap-4"
         >
           {renamingId === ex._id ? (
             <div className="flex flex-col gap-3 w-full">
@@ -64,7 +64,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                   onChange={(e) => setNewName(e.target.value)}
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
-                  className="flex-grow bg-white text-black border border-slate-300 p-3 rounded w-full text-lg focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
+                  className="flex-grow bg-white text-black border border-slate-300 p-3 rounded-lg w-full text-base focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
                   autoFocus
                   placeholder="Enter new name"
                 />
@@ -78,14 +78,14 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
 
               <div className="flex gap-3 justify-end">
                 <button
-                  className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                   onClick={handleSave}
                   onMouseDown={(e) => e.preventDefault()}
                 >
                   Save
                 </button>
                 <button
-                  className="bg-gray-500 text-white px-4 py-2 rounded text-sm"
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                   onClick={handleCancel}
                   onMouseDown={(e) => e.preventDefault()}
                 >
@@ -94,21 +94,21 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <p className="text-white text-lg font-medium">
-                  Correct Answer: {ex.correctAnswer}
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-start gap-3">
+                <p className="text-white text-base font-medium flex-grow">
+                  {ex.correctAnswer}
                 </p>
-                <div className="flex gap-4">
+                <div className="flex gap-3 flex-shrink-0">
                   <button
                     onClick={() => {
                       setRenamingId(ex._id);
                       setNewName(ex.correctAnswer);
                     }}
                     aria-label="Rename exercise"
-                    className="text-orange-400 hover:text-orange-500 focus:outline-none"
+                    className="text-orange-400 hover:text-orange-500 focus:outline-none p-1"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round"
                         d="M15.232 5.232l3.536 3.536M16.768 4.768a2.5 2.5 0 113.536
@@ -119,9 +119,9 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                   <button
                     onClick={() => onDelete(ex._id)}
                     aria-label="Delete exercise"
-                    className="text-red-500 hover:text-red-600 focus:outline-none"
+                    className="text-red-500 hover:text-red-600 focus:outline-none p-1"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none"
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round"
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2
@@ -133,7 +133,12 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                 </div>
               </div>
 
-              <audio controls src={ex.audioData}></audio>
+              <audio 
+                controls 
+                src={ex.audioData} 
+                className="w-full rounded-lg"
+                style={{height: '40px'}}
+              />
             </div>
           )}
         </li>

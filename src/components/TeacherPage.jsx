@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import RecordingComponent from './RecordingComponent';
 import FolderManager from './FolderManager';
 import ExerciseList from './ExerciseList';
+import UnassignTab from './UnassignTab';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
@@ -187,6 +188,15 @@ function TeacherPage() {
     }
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Reset selections when switching tabs
+    if (tab !== 'assign') {
+      setSelectedExerciseIds([]);
+      setSelectedStudentIds([]);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen w-screen flex justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 text-white px-4">
@@ -214,31 +224,55 @@ function TeacherPage() {
           Welcome, {user?.fullName?.split(' ')[0] || 'Teacher'}!
         </h1>
 
-        {/* Tabs */}
-        <div className="flex bg-slate-600 rounded-md overflow-hidden">
-          {['create', 'assign'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 text-xs sm:text-sm px-3 py-2 font-medium transition focus:outline-none ${
-                activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500'
-              }`}
-            >
-              {tab === 'create' ? 'Create & Organize' : 'Assign Exercises'}
-            </button>
-          ))}
+        {/* Tabs - Mobile-First Design */}
+        <div className="flex flex-col sm:flex-row bg-slate-600 rounded-lg overflow-hidden">
+          {/* Mobile: Stacked buttons */}
+          <div className="flex flex-col sm:hidden">
+            {['create', 'assign', 'unassign'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`w-full px-4 py-3 font-medium transition focus:outline-none border-b border-slate-500 last:border-b-0 ${activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500'
+                  }`}
+              >
+                {tab === 'create' && '📝 Create & Organize'}
+                {tab === 'assign' && '📤 Assign Exercises'}
+                {tab === 'unassign' && '📋 Manage Assignments'}
+              </button>
+            ))}
+          </div>
+
+          {/* Desktop: Horizontal tabs */}
+          <div className="hidden sm:flex w-full">
+            {['create', 'assign', 'unassign'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`flex-1 text-sm px-3 py-3 font-medium transition focus:outline-none ${activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500'
+                  }`}
+              >
+                {tab === 'create' && 'Create & Organize'}
+                {tab === 'assign' && 'Assign Exercises'}
+                {tab === 'unassign' && 'Manage Assignments'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <FolderManager
-          teacherId={user._id}
-          onFolderSelect={handleFolderSelect}
-          selectedFolder={selectedFolder}
-          folders={folders}
-          onFoldersUpdate={handleFoldersUpdate}
-          activeTab={activeTab}
-        />
+        {/* Show folder manager for create and assign tabs */}
+        {(activeTab === 'create' || activeTab === 'assign') && (
+          <FolderManager
+            teacherId={user._id}
+            onFolderSelect={handleFolderSelect}
+            selectedFolder={selectedFolder}
+            folders={folders}
+            onFoldersUpdate={handleFoldersUpdate}
+            activeTab={activeTab}
+          />
+        )}
 
-        {selectedFolder && (
+        {/* Show selected folder info for create and assign tabs */}
+        {(activeTab === 'create' || activeTab === 'assign') && selectedFolder && (
           <div className="text-center text-white text-sm">
             Selected Folder:{' '}
             <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
@@ -248,6 +282,7 @@ function TeacherPage() {
           </div>
         )}
 
+        {/* Tab Content */}
         {activeTab === 'create' ? (
           <>
             <RecordingComponent
@@ -271,7 +306,7 @@ function TeacherPage() {
               )
             )}
           </>
-        ) : (
+        ) : activeTab === 'assign' ? (
           <div className="space-y-6">
             {!selectedFolder ? (
               <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
@@ -355,13 +390,12 @@ function TeacherPage() {
                       selectedStudentIds.length === 0 ||
                       assignmentLoading
                     }
-                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
-                      selectedExerciseIds.length === 0 ||
-                      selectedStudentIds.length === 0 ||
-                      assignmentLoading
+                    className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${selectedExerciseIds.length === 0 ||
+                        selectedStudentIds.length === 0 ||
+                        assignmentLoading
                         ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                         : 'bg-orange-500 hover:bg-orange-600 text-white'
-                    }`}
+                      }`}
                   >
                     {assignmentLoading ? (
                       <div className="flex items-center gap-2 justify-center">
@@ -369,10 +403,8 @@ function TeacherPage() {
                         Assigning...
                       </div>
                     ) : (
-                      `Assign ${selectedExerciseIds.length || 0} Exercise${
-                        selectedExerciseIds.length !== 1 ? 's' : ''
-                      } to ${selectedStudentIds.length || 0} Student${
-                        selectedStudentIds.length !== 1 ? 's' : ''
+                      `Assign ${selectedExerciseIds.length || 0} Exercise${selectedExerciseIds.length !== 1 ? 's' : ''
+                      } to ${selectedStudentIds.length || 0} Student${selectedStudentIds.length !== 1 ? 's' : ''
                       }`
                     )}
                   </button>
@@ -380,9 +412,12 @@ function TeacherPage() {
               </>
             )}
           </div>
+        ) : (
+          // Unassign tab content
+          <UnassignTab user={user} />
         )}
 
-        <NavLinks links={[{ label: 'Manage Assignments →', to: '/TeacherExercisesManager' }]} />
+
       </div>
 
       <div className="w-full max-w-md sm:max-w-4xl mt-4">
