@@ -8,6 +8,7 @@
 
 - Confirmation for delete exercises
 
+- Fix blurry logo on mobile
 
 
 - Move link to teacherexercisemanager into teacherpage tabs (1 day)
