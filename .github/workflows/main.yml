@@ -1,0 +1,14 @@
+name: Test Monitor
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test site
+        run: |
+          echo "Testing site..."
+          curl -I https://grad-project-al5i.onrender.com/
