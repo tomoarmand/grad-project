@@ -48,11 +48,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// --- Updated route prefixes with /api ---
-app.use('/api/users', userRoutes);
-app.use('/api/exercises', exerciseRoutes);
-app.use('/api/folders', folderRoutes);
-app.use('/api/assignments', assignmentRoutes);
+app.use('/users', userRoutes);
+app.use('/exercises', exerciseRoutes);
+app.use('/folders', folderRoutes);
+app.use('/assignments', assignmentRoutes);        
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
