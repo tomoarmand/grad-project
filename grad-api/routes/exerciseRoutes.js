@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import Exercise from '../models/Exercise.js';
+import User from '../models/User.js';  // <-- Make sure this is here!
 
 const router = express.Router();
 
@@ -38,7 +39,10 @@ router.post('/', async (req, res) => {
       correctAnswer,
       userId: new mongoose.Types.ObjectId(userId),
       studentIds: studentId ? [new mongoose.Types.ObjectId(studentId)] : [],
-      folderId: folderId && mongoose.Types.ObjectId.isValid(folderId) ? new mongoose.Types.ObjectId(folderId) : null,
+      folderId:
+        folderId && mongoose.Types.ObjectId.isValid(folderId)
+          ? new mongoose.Types.ObjectId(folderId)
+          : null,
     });
 
     await exercise.save();
@@ -53,7 +57,6 @@ router.post('/', async (req, res) => {
 router.get('/folder/:folderId', async (req, res) => {
   try {
     const { folderId } = req.params;
-    console.log('API hit: get exercises for folder', folderId);
 
     if (!mongoose.Types.ObjectId.isValid(folderId)) {
       return res.status(400).json({ error: 'Invalid folderId' });
@@ -67,13 +70,21 @@ router.get('/folder/:folderId', async (req, res) => {
   }
 });
 
+// --- THIS ROUTE MUST BE ABOVE THE "/:id" ROUTE ---
 router.get('/student-by-email/:email', async (req, res) => {
   try {
-    const student = await User.findOne({ email: req.params.email });
+    // Decode email param (e.g. student%40gmail.com -> student@gmail.com)
+    const email = decodeURIComponent(req.params.email);
+
+    // Find student by email
+    const student = await User.findOne({ email });
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
-    const exercises = await Exercise.find({ studentIds: student._id })
-      .populate('userId', 'fullName email');
+    // Find exercises linked to that student id
+    const exercises = await Exercise.find({ studentIds: student._id }).populate(
+      'userId',
+      'fullName email'
+    );
 
     res.json({ student: student.email, exercises });
   } catch (err) {
@@ -82,9 +93,12 @@ router.get('/student-by-email/:email', async (req, res) => {
   }
 });
 
-// Get single exercise
+// Get single exercise by id
 router.get('/:id', async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(400).json({ error: 'Invalid exercise ID' });
+
     const exercise = await Exercise.findById(req.params.id);
     if (!exercise) return res.status(404).json({ error: 'Not found' });
     res.json(exercise);
@@ -115,9 +129,10 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Update exercise
 router.put('/:id', async (req, res) => {
   try {
-    const { correctAnswer, audioData, folderId, studentIds } = req.body; // include whatever fields you allow updating
+    const { correctAnswer, audioData, folderId, studentIds } = req.body;
 
     const updateFields = {};
     if (correctAnswer !== undefined) updateFields.correctAnswer = correctAnswer;
@@ -125,11 +140,7 @@ router.put('/:id', async (req, res) => {
     if (folderId !== undefined) updateFields.folderId = folderId;
     if (studentIds !== undefined) updateFields.studentIds = studentIds;
 
-    const updatedExercise = await Exercise.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateFields },
-      { new: true } // return the updated doc
-    );
+    const updatedExercise = await Exercise.findByIdAndUpdate(req.params.id, { $set: updateFields }, { new: true });
 
     if (!updatedExercise) {
       return res.status(404).json({ error: 'Exercise not found' });
@@ -141,6 +152,5 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-
 
 export default router;
