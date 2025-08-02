@@ -18,14 +18,15 @@
 
 - Address lag after recording exercise
 
-
-- Move link to teacherexercisemanager into teacherpage tabs (1 day)
-
-- Rename home page link (5 minutes)
-
-- Edit home page (3 hours)
+- Foldermanager rename feature overflow issue
 
 
+
+- Edit home page (3 hours) **
+
+
+
+- Move link to teacherexercisemanager into teacherpage tabs (1 day) [3 hours]
 
 - Dropdown display in foldermanager issue (30 minutes) [5 minutes]
 

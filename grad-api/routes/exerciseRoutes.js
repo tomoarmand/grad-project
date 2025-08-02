@@ -100,6 +100,21 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.get('/student-by-email/:email', async (req, res) => {
+  try {
+    const student = await User.findOne({ email: req.params.email });
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    const exercises = await Exercise.find({ studentIds: student._id })
+      .populate('userId', 'fullName email');
+
+    res.json({ student: student.email, exercises });
+  } catch (err) {
+    console.error('GET /exercises/student-by-email error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const { correctAnswer, audioData, folderId, studentIds } = req.body; // include whatever fields you allow updating
@@ -126,5 +141,6 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 export default router;
