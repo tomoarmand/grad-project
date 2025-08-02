@@ -1,10 +1,4 @@
-## To Do
-
-- Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections
-
-- Walkthroughs for new users
-
-- Break down components and create smoother work flow
+## To Do 
 
 - Confirmation for delete exercises
 
@@ -20,7 +14,10 @@
 
 - Foldermanager rename feature overflow issue
 
+- Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections   
 
+
+- Walkthroughs for new users **
 
 - Edit home page (3 hours) **
 

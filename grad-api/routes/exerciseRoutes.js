@@ -67,6 +67,21 @@ router.get('/folder/:folderId', async (req, res) => {
   }
 });
 
+router.get('/student-by-email/:email', async (req, res) => {
+  try {
+    const student = await User.findOne({ email: req.params.email });
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    const exercises = await Exercise.find({ studentIds: student._id })
+      .populate('userId', 'fullName email');
+
+    res.json({ student: student.email, exercises });
+  } catch (err) {
+    console.error('GET /exercises/student-by-email error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get single exercise
 router.get('/:id', async (req, res) => {
   try {
@@ -96,21 +111,6 @@ router.delete('/:id', async (req, res) => {
     res.json(remainingExercises);
   } catch (err) {
     console.error('DELETE /:id error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.get('/student-by-email/:email', async (req, res) => {
-  try {
-    const student = await User.findOne({ email: req.params.email });
-    if (!student) return res.status(404).json({ error: 'Student not found' });
-
-    const exercises = await Exercise.find({ studentIds: student._id })
-      .populate('userId', 'fullName email');
-
-    res.json({ student: student.email, exercises });
-  } catch (err) {
-    console.error('GET /exercises/student-by-email error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
