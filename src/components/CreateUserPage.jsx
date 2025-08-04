@@ -5,6 +5,7 @@ import NavLinks from './NavLinks';
 
 function CreateUserPage() {
   const [formData, setFormData] = useState({ fullName: '', email: '', role: 'teacher' });
+  const [isLoading, setIsLoading] = useState(false);
   // const [teacherPIN, setTeacherPIN] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -17,30 +18,42 @@ function CreateUserPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const response = await fetch(`${API_URL}/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
+    setIsLoading(true);
 
-    if (response.ok) {
-      const user = await response.json();
-      setUser(user);
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-      if (user.role === 'teacher') {
-        // Uncomment to re-enable PIN verification
-        // if (teacherPIN === TEACHER_KEY) {
-          navigate('/TeacherPage');
-        // } else {
-        //   alert("Account created, but incorrect PIN. Please log in again.");
-        //   navigate('/');
-        // }
-      } else if (user.role === 'student') {
-        navigate('/StudentPage');
+      if (response.ok) {
+        const user = await response.json();
+
+        if (user.role === 'teacher') {
+          // Teachers still get auto-logged in
+          setUser(user);
+          // Uncomment to re-enable PIN verification
+          // if (teacherPIN === TEACHER_KEY) {
+            navigate('/TeacherPage');
+          // } else {
+          //   alert("Account created, but incorrect PIN. Please log in again.");
+          //   navigate('/');
+          // }
+        } else if (user.role === 'student') {
+          // Students are NOT auto-logged in - redirect to home page with alert
+          alert('Student account created successfully!');
+          navigate('/');
+        }
+      } else {
+        const error = await response.json();
+        alert(error.error || "Error creating user");
       }
-    } else {
-      const error = await response.json();
-      alert(error.error || "Error creating user");
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert("An error occurred while creating the account. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,6 +69,7 @@ function CreateUserPage() {
             onChange={handleChange}
             className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
             required
+            disabled={isLoading}
           />
           <input
             name="email"
@@ -65,12 +79,14 @@ function CreateUserPage() {
             onChange={handleChange}
             className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
             required
+            disabled={isLoading}
           />
           <select
             name="role"
             value={formData.role}
             onChange={handleChange}
             className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black border-2 border-gray-300 focus:outline-none focus:border-orange-400 transition"
+            disabled={isLoading}
           >
             <option value="teacher">Teacher</option>
             <option value="student">Student</option>
@@ -84,15 +100,21 @@ function CreateUserPage() {
               value={teacherPIN}
               onChange={(e) => setTeacherPIN(e.target.value)}
               className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
+              disabled={isLoading}
             />
           )}
           */}
 
           <button
             type="submit"
-            className="w-full bg-[#64748b] hover:bg-[#fb923c] text-white py-3 rounded text-lg sm:text-xl font-semibold transition duration-200"
+            disabled={isLoading}
+            className={`w-full py-3 rounded text-lg sm:text-xl font-semibold transition duration-200 ${
+              isLoading 
+                ? 'bg-gray-400 cursor-not-allowed text-gray-600'
+                : 'bg-[#64748b] hover:bg-[#fb923c] text-white'
+            }`}
           >
-            Create Account
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
       </div>

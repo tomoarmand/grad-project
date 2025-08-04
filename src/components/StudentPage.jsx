@@ -31,7 +31,19 @@ function StudentPage() {
     setTimeout(() => setShowCorrect(false), 2000);
   };
 
-  const triggerTryAgain = () => {
+  const getEncouragementMessage = (attempts) => {
+    switch (attempts) {
+      case 1:
+        return { title: "Almost there!", subtitle: "Give it another try!" };
+      case 2:
+        return { title: "You're getting closer!", subtitle: "One more time!" };
+      case 3:
+      default:
+        return { title: "Don't worry, this is challenging.", subtitle: "Here's some help..." };
+    }
+  };
+
+  const triggerTryAgain = (attempts) => {
     setIsShaking(true);
     setShowTryAgain(true);
     setTimeout(() => setIsShaking(false), 600);
@@ -78,9 +90,9 @@ function StudentPage() {
       setIsInputFocused(false);
       setTimeout(refreshExercise, 1000);
     } else {
-      triggerTryAgain();
       setFailedAttempts((prev) => {
         const newAttempts = prev + 1;
+        triggerTryAgain(newAttempts);
         if (newAttempts >= 3) setShowAnswer(true);
         return newAttempts;
       });
@@ -105,14 +117,19 @@ function StudentPage() {
   const fetchExercises = async () => {
     if (!user) return;
     setLoading(true);
-    const res = await fetch(`${API_URL}/exercises?studentId=${user._id}`);
-    const data = await res.json();
-    setExercises(data);
-    if (data.length > 0) {
-      const randomIndex = getRandomIndex(data.length);
-      setCurrentExerciseIndex(randomIndex);
+    try {
+      const res = await fetch(`${API_URL}/exercises?studentId=${user._id}`);
+      const data = await res.json();
+      setExercises(data);
+      if (data.length > 0) {
+        const randomIndex = getRandomIndex(data.length);
+        setCurrentExerciseIndex(randomIndex);
+      }
+    } catch (error) {
+      console.error('Error fetching exercises:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -136,7 +153,7 @@ function StudentPage() {
             {showCorrect && (
               <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
                 <div className="bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-green-600">
-                  <p className="text-2xl font-bold text-center"> Correct!</p>
+                  <p className="text-2xl font-bold text-center">Correct!</p>
                   <p className="text-sm text-center mt-1 opacity-90">Excellent work!</p>
                 </div>
               </div>
@@ -145,8 +162,8 @@ function StudentPage() {
             {showTryAgain && (
               <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
                 <div className="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-red-600">
-                  <p className="text-2xl font-bold text-center"> Try Again!</p>
-                  <p className="text-sm text-center mt-1 opacity-90">Keep going, you've got this!</p>
+                  <p className="text-2xl font-bold text-center">{getEncouragementMessage(failedAttempts).title}</p>
+                  <p className="text-sm text-center mt-1 opacity-90">{getEncouragementMessage(failedAttempts).subtitle}</p>
                 </div>
               </div>
             )}
@@ -182,7 +199,11 @@ function StudentPage() {
                   <button
                     disabled={!inputValue.trim()}
                     onClick={handleSubmit}
-                    className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${inputValue.trim() ? "bg-[#64748b] hover:bg-[#fb923c]" : "bg-gray-400 cursor-not-allowed"}`}
+                    className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${
+                      inputValue.trim() 
+                        ? "bg-[#64748b] hover:bg-[#fb923c]" 
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
                   >
                     Submit
                   </button>

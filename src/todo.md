@@ -17,6 +17,8 @@
 - Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections   
 
 
+- Add feature for students to record 
+
 - Walkthroughs for new users **
 
 - Edit home page (3 hours) **
