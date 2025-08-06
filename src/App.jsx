@@ -9,22 +9,14 @@ function HomePage() {
       <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-8 sm:p-10 text-center">
         {/* Logo and Heading */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-32 h-32 sm:w-36 sm:h-36 mb-4">
-            <img
-              src={logo}
-              alt="KenTone logo"
-              className="w-full h-full object-contain drop-shadow-md"
-              style={{
-                filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))',
-                imageRendering: '-webkit-optimize-contrast',
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)',
-                WebkitFontSmoothing: 'antialiased'
-              }}
-              loading="eager"
-              decoding="sync"
-            />
-          </div>
+          <img
+            src={logo}
+            alt="KenTone logo"
+            className="w-32 h-32 sm:w-36 sm:h-36 object-contain mb-4 drop-shadow-md"
+            style={{
+              filter: 'drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3))'
+            }}
+          />
           <h1
             style={{ 
               fontFamily: "'Merriweather', serif",
