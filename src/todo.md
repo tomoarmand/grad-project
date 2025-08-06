@@ -1,6 +1,5 @@
 ## To Do 
 
-- Confirmation for delete exercises
 
 - Fix blurry logo on mobile
 
@@ -14,6 +13,8 @@
 
 - Foldermanager rename feature overflow issue
 
+- Download PWA link on home page
+
 - Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections   
 
 
@@ -24,6 +25,9 @@
 - Edit home page (3 hours) **
 
 
+
+
+- Confirmation for delete exercises [45 mins]
 
 - Move link to teacherexercisemanager into teacherpage tabs (1 day) [3 hours]
 
