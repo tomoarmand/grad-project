@@ -8,8 +8,36 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
   const [newName, setNewName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState(null);
+  const [error, setError] = useState('');
   const inputRef = useRef(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
+
+  // Input validation functions
+  const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return '';
+    return input
+      .trim()
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<[^>]*>/g, '') // Remove all HTML tags
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+=/gi, ''); // Remove event handlers
+  };
+
+  const validateExerciseName = (name) => {
+    const sanitized = sanitizeInput(name);
+    if (!sanitized || sanitized.length < 1) {
+      return { isValid: false, message: 'Exercise name is required' };
+    }
+    if (sanitized.length > 200) {
+      return { isValid: false, message: 'Exercise name must be 200 characters or less' };
+    }
+    // Allow letters, numbers, spaces, and common musical notation characters
+    const validNameRegex = /^[a-zA-ZÀ-ÿ0-9\s\-_.,!()&♪♫♬♩♭♮♯°]+$/;
+    if (!validNameRegex.test(sanitized)) {
+      return { isValid: false, message: 'Exercise name contains invalid characters' };
+    }
+    return { isValid: true, sanitized };
+  };
 
   const handleInputFocus = () => {
     setIsInputFocused(true);
@@ -23,12 +51,33 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     }, 150);
   };
 
+  const handleNewNameChange = (value) => {
+    if (value.length <= 200) { // Enforce max length
+      setNewName(value);
+      // Clear error when user starts typing
+      if (error) {
+        setError('');
+      }
+    }
+  };
+
   const handleSave = async () => {
-    if (newName.trim() !== '') {
-      await onRename(renamingId, newName.trim());
+    const validation = validateExerciseName(newName);
+    
+    if (!validation.isValid) {
+      setError(validation.message);
+      return;
+    }
+
+    try {
+      await onRename(renamingId, validation.sanitized);
       setRenamingId(null);
       setNewName('');
       setIsInputFocused(false);
+      setError('');
+    } catch (err) {
+      setError('Failed to rename exercise. Please try again.');
+      console.error('Error renaming exercise:', err);
     }
   };
 
@@ -36,6 +85,16 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     setRenamingId(null);
     setNewName('');
     setIsInputFocused(false);
+    setError('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
   };
 
   const confirmDeleteExercise = (exerciseId) => {
@@ -43,8 +102,13 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     setShowDeleteDialog(true);
   };
 
-  const handleDeleteExercise = () => {
-    onDelete(exerciseToDelete);
+  const handleDeleteExercise = async () => {
+    try {
+      await onDelete(exerciseToDelete);
+    } catch (err) {
+      console.error('Error deleting exercise:', err);
+      alert('Failed to delete exercise. Please try again.');
+    }
   };
 
   if (loading) {
@@ -74,17 +138,26 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
             {renamingId === ex._id ? (
               <div className="flex flex-col gap-3 w-full">
                 <div className="flex flex-row gap-2 w-full items-center">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onFocus={handleInputFocus}
-                    onBlur={handleInputBlur}
-                    className="flex-grow bg-white text-black border border-slate-300 p-3 rounded-lg w-full text-base focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
-                    autoFocus
-                    placeholder="Enter new name"
-                  />
+                  <div className="flex-grow">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={newName}
+                      onChange={(e) => handleNewNameChange(e.target.value)}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      onKeyDown={handleKeyDown}
+                      className={`w-full bg-white text-black border p-3 rounded-lg text-base transition ${
+                        error 
+                          ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
+                          : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                      }`}
+                      autoFocus
+                      placeholder="Enter new name"
+                      maxLength="200"
+                    />
+                    {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
+                  </div>
                   {isInputFocused && (
                     <MusicSymbolButton
                       inputRef={inputRef}
@@ -98,6 +171,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                     onClick={handleSave}
                     onMouseDown={(e) => e.preventDefault()}
+                    disabled={!newName.trim()}
                   >
                     Save
                   </button>
@@ -114,16 +188,17 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-3">
                   <p className="text-white text-base font-medium flex-grow">
-                    {ex.correctAnswer}
+                    {sanitizeInput(ex.correctAnswer)}
                   </p>
                   <div className="flex gap-3 flex-shrink-0">
                     <button
                       onClick={() => {
                         setRenamingId(ex._id);
                         setNewName(ex.correctAnswer);
+                        setError('');
                       }}
                       aria-label="Rename exercise"
-                      className="text-orange-400 hover:text-orange-500 focus:outline-none p-1"
+                      className="text-orange-400 hover:text-orange-500 focus:outline-none p-1 transition"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -136,7 +211,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                     <button
                       onClick={() => confirmDeleteExercise(ex._id)}
                       aria-label="Delete exercise"
-                      className="text-red-500 hover:text-red-600 focus:outline-none p-1"
+                      className="text-red-500 hover:text-red-600 focus:outline-none p-1 transition"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -170,7 +245,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
         }}
         onConfirm={handleDeleteExercise}
         title="Delete Exercise"
-        message={`Are you sure you want to delete "${exerciseName}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${sanitizeInput(exerciseName)}"? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"

@@ -9,13 +9,63 @@ const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
 function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const [isRecording, setIsRecording] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState("");
+  const [error, setError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
 
-  const handleInputFocus = () => setIsInputFocused(true);
+  // Input validation functions
+  const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return '';
+    return input
+      .trim()
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<[^>]*>/g, '') // Remove all HTML tags
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+=/gi, ''); // Remove event handlers
+  };
+
+  const validateCorrectAnswer = (answer) => {
+    const sanitized = sanitizeInput(answer);
+    if (!sanitized || sanitized.length < 1) {
+      return { isValid: false, message: 'Answer is required' };
+    }
+    if (sanitized.length > 200) {
+      return { isValid: false, message: 'Answer must be 200 characters or less' };
+    }
+    // Allow letters, numbers, spaces, and common musical notation characters
+    const validAnswerRegex = /^[a-zA-ZÀ-ÿ0-9\s\-_.,!()&♪♫♬♩♭♮♯°]+$/;
+    if (!validAnswerRegex.test(sanitized)) {
+      return { isValid: false, message: 'Answer contains invalid characters' };
+    }
+    return { isValid: true, sanitized };
+  };
+
+  const validateIds = (teacherId, folderId) => {
+    // Basic validation for MongoDB ObjectId format
+    const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+    
+    if (!teacherId || !objectIdRegex.test(teacherId.toString())) {
+      return { isValid: false, message: 'Invalid teacher ID' };
+    }
+    
+    if (!folderId || !objectIdRegex.test(folderId.toString())) {
+      return { isValid: false, message: 'Invalid folder ID' };
+    }
+    
+    return { isValid: true };
+  };
+
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+    // Clear error when user focuses input
+    if (error) {
+      setError('');
+    }
+  };
 
   const handleInputBlur = (e) => {
     setTimeout(() => {
@@ -25,6 +75,16 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
     }, 150);
   };
 
+  const handleCorrectAnswerChange = (value) => {
+    if (value.length <= 200) { // Enforce max length
+      setCorrectAnswer(value);
+      // Clear error when user starts typing
+      if (error) {
+        setError('');
+      }
+    }
+  };
+
   const getAudioMimeType = () => {
     return MediaRecorder.isTypeSupported("audio/mp4")
       ? "audio/mp4"
@@ -32,53 +92,129 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   };
 
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = getAudioMimeType();
+    // Validate answer before starting recording
+    const answerValidation = validateCorrectAnswer(correctAnswer);
+    if (!answerValidation.isValid) {
+      setError(answerValidation.message);
+      return;
+    }
 
-    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
-    audioChunks.current = [];
+    // Validate IDs
+    const idsValidation = validateIds(teacherId, selectedFolder?._id);
+    if (!idsValidation.isValid) {
+      setError(idsValidation.message);
+      return;
+    }
 
-    mediaRecorderRef.current.ondataavailable = (event) => {
-      audioChunks.current.push(event.data);
-    };
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = getAudioMimeType();
 
-    mediaRecorderRef.current.onstop = async () => {
-      const blob = new Blob(audioChunks.current, { type: mimeType });
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
+      audioChunks.current = [];
 
-      const formData = new FormData();
-      formData.append("file", blob);
-      formData.append("upload_preset", UPLOAD_PRESET);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunks.current.push(event.data);
+      };
 
-      try {
-        const res = await axios.post(UPLOAD_URL, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+      mediaRecorderRef.current.onstop = async () => {
+        setIsUploading(true);
+        const blob = new Blob(audioChunks.current, { type: mimeType });
 
-        const audioData = res.data.secure_url;
+        // Validate file size (limit to 10MB)
+        if (blob.size > 10 * 1024 * 1024) {
+          setError("Recording is too large. Please record a shorter exercise.");
+          setIsUploading(false);
+          return;
+        }
 
-        const newExercise = {
-          audioData,
-          correctAnswer,
-          userId: teacherId,
-          folderId: selectedFolder._id,
-        };
+        const formData = new FormData();
+        formData.append("file", blob);
+        formData.append("upload_preset", UPLOAD_PRESET);
 
-        onSave(newExercise);
-        setCorrectAnswer("");
-        setIsInputFocused(false);
-      } catch (err) {
-        console.error("Cloudinary upload failed", err);
-        alert("Upload failed.");
+        try {
+          const res = await axios.post(UPLOAD_URL, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+            timeout: 30000 // 30 second timeout
+          });
+
+          if (!res.data || !res.data.secure_url) {
+            throw new Error("Invalid response from upload service");
+          }
+
+          const audioData = res.data.secure_url;
+
+          // Final validation before saving
+          const finalAnswerValidation = validateCorrectAnswer(correctAnswer);
+          const finalIdsValidation = validateIds(teacherId, selectedFolder._id);
+
+          if (!finalAnswerValidation.isValid) {
+            setError(finalAnswerValidation.message);
+            setIsUploading(false);
+            return;
+          }
+
+          if (!finalIdsValidation.isValid) {
+            setError(finalIdsValidation.message);
+            setIsUploading(false);
+            return;
+          }
+
+          const newExercise = {
+            audioData: audioData,
+            correctAnswer: finalAnswerValidation.sanitized,
+            userId: sanitizeInput(teacherId.toString()),
+            folderId: sanitizeInput(selectedFolder._id.toString()),
+          };
+
+          await onSave(newExercise);
+          setCorrectAnswer("");
+          setIsInputFocused(false);
+          setError("");
+        } catch (err) {
+          console.error("Upload failed", err);
+          if (err.code === 'ECONNABORTED') {
+            setError("Upload timed out. Please try again.");
+          } else if (err.response?.status === 413) {
+            setError("File is too large. Please record a shorter exercise.");
+          } else {
+            setError("Upload failed. Please check your connection and try again.");
+          }
+        } finally {
+          setIsUploading(false);
+        }
+
+        // Clean up media stream
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.onerror = (event) => {
+        console.error("Recording error:", event.error);
+        setError("Recording failed. Please try again.");
+        setIsRecording(false);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setError("");
+    } catch (err) {
+      console.error("Failed to start recording", err);
+      if (err.name === 'NotAllowedError') {
+        setError("Microphone access denied. Please allow microphone access and try again.");
+      } else if (err.name === 'NotFoundError') {
+        setError("No microphone found. Please connect a microphone and try again.");
+      } else {
+        setError("Failed to start recording. Please try again.");
       }
-    };
-
-    mediaRecorderRef.current.start();
-    setIsRecording(true);
+    }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
   if (!selectedFolder) {
@@ -96,46 +232,68 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       <div className="text-left">
         <h2 className="text-2xl font-bold text-white">New Exercise</h2>
         <p className="text-orange-400 mt-1">
-          Recording to: <span className="font-semibold">{selectedFolder.name}</span>
+          Recording to: <span className="font-semibold">{sanitizeInput(selectedFolder.name)}</span>
         </p>
       </div>
 
-      {!isRecording && (
-        <div className="flex flex-row gap-2 w-full items-center">
-          <input
-            ref={inputRef}
-            className="flex-grow min-w-0 px-3 py-2 rounded bg-white text-black placeholder-slate-500 border border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition text-base"
-            type="text"
-            placeholder="Enter correct answer here..."
-            value={correctAnswer}
-            onChange={(e) => setCorrectAnswer(e.target.value)}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-          />
-          {isInputFocused && (
-            <MusicSymbolButton inputRef={inputRef} setterFunction={setCorrectAnswer} />
-          )}
+      {!isRecording && !isUploading && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row gap-2 w-full items-center">
+            <div className="flex-grow min-w-0">
+              <input
+                ref={inputRef}
+                className={`w-full px-3 py-2 rounded bg-white text-black placeholder-slate-500 border text-base transition ${
+                  error 
+                    ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
+                    : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                }`}
+                type="text"
+                placeholder="Enter correct answer here..."
+                value={correctAnswer}
+                onChange={(e) => handleCorrectAnswerChange(e.target.value)}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                maxLength="200"
+              />
+            </div>
+            {isInputFocused && (
+              <MusicSymbolButton inputRef={inputRef} setterFunction={setCorrectAnswer} />
+            )}
+          </div>
+          {error && <p className="text-red-400 text-sm">{error}</p>}
         </div>
       )}
 
-      {!isRecording ? (
+      {isUploading && (
+        <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full border-2 border-orange-500 bg-orange-500 animate-pulse"></div>
+            <p className="text-white text-base">Uploading exercise...</p>
+          </div>
+          <p className="text-slate-300 text-sm">Please wait while we save your recording</p>
+        </div>
+      )}
+
+      {!isRecording && !isUploading ? (
         <button
-          className={`w-full py-2 rounded text-white font-semibold transition duration-200 ${correctAnswer.trim()
-            ? "bg-orange-500 hover:bg-orange-600"
-            : "bg-gray-400 cursor-not-allowed"
-            }`}
+          className={`w-full py-2 rounded text-white font-semibold transition duration-200 ${
+            correctAnswer.trim() && !error
+              ? "bg-orange-500 hover:bg-orange-600"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
           onClick={startRecording}
-          disabled={!correctAnswer.trim()}
+          disabled={!correctAnswer.trim() || !!error}
           onMouseDown={(e) => e.preventDefault()}
         >
           Record!
         </button>
-      ) : (
+      ) : isRecording ? (
         <div className="flex flex-col items-center gap-3 w-full">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full border-2 border-red-600 bg-red-600 animate-pulse"></div>
             <p className="text-white text-base">Recording exercise...</p>
           </div>
+          <p className="text-slate-300 text-sm">Answer: "{sanitizeInput(correctAnswer)}"</p>
           <button
             onClick={stopRecording}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded font-semibold transition duration-200"
@@ -143,7 +301,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
             Stop & Save
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
