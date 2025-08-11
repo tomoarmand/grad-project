@@ -11,9 +11,6 @@ function LoginPage() {
   const { setUser } = useUserStore();
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
-  
-  // WARNING: This should be moved to backend and hashed with bcrypt
-  const TEACHER_KEY = "0000";
 
   // Input validation functions
   const sanitizeInput = (input) => {
@@ -89,6 +86,15 @@ function LoginPage() {
       newErrors.email = emailValidation.message;
     }
 
+    // Validate PIN if provided (for teachers)
+    let pinValidation = null;
+    if (teacherPIN.trim()) {
+      pinValidation = validatePIN(teacherPIN);
+      if (!pinValidation.isValid) {
+        newErrors.pin = pinValidation.message;
+      }
+    }
+
     // If there are validation errors, show them and return
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -99,13 +105,20 @@ function LoginPage() {
     setErrors({});
 
     try {
+      const loginData = { email: emailValidation.sanitized };
+      
+      // Add PIN to request if provided
+      if (pinValidation && pinValidation.sanitized) {
+        loginData.pin = pinValidation.sanitized;
+      }
+
       const response = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ email: emailValidation.sanitized }),
+        body: JSON.stringify(loginData),
       });
 
       if (response.ok) {
@@ -130,25 +143,14 @@ function LoginPage() {
           return;
         }
 
+        // Set user and navigate based on role - backend handles all PIN verification
+        setUser(sanitizedUser);
         if (sanitizedUser.role === 'teacher') {
-          // Validate PIN for teachers
-          const pinValidation = validatePIN(teacherPIN);
-          if (!pinValidation.isValid) {
-            setErrors({ pin: pinValidation.message });
-            return;
-          }
-
-          // Check PIN (WARNING: This should be done on backend with bcrypt)
-          if (pinValidation.sanitized === TEACHER_KEY) {
-            setUser(sanitizedUser);
-            navigate('/TeacherPage');
-          } else {
-            setErrors({ pin: "Incorrect PIN" });
-          }
+          navigate('/TeacherPage');
         } else if (sanitizedUser.role === 'student') {
-          setUser(sanitizedUser);
           navigate('/StudentPage');
         }
+
       } else {
         const errorResponse = await response.json();
         const errorMessage = sanitizeInput(errorResponse.error || "Login failed");

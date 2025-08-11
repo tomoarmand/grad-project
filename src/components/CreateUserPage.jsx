@@ -11,9 +11,6 @@ function CreateUserPage() {
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const { setUser } = useUserStore();
-  
-  // WARNING: This should be moved to backend and hashed with bcrypt
-  const TEACHER_KEY = "0000";
 
   // Input validation functions
   const validateEmail = (email) => {
@@ -80,7 +77,7 @@ function CreateUserPage() {
       newErrors.role = 'Please select a valid role';
     }
 
-    // Validate PIN for teachers
+    // Validate PIN for teachers (frontend validation only - backend handles security)
     if (formData.role === 'teacher') {
       const pinValidation = validatePIN(teacherPIN);
       if (!pinValidation.isValid) {
@@ -153,29 +150,16 @@ function CreateUserPage() {
       if (response.ok) {
         const user = await response.json();
 
+        // Account created successfully - backend handles all PIN hashing
+        // Redirect all users to login page for security
         if (user.role === 'teacher') {
-          // Validate PIN one more time and check it
-          const pinValidation = validatePIN(teacherPIN);
-          if (!pinValidation.isValid) {
-            setErrors({ pin: pinValidation.message });
-            return;
-          }
-
-          // Check PIN (WARNING: This should be done on backend with bcrypt)
-          if (pinValidation.sanitized === TEACHER_KEY) {
-            setUser(user);
-            navigate('/TeacherPage');
-          } else {
-            setErrors({ pin: "Incorrect PIN. Account created but please log in again." });
-            setTimeout(() => {
-              navigate('/');
-            }, 3000);
-          }
+          alert('Teacher account created successfully! Please log in with your PIN.');
         } else if (user.role === 'student') {
-          // Students are NOT auto-logged in - redirect to home page with alert
-          alert('Student account created successfully!');
-          navigate('/');
+          alert('Student account created successfully! Please log in.');
         }
+        
+        navigate('/');
+
       } else {
         const error = await response.json();
         setErrors({ general: error.error || "Error creating user" });
@@ -272,6 +256,9 @@ function CreateUserPage() {
                 autoComplete="new-password"
               />
               {errors.pin && <p className="text-red-400 text-sm mt-1">{errors.pin}</p>}
+              <p className="text-slate-300 text-xs mt-1">
+                Your PIN will be securely encrypted and stored
+              </p>
             </div>
           )}
 
