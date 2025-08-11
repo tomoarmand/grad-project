@@ -1,5 +1,6 @@
 ## To Do 
 
+- Error message display issue
 
 - Fix blurry logo on mobile
 
