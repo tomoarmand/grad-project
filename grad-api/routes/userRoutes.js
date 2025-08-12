@@ -9,14 +9,14 @@ import {
 
 const router = express.Router();
 
-// 🔒 TEACHER PIN FROM ENVIRONMENT
+// 🔒 Fixed teacher PIN from environment (default "0000")
 const TEACHER_PIN = process.env.TEACHER_PIN || "0000";
 
-// Get all users
+// Get all users (hide sensitive fields)
 router.get('/', async (req, res) => {
   try {
     const users = await User.find()
-      .select('-pin -loginAttempts -lockUntil')
+      .select('-pin -loginAttempts -lockUntil') // pin no longer saved but kept for safety
       .limit(100);
     res.json(users);
   } catch (error) {
@@ -25,21 +25,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 🔒 SECURE USER CREATION WITH PIN HASHING
+// CREATE USER
 router.post('/', validateUserCreation, async (req, res) => {
   try {
-    const { fullName, email, role = 'student' } = req.body;
+    const { fullName, email, role = 'student', pin } = req.body;
 
-    const existingUser = await User.findOne({ 
-      email: email.toLowerCase() 
-    });
-    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({ 
-        error: 'User already exists with this email' 
-      });
+      return res.status(400).json({ error: 'User already exists with this email' });
     }
 
+    // For teachers, verify the fixed PIN matches
+    if (role === 'teacher') {
+      if (!pin || pin !== TEACHER_PIN) {
+        return res.status(401).json({ error: 'Invalid teacher PIN' });
+      }
+    }
+
+    // Sanitize inputs
     const userData = {
       fullName: sanitizeInput(fullName),
       email: email.toLowerCase(),
@@ -48,79 +52,61 @@ router.post('/', validateUserCreation, async (req, res) => {
 
     const user = new User(userData);
 
-    // 🔒 HASH PIN FOR TEACHERS
-    if (role === 'teacher') {
-      await user.hashPin(TEACHER_PIN);
-    }
-
     await user.save();
-    
+
     console.log(`✅ User created: ${user.email} (${user.role})`);
     res.status(201).json(user);
 
   } catch (error) {
     console.error('POST /users error:', error);
-    
+
     if (error.code === 11000) {
-      return res.status(400).json({ 
-        error: 'User already exists with this email' 
-      });
+      return res.status(400).json({ error: 'User already exists with this email' });
     }
-    
+
     if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Validation failed',
         details: Object.values(error.errors).map(e => e.message)
       });
     }
-    
+
     res.status(500).json({ error: 'Server error creating user' });
   }
 });
 
-// 🔒 SECURE LOGIN WITH PIN VERIFICATION
-router.post('/login', validateUserLogin, async (req, res) => {
+// LOGIN USER
+router.post('/users/login', validateUserLogin, async (req, res) => {
   try {
     const { email, pin } = req.body;
 
-    const user = await User.findOne({ 
-      email: email.toLowerCase() 
-    });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      return res.status(404).json({ 
-        error: 'User not found' 
-      });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     if (user.isLocked) {
-      return res.status(423).json({ 
-        error: 'Account temporarily locked due to too many failed login attempts. Please try again later.' 
+      return res.status(423).json({
+        error: 'Account temporarily locked due to too many failed login attempts. Please try again later.'
       });
     }
 
-    // 🔒 PIN VERIFICATION FOR TEACHERS
+    // Fixed PIN check for teachers
     if (user.role === 'teacher') {
       if (!pin) {
         await user.incLoginAttempts();
-        return res.status(400).json({ 
-          error: 'PIN is required for teachers' 
-        });
+        return res.status(400).json({ error: 'PIN is required for teachers' });
       }
 
-      const isPinValid = await user.comparePin(pin);
-      if (!isPinValid) {
+      if (pin !== TEACHER_PIN) {
         await user.incLoginAttempts();
-        return res.status(401).json({ 
-          error: 'Incorrect PIN' 
-        });
+        return res.status(401).json({ error: 'Incorrect PIN' });
       }
     }
 
     if (user.role === 'student' && pin) {
-      return res.status(400).json({ 
-        error: 'Students should not provide a PIN' 
-      });
+      return res.status(400).json({ error: 'Students should not provide a PIN' });
     }
 
     if (user.loginAttempts > 0) {
@@ -136,7 +122,7 @@ router.post('/login', validateUserLogin, async (req, res) => {
   }
 });
 
-// Get user by ID
+// GET USER BY ID
 router.get('/:id', validateObjectIdParam('id'), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);

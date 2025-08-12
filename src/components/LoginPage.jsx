@@ -5,6 +5,7 @@ import NavLinks from './NavLinks';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState('student');  // Default to student now
   const [teacherPIN, setTeacherPIN] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -12,15 +13,14 @@ function LoginPage() {
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Input validation functions
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
       .trim()
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<[^>]*>/g, '') // Remove all HTML tags
+      .replace(/<[^>]*>/g, '')
       .replace(/javascript:/gi, '')
-      .replace(/on\w+=/gi, ''); // Remove event handlers
+      .replace(/on\w+=/gi, '');
   };
 
   const validateEmail = (email) => {
@@ -43,11 +43,9 @@ function LoginPage() {
     if (!sanitized) {
       return { isValid: false, message: 'PIN is required for teachers' };
     }
-    // Basic PIN validation - adjust as needed
     if (sanitized.length < 4 || sanitized.length > 10) {
       return { isValid: false, message: 'PIN must be 4-10 characters' };
     }
-    // Only allow alphanumeric characters for PIN
     const pinRegex = /^[a-zA-Z0-9]+$/;
     if (!pinRegex.test(sanitized)) {
       return { isValid: false, message: 'PIN can only contain letters and numbers' };
@@ -59,9 +57,15 @@ function LoginPage() {
     const value = e.target.value;
     if (value.length <= 100) {
       setEmail(value);
-      if (errors.email) {
-        setErrors(prev => ({ ...prev, email: '' }));
-      }
+      if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+    }
+  };
+
+  const handleRoleChange = (e) => {
+    setRole(e.target.value);
+    if (e.target.value === 'student') {
+      setTeacherPIN('');
+      if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
     }
   };
 
@@ -69,33 +73,28 @@ function LoginPage() {
     const value = e.target.value;
     if (value.length <= 10) {
       setTeacherPIN(value);
-      if (errors.pin) {
-        setErrors(prev => ({ ...prev, pin: '' }));
-      }
+      if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
     }
   };
 
   const handleLogin = async (event) => {
     event.preventDefault();
-    
+
     const newErrors = {};
-    
-    // Validate email
+
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
       newErrors.email = emailValidation.message;
     }
 
-    // Validate PIN if provided (for teachers)
     let pinValidation = null;
-    if (teacherPIN.trim()) {
+    if (role === 'teacher') {
       pinValidation = validatePIN(teacherPIN);
       if (!pinValidation.isValid) {
         newErrors.pin = pinValidation.message;
       }
     }
 
-    // If there are validation errors, show them and return
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -106,13 +105,11 @@ function LoginPage() {
 
     try {
       const loginData = { email: emailValidation.sanitized };
-      
-      // Add PIN to request if provided
-      if (pinValidation && pinValidation.sanitized) {
+      if (role === 'teacher' && pinValidation && pinValidation.sanitized) {
         loginData.pin = pinValidation.sanitized;
       }
 
-      const response = await fetch(`${API_URL}/users/login`, {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -123,14 +120,12 @@ function LoginPage() {
 
       if (response.ok) {
         const user = await response.json();
-        
-        // Validate response data
+
         if (!user || !user.role || !user._id) {
           setErrors({ general: 'Invalid response from server' });
           return;
         }
 
-        // Sanitize user data before storing
         const sanitizedUser = {
           ...user,
           fullName: sanitizeInput(user.fullName || ''),
@@ -143,7 +138,6 @@ function LoginPage() {
           return;
         }
 
-        // Set user and navigate based on role - backend handles all PIN verification
         setUser(sanitizedUser);
         if (sanitizedUser.role === 'teacher') {
           navigate('/TeacherPage');
@@ -168,19 +162,20 @@ function LoginPage() {
     <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
       <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 mt-4">
         <h1 className="text-3xl sm:text-4xl text-white font-bold text-center mb-6">Welcome Back</h1>
-        
+
         {errors.general && (
           <div className="bg-red-500 text-white p-3 rounded mb-4 text-sm">
             {errors.general}
           </div>
         )}
-        
+
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          {/* Email input */}
           <div>
             <input
               className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                errors.email 
-                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
+                errors.email
+                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
                   : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
               }`}
               type="email"
@@ -194,28 +189,48 @@ function LoginPage() {
             />
             {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
           </div>
-          
+
+          {/* Role selector */}
           <div>
-            <input
-              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                errors.pin 
-                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+            <select
+              name="role"
+              value={role}
+              onChange={handleRoleChange}
+              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black border-2 transition ${
+                errors.role ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:outline-none focus:border-orange-400'
               }`}
-              type="password"
-              placeholder="Enter PIN (Teachers only)"
-              value={teacherPIN}
-              onChange={handlePINChange}
               disabled={isLoading}
-              maxLength="10"
-              autoComplete="current-password"
-            />
-            {errors.pin && <p className="text-red-400 text-sm mt-1">{errors.pin}</p>}
-            <p className="text-slate-300 text-xs mt-1">
-              Students can leave PIN field empty
-            </p>
+            >
+              <option value="teacher">Teacher</option>
+              <option value="student">Student</option>
+            </select>
           </div>
-          
+
+          {/* PIN input - only visible for teachers */}
+          {role === 'teacher' && (
+            <div>
+              <input
+                className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
+                  errors.pin
+                    ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
+                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                }`}
+                type="password"
+                placeholder="Enter PIN"
+                value={teacherPIN}
+                onChange={handlePINChange}
+                disabled={isLoading}
+                maxLength="10"
+                autoComplete="current-password"
+              />
+              {errors.pin && <p className="text-red-400 text-sm mt-1">{errors.pin}</p>}
+              <p className="text-slate-300 text-xs mt-1">
+                Teachers must enter their PIN to log in.
+              </p>
+            </div>
+          )}
+
+          {/* Submit button */}
           <button
             type="submit"
             disabled={isLoading || !email.trim()}
@@ -229,6 +244,7 @@ function LoginPage() {
           </button>
         </form>
       </div>
+
       <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
     </div>
   );

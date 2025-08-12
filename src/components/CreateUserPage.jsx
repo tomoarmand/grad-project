@@ -4,7 +4,7 @@ import useUserStore from '../store/userStore';
 import NavLinks from './NavLinks';
 
 function CreateUserPage() {
-  const [formData, setFormData] = useState({ fullName: '', email: '', role: 'teacher' });
+  const [formData, setFormData] = useState({ fullName: '', email: '', role: 'student' }); // Default to student
   const [isLoading, setIsLoading] = useState(false);
   const [teacherPIN, setTeacherPIN] = useState('');
   const [errors, setErrors] = useState({});
@@ -12,16 +12,25 @@ function CreateUserPage() {
   const navigate = useNavigate();
   const { setUser } = useUserStore();
 
-  // Input validation functions
-  const validateEmail = (email) => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
+  // You can define or import these validation functions as needed:
+  const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return '';
+    return input
+      .trim()
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+=/gi, '');
   };
 
   const validateFullName = (name) => {
-    // Allow letters, spaces, hyphens, apostrophes, and common accented characters
-    const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/;
-    return nameRegex.test(name.trim());
+    // Must be 2-50 chars, only letters, spaces, hyphens, apostrophes
+    return /^[a-zA-Z\s\-']{2,50}$/.test(name);
+  };
+
+  const validateEmail = (email) => {
+    // Basic email regex
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
   };
 
   const validatePIN = (pin) => {
@@ -29,11 +38,9 @@ function CreateUserPage() {
     if (!sanitized) {
       return { isValid: false, message: 'PIN is required for teachers' };
     }
-    // Basic PIN validation - adjust as needed
     if (sanitized.length < 4 || sanitized.length > 10) {
       return { isValid: false, message: 'PIN must be 4-10 characters' };
     }
-    // Only allow alphanumeric characters for PIN
     const pinRegex = /^[a-zA-Z0-9]+$/;
     if (!pinRegex.test(sanitized)) {
       return { isValid: false, message: 'PIN can only contain letters and numbers' };
@@ -41,48 +48,22 @@ function CreateUserPage() {
     return { isValid: true, sanitized };
   };
 
-  const sanitizeInput = (input) => {
-    if (typeof input !== 'string') return '';
-    // Remove potential script tags and other dangerous HTML
-    return input
-      .trim()
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<[^>]*>/g, '') // Remove all HTML tags
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+=/gi, ''); // Remove event handlers
-  };
-
   const validateForm = () => {
     const newErrors = {};
-
-    // Validate full name
     const sanitizedName = sanitizeInput(formData.fullName);
-    if (!sanitizedName) {
-      newErrors.fullName = 'Full name is required';
-    } else if (!validateFullName(sanitizedName)) {
-      newErrors.fullName = 'Full name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes';
-    }
+    if (!sanitizedName) newErrors.fullName = 'Full name is required';
+    else if (!validateFullName(sanitizedName)) newErrors.fullName = 'Full name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes';
 
-    // Validate email
     const sanitizedEmail = sanitizeInput(formData.email);
-    if (!sanitizedEmail) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(sanitizedEmail)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+    if (!sanitizedEmail) newErrors.email = 'Email is required';
+    else if (!validateEmail(sanitizedEmail)) newErrors.email = 'Please enter a valid email address';
 
-    // Validate role
     const validRoles = ['teacher', 'student'];
-    if (!validRoles.includes(formData.role)) {
-      newErrors.role = 'Please select a valid role';
-    }
+    if (!validRoles.includes(formData.role)) newErrors.role = 'Please select a valid role';
 
-    // Validate PIN for teachers (frontend validation only - backend handles security)
     if (formData.role === 'teacher') {
       const pinValidation = validatePIN(teacherPIN);
-      if (!pinValidation.isValid) {
-        newErrors.pin = pinValidation.message;
-      }
+      if (!pinValidation.isValid) newErrors.pin = pinValidation.message;
     }
 
     setErrors(newErrors);
@@ -91,26 +72,18 @@ function CreateUserPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    
-    // Clear specific error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
 
-    // Basic length limits during typing
     let sanitizedValue = value;
-    if (name === 'fullName' && value.length > 50) {
-      sanitizedValue = value.slice(0, 50);
-    }
-    if (name === 'email' && value.length > 100) {
-      sanitizedValue = value.slice(0, 100);
-    }
+    if (name === 'fullName' && value.length > 50) sanitizedValue = value.slice(0, 50);
+    if (name === 'email' && value.length > 100) sanitizedValue = value.slice(0, 100);
 
     setFormData({ ...formData, [name]: sanitizedValue });
 
-    // Clear PIN error when switching from teacher to student
+    // Clear PIN error if role changes to student
     if (name === 'role' && value === 'student' && errors.pin) {
       setErrors(prev => ({ ...prev, pin: '' }));
+      setTeacherPIN('');
     }
   };
 
@@ -118,55 +91,45 @@ function CreateUserPage() {
     const value = e.target.value;
     if (value.length <= 10) {
       setTeacherPIN(value);
-      if (errors.pin) {
-        setErrors(prev => ({ ...prev, pin: '' }));
-      }
+      if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
     }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
-      // Sanitize data before sending
       const sanitizedData = {
         fullName: sanitizeInput(formData.fullName),
         email: sanitizeInput(formData.email).toLowerCase(),
-        role: formData.role
+        role: formData.role,
+        pin: formData.role === 'teacher' ? teacherPIN : undefined,
       };
 
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sanitizedData)
+        body: JSON.stringify(sanitizedData),
       });
 
       if (response.ok) {
         const user = await response.json();
-
-        // Account created successfully - backend handles all PIN hashing
-        // Redirect all users to login page for security
         if (user.role === 'teacher') {
           alert('Teacher account created successfully! Please log in with your PIN.');
-        } else if (user.role === 'student') {
+        } else {
           alert('Student account created successfully! Please log in.');
         }
-        
         navigate('/');
-
       } else {
         const error = await response.json();
-        setErrors({ general: error.error || "Error creating user" });
+        setErrors({ general: error.error || 'Error creating user' });
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      setErrors({ general: "An error occurred while creating the account. Please try again." });
+      setErrors({ general: 'An error occurred while creating the account. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -176,14 +139,15 @@ function CreateUserPage() {
     <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
       <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 mt-4">
         <h1 className="text-3xl sm:text-4xl text-white font-bold text-center mb-6">Create Account</h1>
-        
+
         {errors.general && (
           <div className="bg-red-500 text-white p-3 rounded mb-4 text-sm">
             {errors.general}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* fullName input */}
           <div>
             <input
               name="fullName"
@@ -191,9 +155,7 @@ function CreateUserPage() {
               value={formData.fullName}
               onChange={handleChange}
               className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                errors.fullName 
-                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                errors.fullName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:outline-none focus:border-orange-500'
               }`}
               required
               disabled={isLoading}
@@ -202,6 +164,7 @@ function CreateUserPage() {
             {errors.fullName && <p className="text-red-400 text-sm mt-1">{errors.fullName}</p>}
           </div>
 
+          {/* email input */}
           <div>
             <input
               name="email"
@@ -210,9 +173,7 @@ function CreateUserPage() {
               value={formData.email}
               onChange={handleChange}
               className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                errors.email 
-                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:outline-none focus:border-orange-500'
               }`}
               required
               disabled={isLoading}
@@ -221,15 +182,14 @@ function CreateUserPage() {
             {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
           </div>
 
+          {/* role select */}
           <div>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
               className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black border-2 transition ${
-                errors.role 
-                  ? 'border-red-500 focus:border-red-500' 
-                  : 'border-gray-300 focus:outline-none focus:border-orange-400'
+                errors.role ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:outline-none focus:border-orange-400'
               }`}
               disabled={isLoading}
             >
@@ -239,6 +199,7 @@ function CreateUserPage() {
             {errors.role && <p className="text-red-400 text-sm mt-1">{errors.role}</p>}
           </div>
 
+          {/* PIN input only for teachers */}
           {formData.role === 'teacher' && (
             <div>
               <input
@@ -247,18 +208,14 @@ function CreateUserPage() {
                 value={teacherPIN}
                 onChange={handlePINChange}
                 className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                  errors.pin 
-                    ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                  errors.pin ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:outline-none focus:border-orange-500'
                 }`}
                 disabled={isLoading}
                 maxLength="10"
                 autoComplete="new-password"
               />
               {errors.pin && <p className="text-red-400 text-sm mt-1">{errors.pin}</p>}
-              <p className="text-slate-300 text-xs mt-1">
-                Your PIN will be securely encrypted and stored
-              </p>
+              <p className="text-slate-300 text-xs mt-1">Your PIN will be securely encrypted and stored</p>
             </div>
           )}
 
@@ -266,9 +223,7 @@ function CreateUserPage() {
             type="submit"
             disabled={isLoading}
             className={`w-full py-3 rounded text-lg sm:text-xl font-semibold transition duration-200 ${
-              isLoading 
-                ? 'bg-gray-400 cursor-not-allowed text-gray-600'
-                : 'bg-[#64748b] hover:bg-[#fb923c] text-white'
+              isLoading ? 'bg-gray-400 cursor-not-allowed text-gray-600' : 'bg-[#64748b] hover:bg-[#fb923c] text-white'
             }`}
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}
