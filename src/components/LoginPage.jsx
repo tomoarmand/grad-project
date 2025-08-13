@@ -5,11 +5,11 @@ import NavLinks from './NavLinks';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('student');  // Default to student now
-  const [teacherPIN, setTeacherPIN] = useState('');
+  const [role, setRole] = useState('student');
+  const [teacherAccessCode, setTeacherAccessCode] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const { setUser } = useUserStore();
+  const { setUser, setToken } = useUserStore();
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -38,17 +38,17 @@ function LoginPage() {
     return { isValid: true, sanitized };
   };
 
-  const validatePIN = (pin) => {
-    const sanitized = sanitizeInput(pin);
+  const validateAccessCode = (code) => {
+    const sanitized = sanitizeInput(code);
     if (!sanitized) {
-      return { isValid: false, message: 'PIN is required for teachers' };
+      return { isValid: false, message: 'Access code is required for teachers' };
     }
     if (sanitized.length < 4 || sanitized.length > 10) {
-      return { isValid: false, message: 'PIN must be 4-10 characters' };
+      return { isValid: false, message: 'Access code must be 4-10 characters' };
     }
-    const pinRegex = /^[a-zA-Z0-9]+$/;
-    if (!pinRegex.test(sanitized)) {
-      return { isValid: false, message: 'PIN can only contain letters and numbers' };
+    const codeRegex = /^[a-zA-Z0-9]+$/;
+    if (!codeRegex.test(sanitized)) {
+      return { isValid: false, message: 'Access code can only contain letters and numbers' };
     }
     return { isValid: true, sanitized };
   };
@@ -64,16 +64,16 @@ function LoginPage() {
   const handleRoleChange = (e) => {
     setRole(e.target.value);
     if (e.target.value === 'student') {
-      setTeacherPIN('');
-      if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
+      setTeacherAccessCode('');
+      if (errors.accessCode) setErrors(prev => ({ ...prev, accessCode: '' }));
     }
   };
 
-  const handlePINChange = (e) => {
+  const handleAccessCodeChange = (e) => {
     const value = e.target.value;
     if (value.length <= 10) {
-      setTeacherPIN(value);
-      if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
+      setTeacherAccessCode(value);
+      if (errors.accessCode) setErrors(prev => ({ ...prev, accessCode: '' }));
     }
   };
 
@@ -87,11 +87,11 @@ function LoginPage() {
       newErrors.email = emailValidation.message;
     }
 
-    let pinValidation = null;
+    let accessCodeValidation = null;
     if (role === 'teacher') {
-      pinValidation = validatePIN(teacherPIN);
-      if (!pinValidation.isValid) {
-        newErrors.pin = pinValidation.message;
+      accessCodeValidation = validateAccessCode(teacherAccessCode);
+      if (!accessCodeValidation.isValid) {
+        newErrors.accessCode = accessCodeValidation.message;
       }
     }
 
@@ -105,32 +105,53 @@ function LoginPage() {
 
     try {
       const loginData = { email: emailValidation.sanitized };
-      if (role === 'teacher' && pinValidation && pinValidation.sanitized) {
-        loginData.pin = pinValidation.sanitized;
+
+      // Include accessCode for teachers, using sanitized version
+      if (role === 'teacher') {
+        loginData.accessCode = accessCodeValidation.sanitized;
+        // DEBUG LOGGING
+        console.log('🐛 Frontend: Sending teacher login with access code:', loginData.accessCode);
+        console.log('🐛 Frontend: Raw access code was:', teacherAccessCode);
+        console.log('🐛 Frontend: Full login data:', loginData);
       }
 
-      const response = await fetch(`${API_URL}/login`, {
+      console.log('🐛 Frontend: Making login request to:', `${API_URL}/users/login`);
+      console.log('🐛 Frontend: Login data being sent:', loginData);
+
+      const response = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify(loginData),
       });
 
-      if (response.ok) {
-        const user = await response.json();
+      console.log('🐛 Frontend: Response status:', response.status);
 
-        if (!user || !user.role || !user._id) {
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('🐛 Frontend: Login successful, user data:', userData);
+
+        if (!userData || !userData.role || !userData._id) {
           setErrors({ general: 'Invalid response from server' });
           return;
         }
 
+        // Store JWT token
+        if (userData.token) {
+          setToken(userData.token);
+          localStorage.setItem('authToken', userData.token);
+        }
+
+        // Create sanitized user object without token
         const sanitizedUser = {
-          ...user,
-          fullName: sanitizeInput(user.fullName || ''),
-          email: sanitizeInput(user.email || ''),
-          role: user.role === 'teacher' || user.role === 'student' ? user.role : null
+          _id: userData._id,
+          fullName: sanitizeInput(userData.fullName || ''),
+          email: sanitizeInput(userData.email || ''),
+          role: userData.role === 'teacher' || userData.role === 'student' ? userData.role : null,
+          createdAt: userData.createdAt,
+          updatedAt: userData.updatedAt
         };
 
         if (!sanitizedUser.role) {
@@ -147,11 +168,12 @@ function LoginPage() {
 
       } else {
         const errorResponse = await response.json();
+        console.log('🐛 Frontend: Login failed, error response:', errorResponse);
         const errorMessage = sanitizeInput(errorResponse.error || "Login failed");
         setErrors({ general: errorMessage });
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('🐛 Frontend: Login error:', error);
       setErrors({ general: "An error occurred while logging in. Please check your connection and try again." });
     } finally {
       setIsLoading(false);
@@ -169,7 +191,28 @@ function LoginPage() {
           </div>
         )}
 
+        {/* DEBUG INFO */}
+        {role === 'teacher' && (
+          <div className="bg-blue-500 text-white p-2 rounded mb-4 text-xs">
+            DEBUG: Access Code = "{teacherAccessCode}"
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          {/* Role selector - no label */}
+          <div>
+            <select
+              name="role"
+              value={role}
+              onChange={handleRoleChange}
+              className="w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black border-2 border-gray-300 focus:outline-none focus:border-orange-400 transition"
+              disabled={isLoading}
+            >
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+            </select>
+          </div>
+
           {/* Email input */}
           <div>
             <input
@@ -190,42 +233,26 @@ function LoginPage() {
             {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
           </div>
 
-          {/* Role selector */}
-          <div>
-            <select
-              name="role"
-              value={role}
-              onChange={handleRoleChange}
-              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black border-2 transition ${
-                errors.role ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:outline-none focus:border-orange-400'
-              }`}
-              disabled={isLoading}
-            >
-              <option value="teacher">Teacher</option>
-              <option value="student">Student</option>
-            </select>
-          </div>
-
-          {/* PIN input - only visible for teachers */}
+          {/* Access code input - only visible for teachers */}
           {role === 'teacher' && (
             <div>
               <input
                 className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                  errors.pin
+                  errors.accessCode
                     ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
                     : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
                 }`}
                 type="password"
-                placeholder="Enter PIN"
-                value={teacherPIN}
-                onChange={handlePINChange}
+                placeholder="Enter Teacher Access Code"
+                value={teacherAccessCode}
+                onChange={handleAccessCodeChange}
                 disabled={isLoading}
                 maxLength="10"
                 autoComplete="current-password"
               />
-              {errors.pin && <p className="text-red-400 text-sm mt-1">{errors.pin}</p>}
+              {errors.accessCode && <p className="text-red-400 text-sm mt-1">{errors.accessCode}</p>}
               <p className="text-slate-300 text-xs mt-1">
-                Teachers must enter their PIN to log in.
+                Teachers must enter the access code to log in.
               </p>
             </div>
           )}

@@ -21,48 +21,10 @@ const userSchema = new mongoose.Schema({
     enum: ['teacher', 'student'],
     default: 'student',
   },
-
-  // Login attempt tracking for security
-  loginAttempts: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  lockUntil: {
-    type: Date,
-  }
 },
 {
   timestamps: true,
 });
-
-// Virtual property: isLocked if current time < lockUntil
-userSchema.virtual('isLocked').get(function () {
-  return !!(this.lockUntil && this.lockUntil > Date.now());
-});
-
-// Increment login attempts and lock account after 5 failed attempts within timeframe
-userSchema.methods.incLoginAttempts = async function () {
-  const LOCK_TIME = 2 * 60 * 60 * 1000; // 2 hours
-
-  if (this.lockUntil && this.lockUntil < Date.now()) {
-    // Lock expired, reset
-    this.loginAttempts = 1;
-    this.lockUntil = undefined;
-  } else {
-    this.loginAttempts += 1;
-    if (this.loginAttempts >= 5 && !this.isLocked) {
-      this.lockUntil = new Date(Date.now() + LOCK_TIME);
-    }
-  }
-  return this.save();
-};
-
-userSchema.methods.resetLoginAttempts = async function () {
-  this.loginAttempts = 0;
-  this.lockUntil = undefined;
-  return this.save();
-};
 
 const User = mongoose.model('User', userSchema);
 

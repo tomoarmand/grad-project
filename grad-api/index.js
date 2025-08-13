@@ -46,7 +46,7 @@ const globalLimiter = rateLimit({
 // Rate limiting - Stricter for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth attempts per windowMs
+  max: 10, // limit each IP to 10 auth attempts per windowMs (increased from 5 for master PIN system)
   message: {
     error: 'Too many authentication attempts, please try again later.',
   },
@@ -176,4 +176,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔒 Security middleware active`);
+  console.log(`🔑 Master PIN system enabled`);
 });
