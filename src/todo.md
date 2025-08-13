@@ -1,5 +1,8 @@
 ## To Do 
 
+- Error message display issue
+
+- Alerts for creation of new student and teacher profiles still genereic
 
 - Fix blurry logo on mobile
 

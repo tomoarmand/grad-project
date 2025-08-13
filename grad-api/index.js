@@ -2,6 +2,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from "cors";
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+import compression from 'compression';
+
 import userRoutes from './routes/userRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
 import folderRoutes from './routes/folderRoutes.js';
@@ -10,13 +17,92 @@ import assignmentRoutes from './routes/assignmentRoutes.js';
 dotenv.config();
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
-app.use(cors());
+
+// 🔒 SECURITY MIDDLEWARE - APPLY FIRST!
+// Set security headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// Rate limiting - Global
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting - Stricter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 auth attempts per windowMs (increased from 5 for master PIN system)
+  message: {
+    error: 'Too many authentication attempts, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(globalLimiter);
+
+// Data sanitization against NoSQL injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
+
+// Prevent parameter pollution
+app.use(hpp({
+  whitelist: ['studentIds', 'exerciseIds']
+}));
+
+// Compression middleware
+app.use(compression());
+
+// Body parser with size limits
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      const error = new Error('Invalid JSON');
+      error.status = 400;
+      throw error;
+    }
+  }
+}));
+
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Connect to MongoDB Atlas
 const uri = process.env.MONGO_KEY;
-console.log("Connecting to DB with URI:", process.env.MONGO_KEY);
-mongoose.connect(uri);
+console.log("Connecting to DB...");
+
+mongoose.connect(uri, {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+});
 
 mongoose.connection.on('connected', () => {
   console.log('✅ Database connected successfully');
@@ -26,7 +112,18 @@ mongoose.connection.on('error', (err) => {
   console.error('❌ Database connection error:', err);
 });
 
-// Health check endpoint for monitoring services
+mongoose.connection.on('disconnected', () => {
+  console.log('📡 Database disconnected');
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  await mongoose.connection.close();
+  console.log('Database connection closed through app termination');
+  process.exit(0);
+});
+
+// Health check endpoints
 app.get('/', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -36,7 +133,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Optional: More detailed health check
 app.get('/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.json({
@@ -44,16 +140,41 @@ app.get('/health', (req, res) => {
     database: dbStatus,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    memory: process.memoryUsage()
+    memory: process.memoryUsage(),
+    version: process.version
   });
 });
 
-app.use('/users', userRoutes);
+// Routes with security middleware
+app.use('/users', authLimiter, userRoutes);
 app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
-app.use('/assignments', assignmentRoutes);        
+app.use('/assignments', assignmentRoutes);
+
+// Global error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Global error:', error);
+  
+  if (process.env.NODE_ENV === 'production') {
+    res.status(error.status || 500).json({
+      error: 'Something went wrong!'
+    });
+  } else {
+    res.status(error.status || 500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Handle 404 routes
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔒 Security middleware active`);
+  console.log(`🔑 Master PIN system enabled`);
 });
