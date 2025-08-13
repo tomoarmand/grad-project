@@ -8,22 +8,17 @@ dotenv.config();
 
 const router = express.Router();
 
-// Simple PIN configuration - just put the plain PIN in env
-const TEACHER_PIN = process.env.TEACHER_PIN; // Default PIN for development, change in production
+const TEACHER_PIN = process.env.TEACHER_PIN;
 
-// Hash the PIN at startup (only happens once when server starts)
 let TEACHER_PIN_HASH = null;
 let hashInitialized = false;
 
 const initializePinHash = async () => {
   if (!hashInitialized) {
     try {
-      // FIX: Add await here!
       TEACHER_PIN_HASH = await bcrypt.hash(TEACHER_PIN, 12);
       hashInitialized = true;
-      console.log('💡 Teacher PIN configured and hashed successfully');
-      console.log('🔍 Original PIN:', TEACHER_PIN);
-      console.log('🔒 Hashed PIN:', TEACHER_PIN_HASH);
+      console.log('✅ Teacher PIN configured successfully');
     } catch (error) {
       console.error('❌ Error hashing teacher PIN:', error);
       throw error;
@@ -31,29 +26,20 @@ const initializePinHash = async () => {
   }
 };
 
-// Initialize PIN hash immediately
 initializePinHash().catch(console.error);
 
-// JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || process.env.API_SECRET || 'fallback-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-// Verify access code against hash
 const verifyAccessCode = async (code, hash) => {
   try {
-    console.log('🔍 Verifying access code:', code);
-    console.log('🔒 Against hash:', hash);
-    const result = await bcrypt.compare(code, hash);
-    console.log('✅ Verification result:', result);
-    return result;
+    return await bcrypt.compare(code, hash);
   } catch (error) {
-    console.log('Debug - code:', code, 'hash:', hash);
     console.error('❌ Error in verifyAccessCode:', error);
     return false;
   }
 };
 
-// Generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
     { 
@@ -66,7 +52,6 @@ const generateToken = (user) => {
   );
 };
 
-// JWT Authentication middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -84,7 +69,6 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Input sanitization
 const sanitizeInput = (input) => {
   if (typeof input !== 'string') return '';
   return input.trim()
@@ -94,7 +78,6 @@ const sanitizeInput = (input) => {
     .replace(/on\w+=/gi, '');
 };
 
-// Validation
 const validateEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) && email.length <= 100;
 const validateFullName = (name) => /^[a-zA-Z\s\-']{2,50}$/.test(name);
 const validateAccessCode = (code) => /^[a-zA-Z0-9]{4,10}$/.test(code);
@@ -102,7 +85,6 @@ const validateAccessCode = (code) => /^[a-zA-Z0-9]{4,10}$/.test(code);
 // Get all users (protected route)
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    // Only teachers can view all users
     if (req.user.role !== 'teacher') {
       return res.status(403).json({ error: 'Access denied. Teacher role required.' });
     }
@@ -118,7 +100,6 @@ router.get('/', authenticateToken, async (req, res) => {
 // Create user
 router.post('/', async (req, res) => {
   try {
-    // Ensure PIN hash is initialized
     if (!hashInitialized) {
       await initializePinHash();
     }
@@ -130,7 +111,6 @@ router.post('/', async (req, res) => {
     const sanitizedRole = role === 'teacher' ? 'teacher' : 'student';
     const sanitizedAccessCode = accessCode ? sanitizeInput(accessCode) : '';
 
-    // Validate full name & email
     if (!validateFullName(sanitizedFullName)) {
       return res.status(400).json({ error: 'Invalid full name' });
     }
@@ -138,10 +118,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email address' });
     }
 
-    // Teacher account creation check - Compare against hashed PIN
     if (sanitizedRole === 'teacher') {
-      console.log('👨‍🏫 Creating teacher account...');
-      
       if (!sanitizedAccessCode) {
         return res.status(400).json({ error: 'Teacher access code is required' });
       }
@@ -150,21 +127,15 @@ router.post('/', async (req, res) => {
       }
       
       if (!TEACHER_PIN_HASH) {
-        console.error('❌ Teacher PIN hash not initialized');
         return res.status(500).json({ error: 'Server configuration error' });
       }
       
-      // Verify against hashed PIN
       const isValidCode = await verifyAccessCode(sanitizedAccessCode, TEACHER_PIN_HASH);
       if (!isValidCode) {
-        console.log('❌ Teacher access code verification failed');
         return res.status(400).json({ error: 'Incorrect teacher access code' });
       }
-      
-      console.log('✅ Teacher access code verified successfully');
     }
 
-    // Prevent duplicate email
     const existingUser = await User.findOne({ email: sanitizedEmail.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists with this email' });
@@ -176,7 +147,6 @@ router.post('/', async (req, res) => {
       role: sanitizedRole
     });
 
-    // Generate JWT token for the new user
     const token = generateToken(user);
 
     res.status(201).json({
@@ -198,22 +168,14 @@ router.post('/', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    console.log('🐛 Backend: Login request received');
-    console.log('🐛 Backend: Request body:', req.body);
-    
-    // Ensure PIN hash is initialized
     if (!hashInitialized) {
       await initializePinHash();
     }
 
     const { email, accessCode } = req.body;
-    console.log('🐛 Backend: Extracted email:', email);
-    console.log('🐛 Backend: Extracted accessCode:', accessCode);
 
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedAccessCode = accessCode ? sanitizeInput(accessCode) : '';
-    console.log('🐛 Backend: Sanitized email:', sanitizedEmail);
-    console.log('🐛 Backend: Sanitized accessCode:', sanitizedAccessCode);
 
     if (!validateEmail(sanitizedEmail)) {
       return res.status(400).json({ error: 'Invalid email address' });
@@ -224,41 +186,24 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('🐛 Backend: Found user with role:', user.role);
-
-    // Teacher login check - Compare against hashed PIN
     if (user.role === 'teacher') {
-      console.log('👨‍🏫 Teacher login attempt...');
-      console.log('🐛 Backend: Teacher PIN from env:', TEACHER_PIN);
-      console.log('🐛 Backend: Teacher PIN hash:', TEACHER_PIN_HASH);
-      
       if (!sanitizedAccessCode) {
-        console.log('❌ No access code provided');
         return res.status(401).json({ error: 'Teacher access code is required' });
       }
       if (!validateAccessCode(sanitizedAccessCode)) {
-        console.log('❌ Access code format invalid');
         return res.status(401).json({ error: 'Invalid teacher access code format' });
       }
       
       if (!TEACHER_PIN_HASH) {
-        console.error('❌ Teacher PIN hash not initialized');
         return res.status(500).json({ error: 'Server configuration error' });
       }
       
-      // Verify against hashed PIN
       const isValidCode = await verifyAccessCode(sanitizedAccessCode, TEACHER_PIN_HASH);
       if (!isValidCode) {
-        console.log('❌ Teacher login - access code verification failed');
         return res.status(401).json({ error: 'Incorrect teacher access code' });
       }
-      
-      console.log('✅ Teacher login - access code verified successfully');
-    } else {
-      console.log('👨‍🎓 Student login (no PIN check needed)');
     }
 
-    // Generate JWT token
     const token = generateToken(user);
 
     res.json({
@@ -280,7 +225,6 @@ router.post('/login', async (req, res) => {
 // Token validation endpoint
 router.post('/verify-token', authenticateToken, async (req, res) => {
   try {
-    // If middleware passes, token is valid
     const user = await User.findById(req.user.userId).select('-__v');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -303,7 +247,6 @@ router.post('/verify-token', authenticateToken, async (req, res) => {
 // Get single user (protected route)
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    // Users can only view their own profile, teachers can view any profile
     if (req.user.role !== 'teacher' && req.user.userId !== req.params.id) {
       return res.status(403).json({ error: 'Access denied. You can only view your own profile.' });
     }

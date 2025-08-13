@@ -106,17 +106,9 @@ function LoginPage() {
     try {
       const loginData = { email: emailValidation.sanitized };
 
-      // Include accessCode for teachers, using sanitized version
       if (role === 'teacher') {
         loginData.accessCode = accessCodeValidation.sanitized;
-        // DEBUG LOGGING
-        console.log('🐛 Frontend: Sending teacher login with access code:', loginData.accessCode);
-        console.log('🐛 Frontend: Raw access code was:', teacherAccessCode);
-        console.log('🐛 Frontend: Full login data:', loginData);
       }
-
-      console.log('🐛 Frontend: Making login request to:', `${API_URL}/users/login`);
-      console.log('🐛 Frontend: Login data being sent:', loginData);
 
       const response = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
@@ -127,24 +119,19 @@ function LoginPage() {
         body: JSON.stringify(loginData),
       });
 
-      console.log('🐛 Frontend: Response status:', response.status);
-
       if (response.ok) {
         const userData = await response.json();
-        console.log('🐛 Frontend: Login successful, user data:', userData);
 
         if (!userData || !userData.role || !userData._id) {
           setErrors({ general: 'Invalid response from server' });
           return;
         }
 
-        // Store JWT token
         if (userData.token) {
           setToken(userData.token);
           localStorage.setItem('authToken', userData.token);
         }
 
-        // Create sanitized user object without token
         const sanitizedUser = {
           _id: userData._id,
           fullName: sanitizeInput(userData.fullName || ''),
@@ -168,12 +155,11 @@ function LoginPage() {
 
       } else {
         const errorResponse = await response.json();
-        console.log('🐛 Frontend: Login failed, error response:', errorResponse);
         const errorMessage = sanitizeInput(errorResponse.error || "Login failed");
         setErrors({ general: errorMessage });
       }
     } catch (error) {
-      console.error('🐛 Frontend: Login error:', error);
+      console.error('Login error:', error);
       setErrors({ general: "An error occurred while logging in. Please check your connection and try again." });
     } finally {
       setIsLoading(false);
@@ -191,15 +177,7 @@ function LoginPage() {
           </div>
         )}
 
-        {/* DEBUG INFO */}
-        {role === 'teacher' && (
-          <div className="bg-blue-500 text-white p-2 rounded mb-4 text-xs">
-            DEBUG: Access Code = "{teacherAccessCode}"
-          </div>
-        )}
-
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          {/* Role selector - no label */}
           <div>
             <select
               name="role"
@@ -213,7 +191,6 @@ function LoginPage() {
             </select>
           </div>
 
-          {/* Email input */}
           <div>
             <input
               className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
@@ -233,7 +210,6 @@ function LoginPage() {
             {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
           </div>
 
-          {/* Access code input - only visible for teachers */}
           {role === 'teacher' && (
             <div>
               <input
@@ -257,7 +233,6 @@ function LoginPage() {
             </div>
           )}
 
-          {/* Submit button */}
           <button
             type="submit"
             disabled={isLoading || !email.trim()}
