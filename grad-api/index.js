@@ -85,9 +85,34 @@ app.use(express.json({
 
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS configuration
+// Enhanced CORS configuration for all environments
+const allowedOrigins = [
+  // Production
+  'https://kentone.vercel.app',
+  
+  // Development
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:4173',  // Vite preview server
+  'http://localhost:3000',  // Alternative dev port
+  
+  // Add your production backend URL if different
+  process.env.FRONTEND_URL
+].filter(Boolean); // Remove any undefined values
+
+console.log('🔒 CORS allowed origins:', allowedOrigins);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']

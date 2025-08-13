@@ -62,7 +62,14 @@ const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
+      console.log('🔍 Token verification failed:', err.message);
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      } else if (err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: 'Invalid token' });
+      } else {
+        return res.status(403).json({ error: 'Token verification failed' });
+      }
     }
     req.user = user;
     next();
@@ -222,26 +229,54 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Token validation endpoint
-router.post('/verify-token', authenticateToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select('-__v');
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+// Enhanced Token validation endpoint with better error handling and logging
+router.post('/verify-token', (req, res) => {
+  console.log('🔍 Backend: verify-token endpoint called');
+  console.log('🔍 Backend: Headers received:', req.headers.authorization ? 'Token present' : 'No token');
+  
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    console.log('🔍 Backend: No token provided');
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, async (err, decodedUser) => {
+    if (err) {
+      console.log('🔍 Backend: Token verification failed:', err.message);
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      } else if (err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: 'Invalid token' });
+      } else {
+        return res.status(401).json({ error: 'Token verification failed' });
+      }
     }
 
-    res.json({
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
-    });
-  } catch (error) {
-    console.error('POST /users/verify-token error:', error);
-    res.status(500).json({ error: 'Server error during token verification' });
-  }
+    try {
+      console.log('🔍 Backend: Token valid, fetching user data for ID:', decodedUser.userId);
+      const user = await User.findById(decodedUser.userId).select('-__v');
+      
+      if (!user) {
+        console.log('🔍 Backend: User not found in database');
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      console.log('🔍 Backend: User found, returning data for:', user.email);
+      res.json({
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      });
+    } catch (error) {
+      console.error('🔍 Backend: Database error during token verification:', error);
+      res.status(500).json({ error: 'Server error during token verification' });
+    }
+  });
 });
 
 // Get single user (protected route)
