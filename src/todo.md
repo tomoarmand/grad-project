@@ -1,5 +1,7 @@
 ## To Do 
 
+- assigned successfully message etc.
+
 - Error message display issue
 
 - Alerts for creation of new student and teacher profiles still genereic
@@ -16,9 +18,7 @@
 
 - Foldermanager rename feature overflow issue
 
-- Download PWA link on home page
-
-- Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections   
+- Download PWA link on home page 
 
 
 - Add feature for students to record 
@@ -28,7 +28,7 @@
 - Edit home page (3 hours) **
 
 
-
+- Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections  [2 days]
 
 - Confirmation for delete exercises [45 mins]
 

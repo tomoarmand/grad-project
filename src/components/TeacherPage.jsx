@@ -1,20 +1,28 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FolderManager from './FolderManager.jsx';
 import CreateTab from './CreateTab.jsx';
 import AssignTab from './AssignTab.jsx';
 import UnassignTab from './UnassignTab.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
 
 function TeacherPage() {
   const [activeTab, setActiveTab] = useState('create');
-  const { user } = useUserStore();
+  const { user, logout } = useUserStore();
+  const navigate = useNavigate();
 
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [folders, setFolders] = useState([]);
 
   const API_URL = import.meta.env.VITE_API_URL;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   useEffect(() => {
     if (user) {
@@ -87,16 +95,23 @@ function TeacherPage() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-2 py-6 sm:px-4 sm:py-8 overflow-auto">
-      {/* Breadcrumbs */}
-      <div className="w-full max-w-md sm:max-w-4xl mb-4">
-        <NavLinks
-          links={[
-            { label: 'Home', to: '/' },
-            { label: 'Teacher Dashboard', to: '/TeacherPage' },
-            selectedFolder ? { label: selectedFolder.name, to: '#' } : null,
-          ].filter(Boolean)}
-          isBreadcrumb
-        />
+      {/* Top Bar with Breadcrumbs and Settings Menu - Mobile optimized spacing */}
+      <div className="w-full max-w-md sm:max-w-4xl mb-4 flex items-start sm:items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <NavLinks
+            links={[
+              { label: 'Home', to: '/' },
+              { label: 'Teacher Dashboard', to: '/TeacherPage' },
+              selectedFolder ? { label: selectedFolder.name, to: '#' } : null,
+            ].filter(Boolean)}
+            isBreadcrumb
+          />
+        </div>
+        
+        {/* Settings Menu - positioned top-right with mobile considerations */}
+        <div className="flex-shrink-0 self-start">
+          <SettingsMenu user={user} onLogout={handleLogout} />
+        </div>
       </div>
 
       <div className="w-full max-w-md sm:max-w-4xl bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-6">
@@ -104,16 +119,16 @@ function TeacherPage() {
           Welcome, {user?.fullName?.split(' ')[0] || 'Teacher'}!
         </h1>
 
-        {/* Tabs - Mobile-First Design */}
+        {/* Tabs - Mobile-First Design with better touch targets */}
         <div className="flex flex-col sm:flex-row bg-slate-600 rounded-lg overflow-hidden">
-          {/* Mobile: Stacked buttons */}
+          {/* Mobile: Stacked buttons with larger touch areas */}
           <div className="flex flex-col sm:hidden">
             {['create', 'assign', 'unassign'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`w-full px-4 py-3 font-medium transition focus:outline-none border-b border-slate-500 last:border-b-0 ${
-                  activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500'
+                className={`w-full px-4 py-4 font-medium transition focus:outline-none border-b border-slate-500 last:border-b-0 touch-manipulation ${
+                  activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500 active:bg-slate-400'
                 }`}
               >
                 {tab === 'create' && '📝 Create & Organise'}
