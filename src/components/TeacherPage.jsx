@@ -199,9 +199,6 @@ function TeacherPage() {
         )}
       </div>
 
-      <div className="w-full max-w-md sm:max-w-4xl mt-4">
-        <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
-      </div>
     </div>
   );
 }

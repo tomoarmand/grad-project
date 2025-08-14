@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import SettingsMenu from './SettingsMenu.jsx';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from "react-spinners";
-import NavLinks from './NavLinks';
 import MusicSymbolButton from './MusicSymbolButton';
 
 function StudentPage() {
@@ -19,12 +20,18 @@ function StudentPage() {
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   const inputRef = useRef();
+  const { user, logout } = useUserStore();
+  const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
   }, [currentExerciseIndex]);
-
-  const { user } = useUserStore();
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const triggerSuccess = () => {
     setShowCorrect(true);
@@ -136,8 +143,21 @@ function StudentPage() {
     if (user) fetchExercises();
   }, [user]);
 
+  if (!user) {
+    return (
+      <div className="min-h-screen w-screen flex justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 text-white px-4">
+        <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 ${isShaking ? 'animate-shake' : ''}`}>
+      {/* Settings Menu - positioned in top-right corner */}
+      <div className="fixed top-4 right-4 z-30">
+        <SettingsMenu user={user} onLogout={handleLogout} />
+      </div>
+
       <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
         <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
           Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
@@ -230,8 +250,6 @@ function StudentPage() {
           </>
         )}
       </div>
-
-      <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isSubtle />
 
       <style jsx>{`
         @keyframes shake {
