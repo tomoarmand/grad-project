@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { PuffLoader } from 'react-spinners';
+import useUserStore from '../store/userStore';
 
 function UnassignTab({ user }) {
+  const { getAuthHeader } = useUserStore();
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,23 +21,54 @@ function UnassignTab({ user }) {
 
   const fetchStudents = async () => {
     try {
-      const res = await fetch(`${API_URL}/assignments/students/by-teacher/${user._id}`);
+      setStudentsLoading(true);
+      setError('');
+      
+      const res = await fetch(`${API_URL}/assignments/students/by-teacher/${user._id}`, {
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch students: ${res.status} ${res.statusText}`);
+      }
+      
       const data = await res.json();
-      setStudents(data.sort((a, b) => 
+      const sortedStudents = data.sort((a, b) => 
         (a.fullName || 'Unnamed Student').toLowerCase().localeCompare(
           (b.fullName || 'Unnamed Student').toLowerCase()
         )
-      ));
+      );
+      setStudents(sortedStudents);
+      console.log('✅ Successfully fetched students with assignments:', sortedStudents.length);
+      
     } catch (error) {
       console.error("Failed to fetch students with assignments:", error);
+      setError(`Failed to load students: ${error.message}`);
+    } finally {
+      setStudentsLoading(false);
     }
   };
 
   const fetchExercises = async (student) => {
     setSelectedStudent(student);
     setLoading(true);
+    setError('');
+    
     try {
-      const res = await fetch(`${API_URL}/exercises?studentId=${student._id}&userId=${user._id}`);
+      const res = await fetch(`${API_URL}/exercises?studentId=${student._id}&userId=${user._id}`, {
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch exercises: ${res.status} ${res.statusText}`);
+      }
+      
       const data = await res.json();
       const sortedExercises = data.sort((a, b) => {
         const nameA = (a.correctAnswer?.trim() || 'Exercise name missing').toLowerCase();
@@ -43,6 +78,7 @@ function UnassignTab({ user }) {
       setExercises(sortedExercises);
     } catch (error) {
       console.error("Failed to fetch exercises for unassign:", error);
+      setError(`Failed to load exercises: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -52,20 +88,28 @@ function UnassignTab({ user }) {
     try {
       const res = await fetch(`${API_URL}/assignments/unassign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
         body: JSON.stringify({
           exerciseId,
           studentId: selectedStudent._id,
         }),
       });
+      
       if (res.ok) {
         // Refresh the exercises for the selected student
         fetchExercises(selectedStudent);
         // Also refresh the student list in case this was their last assignment
         fetchStudents();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Failed to unassign exercise: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Failed to unassign:", error);
+      alert('Error occurred while unassigning exercise.');
     }
   };
 
@@ -73,6 +117,7 @@ function UnassignTab({ user }) {
   const resetState = () => {
     setSelectedStudent(null);
     setExercises([]);
+    setError('');
   };
 
   // Expose reset function to parent component
@@ -82,9 +127,21 @@ function UnassignTab({ user }) {
 
   return (
     <div className="space-y-6">
+      {/* Show error message if any */}
+      {error && (
+        <div className="bg-red-600 text-white p-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="bg-slate-600 rounded-lg p-4">
         <h3 className="text-white text-lg font-semibold mb-3">Select a Student</h3>
-        {students.length === 0 ? (
+        
+        {studentsLoading ? (
+          <div className="flex justify-center py-4">
+            <PuffLoader color="#ffffff" size={25} speedMultiplier={1.2} />
+          </div>
+        ) : students.length === 0 ? (
           <p className="text-white text-base">No students with assignments found.</p>
         ) : (
           <select

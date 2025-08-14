@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { PuffLoader } from 'react-spinners';
+import useUserStore from '../store/userStore'; // Import the store
 
 function AssignTab({ user, selectedFolder }) {
+  const { getAuthHeader } = useUserStore(); // Get the auth header function
   const [exercises, setExercises] = useState([]);
   const [students, setStudents] = useState([]);
   const [selectedExerciseIds, setSelectedExerciseIds] = useState([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,7 +33,20 @@ function AssignTab({ user, selectedFolder }) {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch(`${API_URL}/users`);
+      setStudentsLoading(true);
+      setError('');
+      
+      const response = await fetch(`${API_URL}/users`, {
+        headers: {
+          ...getAuthHeader(), // Add authentication header
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch students: ${response.status} ${response.statusText}`);
+      }
+      
       const allUsers = await response.json();
       const sortedStudents = allUsers
         .filter((u) => u.role === 'student')
@@ -38,16 +55,34 @@ function AssignTab({ user, selectedFolder }) {
           const nameB = (b.fullName || 'Unnamed Student').toLowerCase();
           return nameA.localeCompare(nameB);
         });
+      
       setStudents(sortedStudents);
+      console.log('✅ Successfully fetched students in AssignTab:', sortedStudents.length);
+      
     } catch (error) {
       console.error('Failed to fetch students:', error);
+      setError(`Failed to load students: ${error.message}`);
+    } finally {
+      setStudentsLoading(false);
     }
   };
 
   const fetchExercisesForFolder = async (folderId) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/exercises/folder/${folderId}`);
+      setError('');
+      
+      const response = await fetch(`${API_URL}/exercises/folder/${folderId}`, {
+        headers: {
+          ...getAuthHeader(), // Add auth header for consistency
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch exercises: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
       const sortedExercises = data.sort((a, b) => {
         const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
@@ -57,6 +92,7 @@ function AssignTab({ user, selectedFolder }) {
       setExercises(sortedExercises);
     } catch (error) {
       console.error('Failed to fetch exercises:', error);
+      setError(`Failed to load exercises: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -78,11 +114,15 @@ function AssignTab({ user, selectedFolder }) {
     if (selectedExerciseIds.length === 0 || selectedStudentIds.length === 0) {
       return alert('Select both exercises and students.');
     }
+    
     setAssignmentLoading(true);
     try {
       const response = await fetch(`${API_URL}/assignments/assign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader() // Add auth header
+        },
         body: JSON.stringify({
           exerciseIds: selectedExerciseIds,
           studentIds: selectedStudentIds,
@@ -94,7 +134,8 @@ function AssignTab({ user, selectedFolder }) {
         setSelectedExerciseIds([]);
         setSelectedStudentIds([]);
       } else {
-        alert('Failed to assign exercises.');
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Failed to assign exercises: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Assignment failed:', error);
@@ -106,6 +147,13 @@ function AssignTab({ user, selectedFolder }) {
 
   return (
     <div className="space-y-6">
+      {/* Show error message if any */}
+      {error && (
+        <div className="bg-red-600 text-white p-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       {!selectedFolder ? (
         <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
           <p className="text-white text-lg">📁 Select a folder above to begin assigning exercises</p>
@@ -151,8 +199,20 @@ function AssignTab({ user, selectedFolder }) {
           </div>
 
           <div className="bg-slate-600 rounded-lg p-3">
-            <h3 className="text-white text-sm font-semibold mb-2">Select Students</h3>
-            {students.length === 0 ? (
+            <h3 className="text-white text-sm font-semibold mb-2">
+              Select Students
+              {!studentsLoading && students.length > 0 && (
+                <span className="text-orange-400 font-normal ml-1">
+                  ({students.length} available)
+                </span>
+              )}
+            </h3>
+            
+            {studentsLoading ? (
+              <div className="flex justify-center py-4">
+                <PuffLoader color="#ffffff" size={20} speedMultiplier={1.2} />
+              </div>
+            ) : students.length === 0 ? (
               <p className="text-white text-xs">No students found.</p>
             ) : (
               <div className="space-y-1 max-h-40 overflow-y-auto">
@@ -167,7 +227,10 @@ function AssignTab({ user, selectedFolder }) {
                       onChange={() => toggleStudent(st._id)}
                       className="mr-2 w-4 h-4"
                     />
-                    <span className="truncate">{st.fullName || 'Unnamed Student'}</span>
+                    <span className="truncate">
+                      {st.fullName || 'Unnamed Student'}
+                      <span className="text-xs text-gray-400 ml-1">({st.email})</span>
+                    </span>
                   </label>
                 ))}
               </div>
@@ -186,12 +249,14 @@ function AssignTab({ user, selectedFolder }) {
               disabled={
                 selectedExerciseIds.length === 0 ||
                 selectedStudentIds.length === 0 ||
-                assignmentLoading
+                assignmentLoading ||
+                studentsLoading
               }
               className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
                 selectedExerciseIds.length === 0 ||
                 selectedStudentIds.length === 0 ||
-                assignmentLoading
+                assignmentLoading ||
+                studentsLoading
                   ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                   : 'bg-orange-500 hover:bg-orange-600 text-white'
               }`}
@@ -200,6 +265,11 @@ function AssignTab({ user, selectedFolder }) {
                 <div className="flex items-center gap-2 justify-center">
                   <PuffLoader color="#ffffff" size={16} speedMultiplier={1.2} />
                   Assigning...
+                </div>
+              ) : studentsLoading ? (
+                <div className="flex items-center gap-2 justify-center">
+                  <PuffLoader color="#ffffff" size={16} speedMultiplier={1.2} />
+                  Loading...
                 </div>
               ) : (
                 `Assign ${selectedExerciseIds.length || 0} Exercise${
