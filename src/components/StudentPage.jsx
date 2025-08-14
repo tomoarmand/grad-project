@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import SettingsMenu from './SettingsMenu.jsx';
+import ConfirmDialog from './ConfirmDialog';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from "react-spinners";
 import MusicSymbolButton from './MusicSymbolButton';
@@ -18,6 +18,7 @@ function StudentPage() {
   const [isShaking, setIsShaking] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   const inputRef = useRef();
   const { user, logout } = useUserStore();
@@ -27,6 +28,10 @@ function StudentPage() {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const confirmSignOut = () => {
+    setShowSignOutDialog(true);
   };
 
   useEffect(() => {
@@ -153,11 +158,6 @@ function StudentPage() {
 
   return (
     <div className={`min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 ${isShaking ? 'animate-shake' : ''}`}>
-      {/* Settings Menu - positioned in top-right corner */}
-      <div className="fixed top-4 right-4 z-30">
-        <SettingsMenu user={user} onLogout={handleLogout} />
-      </div>
-
       <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
         <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
           Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
@@ -250,6 +250,27 @@ function StudentPage() {
           </>
         )}
       </div>
+
+      {/* Sign Out Link - positioned below the card */}
+      <div className="text-center mt-4">
+        <button
+          onClick={confirmSignOut}
+          className="text-sm text-white/70 hover:text-white underline transition-colors"
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <ConfirmDialog
+        isOpen={showSignOutDialog}
+        onClose={() => setShowSignOutDialog(false)}
+        onConfirm={handleLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You will need to log in again."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        type="danger"
+      />
 
       <style jsx>{`
         @keyframes shake {

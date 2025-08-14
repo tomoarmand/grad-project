@@ -4,7 +4,7 @@ import FolderManager from './FolderManager.jsx';
 import CreateTab from './CreateTab.jsx';
 import AssignTab from './AssignTab.jsx';
 import UnassignTab from './UnassignTab.jsx';
-import SettingsMenu from './SettingsMenu.jsx';
+import ConfirmDialog from './ConfirmDialog';
 import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
@@ -16,12 +16,17 @@ function TeacherPage() {
 
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [folders, setFolders] = useState([]);
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const confirmSignOut = () => {
+    setShowSignOutDialog(true);
   };
 
   useEffect(() => {
@@ -95,23 +100,16 @@ function TeacherPage() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-2 py-6 sm:px-4 sm:py-8 overflow-auto">
-      {/* Top Bar with Breadcrumbs and Settings Menu - Mobile optimized spacing */}
-      <div className="w-full max-w-md sm:max-w-4xl mb-4 flex items-start sm:items-center justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <NavLinks
-            links={[
-              { label: 'Home', to: '/' },
-              { label: 'Teacher Dashboard', to: '/TeacherPage' },
-              selectedFolder ? { label: selectedFolder.name, to: '#' } : null,
-            ].filter(Boolean)}
-            isBreadcrumb
-          />
-        </div>
-        
-        {/* Settings Menu - positioned top-right with mobile considerations */}
-        <div className="flex-shrink-0 self-start">
-          <SettingsMenu user={user} onLogout={handleLogout} />
-        </div>
+      {/* Top Bar with Breadcrumbs - Mobile optimized spacing */}
+      <div className="w-full max-w-md sm:max-w-4xl mb-4">
+        <NavLinks
+          links={[
+            { label: 'Home', to: '/' },
+            { label: 'Teacher Dashboard', to: '/TeacherPage' },
+            selectedFolder ? { label: selectedFolder.name, to: '#' } : null,
+          ].filter(Boolean)}
+          isBreadcrumb
+        />
       </div>
 
       <div className="w-full max-w-md sm:max-w-4xl bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-6">
@@ -197,7 +195,29 @@ function TeacherPage() {
         {activeTab === 'unassign' && (
           <UnassignTab user={user} />
         )}
+
       </div>
+
+      {/* Sign Out Link - positioned below the card */}
+      <div className="text-center mt-4">
+        <button
+          onClick={confirmSignOut}
+          className="text-sm text-white/70 hover:text-white underline transition-colors"
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <ConfirmDialog
+        isOpen={showSignOutDialog}
+        onClose={() => setShowSignOutDialog(false)}
+        onConfirm={handleLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You will need to log in again."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        type="danger"
+      />
 
     </div>
   );
