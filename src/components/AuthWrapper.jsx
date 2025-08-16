@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { PuffLoader } from 'react-spinners';
 import useUserStore from '../store/userStore';
 
 function AuthWrapper({ children }) {
@@ -110,7 +111,7 @@ function AuthWrapper({ children }) {
     return (
       <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+          <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
           <div className="text-white text-lg">Loading...</div>
         </div>
       </div>

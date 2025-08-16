@@ -6,7 +6,7 @@
 
 - Alerts for creation of new student and teacher profiles still genereic
 
-- Fix blurry logo on mobile
+
 
 - Unassign all feature
 
@@ -27,6 +27,7 @@
 
 - Edit home page (3 hours) **
 
+- Fix blurry logo on mobile [4 hours]
 
 - Hashing PINs, use b crypt.  Input validation front and back , prevent xss injections  [2 days]
 

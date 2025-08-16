@@ -69,21 +69,17 @@ app.use(hpp({
 // Compression middleware
 app.use(compression());
 
-// Body parser with size limits
-app.use(express.json({ 
-  limit: '10mb',
-  verify: (req, res, buf) => {
-    try {
-      JSON.parse(buf);
-    } catch (e) {
-      const error = new Error('Invalid JSON');
-      error.status = 400;
-      throw error;
-    }
-  }
-}));
-
+// Body parser with size limits - FIXED: Removed problematic verify function
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Optional: Add request logging for debugging (remove in production)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.path} - Content-Type: ${req.get('content-type') || 'none'}`);
+    next();
+  });
+}
 
 // Enhanced CORS configuration for all environments
 const allowedOrigins = [
@@ -174,13 +170,42 @@ app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
 app.use('/assignments', assignmentRoutes);
 
-// Global error handling middleware
+// Improved global error handling middleware
 app.use((error, req, res, next) => {
-  console.error('Global error:', error);
+  // Don't log routine client errors to reduce noise
+  const routineErrors = [
+    'entity.verify.failed',
+    'entity.parse.failed',
+    'request.aborted',
+    'request.size.invalid'
+  ];
+  
+  if (!routineErrors.includes(error.type)) {
+    console.error('🔥 Server error:', {
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      url: req.url,
+      method: req.method,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // Handle specific error types
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({
+      error: 'Request payload too large'
+    });
+  }
+  
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({
+      error: 'Invalid request format'
+    });
+  }
   
   if (process.env.NODE_ENV === 'production') {
     res.status(error.status || 500).json({
-      error: 'Something went wrong!'
+      error: error.status === 400 ? error.message : 'Something went wrong!'
     });
   } else {
     res.status(error.status || 500).json({
@@ -199,4 +224,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔒 Security middleware active`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
