@@ -45,7 +45,7 @@ const globalLimiter = rateLimit({
 // Rate limiting - Auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 auth attempts per windowMs
+  max: 20, // Increased from 10 to 20 for production use with shared IPs
   message: {
     error: 'Too many authentication attempts, please try again later.',
   },
