@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { PuffLoader } from 'react-spinners';
-import useUserStore from '../store/userStore'; // Import the store
+import useUserStore from '../store/userStore';
 
 function AssignTab({ user, selectedFolder }) {
-  const { getAuthHeader } = useUserStore(); // Get the auth header function
+  const { getAuthHeader } = useUserStore();
   const [exercises, setExercises] = useState([]);
   const [students, setStudents] = useState([]);
   const [selectedExerciseIds, setSelectedExerciseIds] = useState([]);
@@ -12,6 +12,7 @@ function AssignTab({ user, selectedFolder }) {
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState(null); // ✅ holds success/error messages
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,40 +28,33 @@ function AssignTab({ user, selectedFolder }) {
     } else {
       setExercises([]);
     }
-    // Reset selections when folder changes
     setSelectedExerciseIds([]);
   }, [selectedFolder]);
+
+  // ✅ auto-clear feedback after 3s
+  useEffect(() => {
+    if (feedback) {
+      const timer = setTimeout(() => setFeedback(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
 
   const fetchStudents = async () => {
     try {
       setStudentsLoading(true);
       setError('');
-      
       const response = await fetch(`${API_URL}/users`, {
-        headers: {
-          ...getAuthHeader(), // Add authentication header
-          'Content-Type': 'application/json'
-        }
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch students: ${response.status} ${response.statusText}`);
-      }
-      
+      if (!response.ok) throw new Error(`Failed: ${response.status}`);
       const allUsers = await response.json();
       const sortedStudents = allUsers
         .filter((u) => u.role === 'student')
-        .sort((a, b) => {
-          const nameA = (a.fullName || 'Unnamed Student').toLowerCase();
-          const nameB = (b.fullName || 'Unnamed Student').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-      
+        .sort((a, b) =>
+          (a.fullName || 'Unnamed').toLowerCase().localeCompare((b.fullName || 'Unnamed').toLowerCase())
+        );
       setStudents(sortedStudents);
-      console.log('✅ Successfully fetched students in AssignTab:', sortedStudents.length);
-      
     } catch (error) {
-      console.error('Failed to fetch students:', error);
       setError(`Failed to load students: ${error.message}`);
     } finally {
       setStudentsLoading(false);
@@ -71,88 +65,73 @@ function AssignTab({ user, selectedFolder }) {
     try {
       setLoading(true);
       setError('');
-      
       const response = await fetch(`${API_URL}/exercises/folder/${folderId}`, {
-        headers: {
-          ...getAuthHeader(), // Add auth header for consistency
-          'Content-Type': 'application/json'
-        }
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch exercises: ${response.status} ${response.statusText}`);
-      }
-      
+      if (!response.ok) throw new Error(`Failed: ${response.status}`);
       const data = await response.json();
-      const sortedExercises = data.sort((a, b) => {
-        const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
-        const nameB = (b.correctAnswer?.trim() || b.question?.trim() || 'Exercise name missing').toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-      setExercises(sortedExercises);
+      setExercises(
+        data.sort((a, b) =>
+          (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise')
+            .toLowerCase()
+            .localeCompare((b.correctAnswer?.trim() || b.question?.trim() || 'Exercise').toLowerCase())
+        )
+      );
     } catch (error) {
-      console.error('Failed to fetch exercises:', error);
       setError(`Failed to load exercises: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExercise = (id) => {
-    setSelectedExerciseIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleStudent = (id) => {
-    setSelectedStudentIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
+  const toggleExercise = (id) =>
+    setSelectedExerciseIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  const toggleStudent = (id) =>
+    setSelectedStudentIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
 
   const handleAssign = async () => {
     if (selectedExerciseIds.length === 0 || selectedStudentIds.length === 0) {
-      return alert('Select both exercises and students.');
+      return setFeedback({ type: 'error', msg: 'Select both exercises and students.' });
     }
-    
     setAssignmentLoading(true);
     try {
       const response = await fetch(`${API_URL}/assignments/assign`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...getAuthHeader() // Add auth header
-        },
-        body: JSON.stringify({
-          exerciseIds: selectedExerciseIds,
-          studentIds: selectedStudentIds,
-        }),
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ exerciseIds: selectedExerciseIds, studentIds: selectedStudentIds }),
       });
 
       if (response.ok) {
-        alert('Exercises assigned successfully!');
+        setFeedback({ type: 'success', msg: '✅ Exercises assigned successfully!' });
         setSelectedExerciseIds([]);
         setSelectedStudentIds([]);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert(`Failed to assign exercises: ${errorData.error || 'Unknown error'}`);
+        setFeedback({ type: 'error', msg: errorData.error || 'Failed to assign exercises' });
       }
-    } catch (error) {
-      console.error('Assignment failed:', error);
-      alert('Error occurred during assignment.');
+    } catch {
+      setFeedback({ type: 'error', msg: 'Error occurred during assignment.' });
     } finally {
       setAssignmentLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Show error message if any */}
-      {error && (
-        <div className="bg-red-600 text-white p-3 rounded-lg text-sm">
-          {error}
+    <div className="space-y-6 relative">
+      {/* ✅ floating feedback bar */}
+      {feedback && (
+        <div
+          className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all duration-500 ${
+            feedback.type === 'success'
+              ? 'bg-green-500 text-white'
+              : 'bg-red-500 text-white'
+          }`}
+        >
+          {feedback.msg}
         </div>
       )}
+
+      {error && <div className="bg-red-600 text-white p-3 rounded-lg text-sm">{error}</div>}
 
       {!selectedFolder ? (
         <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
@@ -160,13 +139,14 @@ function AssignTab({ user, selectedFolder }) {
         </div>
       ) : (
         <>
+          {/* Exercises */}
           <div className="bg-slate-600 rounded-lg p-3">
             <h3 className="text-white text-sm font-semibold mb-2">
               Select Exercises from &quot;{selectedFolder.name}&quot;
             </h3>
             {loading ? (
               <div className="flex justify-center py-4">
-                <PuffLoader color="#ffffff" size={25} speedMultiplier={1.2} />
+                <PuffLoader color="#ffffff" size={25} />
               </div>
             ) : exercises.length === 0 ? (
               <p className="text-white text-xs">No exercises found in this folder.</p>
@@ -184,7 +164,7 @@ function AssignTab({ user, selectedFolder }) {
                       className="mr-2 w-4 h-4"
                     />
                     <span className="truncate">
-                      {ex.correctAnswer?.trim() || ex.question?.trim() || 'Exercise name missing'}
+                      {ex.correctAnswer?.trim() || ex.question?.trim() || 'Exercise'}
                     </span>
                   </label>
                 ))}
@@ -198,19 +178,17 @@ function AssignTab({ user, selectedFolder }) {
             )}
           </div>
 
+          {/* Students */}
           <div className="bg-slate-600 rounded-lg p-3">
             <h3 className="text-white text-sm font-semibold mb-2">
-              Select Students
+              Select Students{' '}
               {!studentsLoading && students.length > 0 && (
-                <span className="text-orange-400 font-normal ml-1">
-                  ({students.length} available)
-                </span>
+                <span className="text-orange-400 font-normal ml-1">({students.length} available)</span>
               )}
             </h3>
-            
             {studentsLoading ? (
               <div className="flex justify-center py-4">
-                <PuffLoader color="#ffffff" size={20} speedMultiplier={1.2} />
+                <PuffLoader color="#ffffff" size={20} />
               </div>
             ) : students.length === 0 ? (
               <p className="text-white text-xs">No students found.</p>
@@ -243,6 +221,7 @@ function AssignTab({ user, selectedFolder }) {
             )}
           </div>
 
+          {/* Assign button */}
           <div className="flex justify-center">
             <button
               onClick={handleAssign}
@@ -263,13 +242,8 @@ function AssignTab({ user, selectedFolder }) {
             >
               {assignmentLoading ? (
                 <div className="flex items-center gap-2 justify-center">
-                  <PuffLoader color="#ffffff" size={16} speedMultiplier={1.2} />
+                  <PuffLoader color="#ffffff" size={16} />
                   Assigning...
-                </div>
-              ) : studentsLoading ? (
-                <div className="flex items-center gap-2 justify-center">
-                  <PuffLoader color="#ffffff" size={16} speedMultiplier={1.2} />
-                  Loading...
                 </div>
               ) : (
                 `Assign ${selectedExerciseIds.length || 0} Exercise${
