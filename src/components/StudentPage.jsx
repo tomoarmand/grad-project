@@ -168,6 +168,14 @@ function StudentPage() {
             <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
             <p className="mt-4">Loading exercises...</p>
           </div>
+        ) : exercises.length === 0 ? (
+          <div className="flex flex-col items-center justify-center text-center text-white gap-4">
+            <p className="text-lg sm:text-xl font-medium">No exercises yet 🎶</p>
+            <p className="text-sm opacity-80">
+              Your teacher hasn’t assigned you anything yet.<br />
+              Check back soon!
+            </p>
+          </div>
         ) : (
           <>
             {showCorrect && (
