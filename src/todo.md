@@ -1,7 +1,5 @@
 ## To Do 
 
-- assigned successfully message etc.
-
 - Error message display issue
 
 - Alerts for creation of new student and teacher profiles still genereic
@@ -23,12 +21,15 @@
 
 - Download PWA link on home page 
 
+----------------------------------------------------
 
 - Add feature for students to record 
 
 - Walkthroughs for new users **
 
 - Edit home page (3 hours) **
+
+----------------------------------------------------
 
 - Fix blurry logo on mobile [4 hours]
 
