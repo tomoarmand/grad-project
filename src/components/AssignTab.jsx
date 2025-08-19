@@ -102,7 +102,9 @@ function AssignTab({ user, selectedFolder }) {
       });
 
       if (response.ok) {
-        setFeedback({ type: 'success', msg: '✅ Exercises assigned successfully!' });
+        // ✅ Fixed grammar - properly handles singular/plural
+        const exerciseText = selectedExerciseIds.length === 1 ? 'Exercise' : 'Exercises';
+        setFeedback({ type: 'success', msg: `✅ ${exerciseText} assigned successfully!` });
         setSelectedExerciseIds([]);
         setSelectedStudentIds([]);
       } else {
@@ -118,16 +120,24 @@ function AssignTab({ user, selectedFolder }) {
 
   return (
     <div className="space-y-6 relative">
-      {/* ✅ floating feedback bar */}
+      {/* ✅ Mobile-optimized feedback bar */}
       {feedback && (
         <div
-          className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all duration-500 ${
+          className={`fixed top-4 left-4 right-4 mx-auto max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-500 z-50 ${
             feedback.type === 'success'
               ? 'bg-green-500 text-white'
               : 'bg-red-500 text-white'
           }`}
         >
-          {feedback.msg}
+          <div className="flex items-center justify-between">
+            <span>{feedback.msg}</span>
+            <button 
+              onClick={() => setFeedback(null)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
