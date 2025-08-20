@@ -1,5 +1,7 @@
 ## To Do 
 
+- Fix app logo
+
 - Error message display issue
 
 - Remember me option 
