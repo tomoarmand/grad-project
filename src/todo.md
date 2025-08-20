@@ -2,12 +2,7 @@
 
 - Error message display issue
 
-- Alerts for creation of new student and teacher profiles still genereic
-
 - Remember me option 
-
-- Weird display of student list in assign exercises in desktop view
-
 
 - Unassign all feature
 
