@@ -10,6 +10,20 @@ import LoginPage from './components/LoginPage.jsx';
 import AssignmentPage from './components/AssignmentPage.jsx';
 import TeacherExercisesManager from './components/TeacherExercisesManager.jsx';
 
+// Register the service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        console.log('✅ Service worker registered:', reg.scope);
+      })
+      .catch((err) => {
+        console.error('❌ Service worker registration failed:', err);
+      });
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
