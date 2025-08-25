@@ -1,5 +1,7 @@
 ## To Do 
 
+- Fix tip text and banner showing frequency
+
 - Fix app logo
 
 - Error message display issue
@@ -16,8 +18,6 @@
 
 - Foldermanager rename feature overflow issue
 
-- Download PWA link on home page 
-
 ----------------------------------------------------
 
 - Add feature for students to record 
@@ -27,6 +27,8 @@
 - Edit home page (3 hours) **
 
 ----------------------------------------------------
+
+- Download PWA link on home page [1 day]
 
 - Fix blurry logo on mobile [4 hours]
 

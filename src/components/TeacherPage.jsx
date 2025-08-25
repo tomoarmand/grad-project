@@ -50,6 +50,17 @@ function TeacherPage() {
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     );
     setFolders(sorted);
+    
+    // Update selectedFolder if it exists and has been modified
+    if (selectedFolder) {
+      const updatedSelectedFolder = sorted.find(folder => folder._id === selectedFolder._id);
+      if (updatedSelectedFolder) {
+        setSelectedFolder(updatedSelectedFolder);
+      } else {
+        // If the folder was deleted, clear the selection
+        setSelectedFolder(null);
+      }
+    }
   };
 
   const handleFolderSelect = (folder) => {
