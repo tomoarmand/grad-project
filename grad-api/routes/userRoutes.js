@@ -3,6 +3,11 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import dotenv from 'dotenv';
+import { 
+  validateUserCreation, 
+  validateUserLogin,
+  validateObjectIdParam 
+} from '../middleware/validation.js';
 
 dotenv.config();
 
@@ -16,6 +21,9 @@ let hashInitialized = false;
 const initializePinHash = async () => {
   if (!hashInitialized) {
     try {
+      if (!TEACHER_PIN) {
+        throw new Error('TEACHER_PIN environment variable is not set');
+      }
       TEACHER_PIN_HASH = await bcrypt.hash(TEACHER_PIN, 12);
       hashInitialized = true;
       console.log('✅ Teacher PIN configured successfully');
@@ -26,6 +34,7 @@ const initializePinHash = async () => {
   }
 };
 
+// Initialize PIN hash on startup
 initializePinHash().catch(console.error);
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.API_SECRET || 'fallback-secret-key';
@@ -52,6 +61,7 @@ const generateToken = (user) => {
   );
 };
 
+// Enhanced authentication middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -63,40 +73,30 @@ const authenticateToken = (req, res, next) => {
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       console.log('🔍 Token verification failed:', err.message);
-      if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({ error: 'Token expired' });
-      } else if (err.name === 'JsonWebTokenError') {
-        return res.status(401).json({ error: 'Invalid token' });
-      } else {
-        return res.status(403).json({ error: 'Token verification failed' });
-      }
+      
+      const errorResponses = {
+        'TokenExpiredError': { status: 401, error: 'Token expired' },
+        'JsonWebTokenError': { status: 401, error: 'Invalid token' },
+        'NotBeforeError': { status: 401, error: 'Token not active' }
+      };
+      
+      const response = errorResponses[err.name] || { status: 403, error: 'Token verification failed' };
+      return res.status(response.status).json({ error: response.error });
     }
+    
     req.user = user;
     next();
   });
 };
 
-const sanitizeInput = (input) => {
-  if (typeof input !== 'string') return '';
-  return input.trim()
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+=/gi, '');
-};
-
-const validateEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) && email.length <= 100;
-const validateFullName = (name) => /^[a-zA-Z\s\-']{2,50}$/.test(name);
-const validateAccessCode = (code) => /^[a-zA-Z0-9]{4,10}$/.test(code);
-
-// Get all users (protected route)
+// Get all users (protected route - teacher only)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'teacher') {
       return res.status(403).json({ error: 'Access denied. Teacher role required.' });
     }
     
-    const users = await User.find().select('-__v');
+    const users = await User.find().select('-__v').sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
     console.error('GET /users error:', error);
@@ -104,58 +104,49 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Create user
-router.post('/', async (req, res) => {
+// Create user - using validation middleware
+router.post('/', validateUserCreation, async (req, res) => {
   try {
+    // Ensure PIN hash is initialized
     if (!hashInitialized) {
       await initializePinHash();
     }
 
     const { fullName, email, role = 'student', accessCode } = req.body;
 
-    const sanitizedFullName = sanitizeInput(fullName);
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedRole = role === 'teacher' ? 'teacher' : 'student';
-    const sanitizedAccessCode = accessCode ? sanitizeInput(accessCode) : '';
-
-    if (!validateFullName(sanitizedFullName)) {
-      return res.status(400).json({ error: 'Invalid full name' });
-    }
-    if (!validateEmail(sanitizedEmail)) {
-      return res.status(400).json({ error: 'Invalid email address' });
-    }
-
-    if (sanitizedRole === 'teacher') {
-      if (!sanitizedAccessCode) {
+    // Teacher role requires access code verification
+    if (role === 'teacher') {
+      if (!accessCode) {
         return res.status(400).json({ error: 'Teacher access code is required' });
-      }
-      if (!validateAccessCode(sanitizedAccessCode)) {
-        return res.status(400).json({ error: 'Invalid teacher access code format' });
       }
       
       if (!TEACHER_PIN_HASH) {
         return res.status(500).json({ error: 'Server configuration error' });
       }
       
-      const isValidCode = await verifyAccessCode(sanitizedAccessCode, TEACHER_PIN_HASH);
+      const isValidCode = await verifyAccessCode(accessCode, TEACHER_PIN_HASH);
       if (!isValidCode) {
         return res.status(400).json({ error: 'Incorrect teacher access code' });
       }
     }
 
-    const existingUser = await User.findOne({ email: sanitizedEmail.toLowerCase() });
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
+    // Create new user
     const user = await User.create({
-      fullName: sanitizedFullName,
-      email: sanitizedEmail.toLowerCase(),
-      role: sanitizedRole
+      fullName,
+      email: email.toLowerCase(),
+      role
     });
 
+    // Generate token
     const token = generateToken(user);
 
+    // Return user data with token
     res.status(201).json({
       _id: user._id,
       fullName: user.fullName,
@@ -163,56 +154,58 @@ router.post('/', async (req, res) => {
       role: user.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      token: token
+      token
     });
 
   } catch (error) {
     console.error('POST /users error:', error);
+    
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ error: 'Validation error', details: messages });
+    }
+    
     res.status(500).json({ error: 'Server error while creating user' });
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+// Login - using validation middleware  
+router.post('/login', validateUserLogin, async (req, res) => {
   try {
+    // Ensure PIN hash is initialized
     if (!hashInitialized) {
       await initializePinHash();
     }
 
     const { email, accessCode } = req.body;
 
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedAccessCode = accessCode ? sanitizeInput(accessCode) : '';
-
-    if (!validateEmail(sanitizedEmail)) {
-      return res.status(400).json({ error: 'Invalid email address' });
-    }
-
-    const user = await User.findOne({ email: sanitizedEmail.toLowerCase() });
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Teacher login requires access code verification
     if (user.role === 'teacher') {
-      if (!sanitizedAccessCode) {
+      if (!accessCode) {
         return res.status(401).json({ error: 'Teacher access code is required' });
-      }
-      if (!validateAccessCode(sanitizedAccessCode)) {
-        return res.status(401).json({ error: 'Invalid teacher access code format' });
       }
       
       if (!TEACHER_PIN_HASH) {
         return res.status(500).json({ error: 'Server configuration error' });
       }
       
-      const isValidCode = await verifyAccessCode(sanitizedAccessCode, TEACHER_PIN_HASH);
+      const isValidCode = await verifyAccessCode(accessCode, TEACHER_PIN_HASH);
       if (!isValidCode) {
         return res.status(401).json({ error: 'Incorrect teacher access code' });
       }
     }
 
+    // Generate token
     const token = generateToken(user);
 
+    // Return user data with token
     res.json({
       _id: user._id,
       fullName: user.fullName,
@@ -220,7 +213,7 @@ router.post('/login', async (req, res) => {
       role: user.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      token: token
+      token
     });
 
   } catch (error) {
@@ -229,7 +222,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Enhanced Token validation endpoint with better error handling and logging
+// Enhanced token verification endpoint
 router.post('/verify-token', (req, res) => {
   console.log('🔍 Backend: verify-token endpoint called');
   console.log('🔍 Backend: Headers received:', req.headers.authorization ? 'Token present' : 'No token');
@@ -245,13 +238,15 @@ router.post('/verify-token', (req, res) => {
   jwt.verify(token, JWT_SECRET, async (err, decodedUser) => {
     if (err) {
       console.log('🔍 Backend: Token verification failed:', err.message);
-      if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({ error: 'Token expired' });
-      } else if (err.name === 'JsonWebTokenError') {
-        return res.status(401).json({ error: 'Invalid token' });
-      } else {
-        return res.status(401).json({ error: 'Token verification failed' });
-      }
+      
+      const errorResponses = {
+        'TokenExpiredError': { status: 401, error: 'Token expired' },
+        'JsonWebTokenError': { status: 401, error: 'Invalid token' },
+        'NotBeforeError': { status: 401, error: 'Token not active' }
+      };
+      
+      const response = errorResponses[err.name] || { status: 401, error: 'Token verification failed' };
+      return res.status(response.status).json({ error: response.error });
     }
 
     try {
@@ -280,8 +275,9 @@ router.post('/verify-token', (req, res) => {
 });
 
 // Get single user (protected route)
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {
   try {
+    // Users can only view their own profile, teachers can view any profile
     if (req.user.role !== 'teacher' && req.user.userId !== req.params.id) {
       return res.status(403).json({ error: 'Access denied. You can only view your own profile.' });
     }
@@ -290,9 +286,66 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+    
     res.json(user);
   } catch (error) {
     console.error('GET /users/:id error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update user (protected route)
+router.put('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {
+  try {
+    // Users can only update their own profile, teachers can update any profile
+    if (req.user.role !== 'teacher' && req.user.userId !== req.params.id) {
+      return res.status(403).json({ error: 'Access denied. You can only update your own profile.' });
+    }
+
+    const { fullName } = req.body;
+    
+    if (!fullName || fullName.trim().length < 2) {
+      return res.status(400).json({ error: 'Full name is required and must be at least 2 characters' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { fullName: fullName.trim() },
+      { new: true, runValidators: true }
+    ).select('-__v');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('PUT /users/:id error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ error: 'Validation error', details: messages });
+    }
+    
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete user (protected route - teacher only)
+router.delete('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher') {
+      return res.status(403).json({ error: 'Access denied. Teacher role required.' });
+    }
+
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully', deletedUser: user._id });
+  } catch (error) {
+    console.error('DELETE /users/:id error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -29,8 +29,9 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Added for dev tools
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:", "wss:"], // Added wss for websockets
     },
   },
 }));
@@ -74,7 +75,7 @@ const assignmentLimiter = createRateLimiter({
   message: { error: 'Too many assignment operations, please try again later.', retryAfter: 15 * 60 },
 });
 
-// Data sanitization
+// Data sanitization and parsing
 app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp({ whitelist: ['studentIds', 'exerciseIds'] }));
@@ -82,7 +83,7 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging
+// Development logging
 if (isDevelopment) {
   app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
@@ -90,21 +91,26 @@ if (isDevelopment) {
   });
 }
 
-// CORS
+// CORS - Fixed to handle trailing slashes and ensure proper origin matching
 const allowedOrigins = [
   'https://kentone.vercel.app',
   'http://localhost:5173',
   'http://localhost:4173',
   'http://localhost:3000',
   process.env.FRONTEND_URL
-].filter(Boolean);
+].filter(Boolean).map(origin => origin.replace(/\/$/, '')); // Remove trailing slashes
 
 console.log('CORS allowed origins:', allowedOrigins);
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    
+    // Normalize origin by removing trailing slash
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    
+    if (allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
@@ -116,7 +122,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// MongoDB connection
+// MongoDB connection with better error handling
 const uri = process.env.MONGO_KEY;
 
 if (!uri) {
@@ -124,7 +130,6 @@ if (!uri) {
   process.exit(1);
 }
 
-// Disable mongoose buffering explicitly
 mongoose.set('bufferCommands', false);
 
 mongoose.connect(uri, {
@@ -138,9 +143,11 @@ mongoose.connect(uri, {
 mongoose.connection.on('connected', () => {
   console.log('✅ Database connected successfully');
 });
+
 mongoose.connection.on('error', (err) => {
   console.error('❌ Database connection error:', err);
 });
+
 mongoose.connection.on('disconnected', () => {
   console.log('📡 Database disconnected');
 });
@@ -156,20 +163,35 @@ const gracefulShutdown = async (signal) => {
   }
   process.exit(0);
 };
+
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// Health check
+// Health check endpoints
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'API is running', timestamp: new Date().toISOString(), uptime: process.uptime(), environment: process.env.NODE_ENV || 'development' });
+  res.json({ 
+    status: 'ok', 
+    message: 'API is running', 
+    timestamp: new Date().toISOString(), 
+    uptime: process.uptime(), 
+    environment: process.env.NODE_ENV || 'development' 
+  });
 });
 
 app.get('/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  res.json({ status: 'ok', database: dbStatus, uptime: process.uptime(), timestamp: new Date().toISOString(), memory: process.memoryUsage(), version: process.version, environment: process.env.NODE_ENV || 'development' });
+  res.json({ 
+    status: 'ok', 
+    database: dbStatus, 
+    uptime: process.uptime(), 
+    timestamp: new Date().toISOString(), 
+    memory: process.memoryUsage(), 
+    version: process.version, 
+    environment: process.env.NODE_ENV || 'development' 
+  });
 });
 
-// Rate limiters
+// Apply rate limiters to specific routes
 app.use('/users/login', authLimiter);
 app.use('/users', authLimiter);
 app.use('/exercises', dataLimiter);
@@ -182,32 +204,46 @@ app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
 app.use('/assignments', assignmentRoutes);
 
-// Error handler
+// Enhanced error handler
 app.use((error, req, res, next) => {
+  // Don't log client errors (4xx) as server errors
   if (!(error.status < 500)) {
     console.error('🔥 Server error:', error.message);
   }
 
+  // Handle specific error types
   if (error.type === 'entity.too.large') {
     return res.status(413).json({ error: 'Request payload too large' });
   }
+  
   if (error.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'Invalid request format' });
   }
+  
   if (error.status === 429) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.', retryAfter: error.retryAfter || 900 });
+    return res.status(429).json({ 
+      error: 'Too many requests. Please try again later.', 
+      retryAfter: error.retryAfter || 900 
+    });
   }
+  
   if (error.name === 'MongooseError' || error.name === 'MongoError') {
     return res.status(503).json({ error: 'Database temporarily unavailable' });
   }
 
+  // CORS errors
+  if (error.message?.includes('CORS')) {
+    return res.status(403).json({ error: 'Cross-origin request blocked' });
+  }
+
+  // Generic error response
   res.status(error.status || 500).json({
     error: isProduction ? (error.status === 400 ? error.message : 'Something went wrong!') : error.message,
     stack: isDevelopment ? error.stack : undefined,
   });
 });
 
-// 404
+// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found', path: req.originalUrl });
 });
@@ -225,4 +261,5 @@ const server = app.listen(PORT, () => {
 server.on('error', (error) => {
   console.error('Server error:', error);
 });
+
 server.timeout = 60000;

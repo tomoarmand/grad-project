@@ -7,200 +7,262 @@ const useUserStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
-      
-      setUser: (userData) => {
-        set({ 
-          user: userData, 
-          isAuthenticated: !!userData 
-        });
-      },
-      
-      setToken: (tokenValue) => {
-        set({ token: tokenValue });
-        if (tokenValue) {
-          localStorage.setItem('authToken', tokenValue);
+      loading: false,
+      error: null,
+
+      // Action to set user data
+      setUser: (userData) => set({ 
+        user: userData, 
+        isAuthenticated: !!userData,
+        error: null 
+      }),
+
+      // Action to set authentication token
+      setToken: (token) => {
+        set({ token, error: null });
+        if (token) {
+          localStorage.setItem('authToken', token);
         } else {
           localStorage.removeItem('authToken');
         }
       },
-      
+
+      // Action to clear all user data (logout)
       clearUser: () => {
         set({ 
           user: null, 
           token: null, 
-          isAuthenticated: false 
+          isAuthenticated: false, 
+          loading: false, 
+          error: null 
         });
         localStorage.removeItem('authToken');
       },
-      
-      // Initialize token from localStorage on app start
+
+      // Initialize authentication from localStorage
       initializeAuth: () => {
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken) {
-          set({ token: storedToken });
-          return storedToken;
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          set({ token });
         }
-        return null;
+        return token || null;
       },
-      
+
       // Get authorization header for API calls
       getAuthHeader: () => {
         const { token } = get();
         return token ? { Authorization: `Bearer ${token}` } : {};
       },
-      
-      // Check if user has specific role
-      hasRole: (role) => {
-        const { user } = get();
-        return user?.role === role;
-      },
-      
-      // Check if user is teacher
-      isTeacher: () => {
-        const { user } = get();
-        return user?.role === 'teacher';
-      },
-      
-      // Check if user is student
-      isStudent: () => {
-        const { user } = get();
-        return user?.role === 'student';
-      },
-      
-      // Verify token with backend - enhanced with better error handling
+
+      // Role checking utilities
+      hasRole: (role) => get().user?.role === role,
+      isTeacher: () => get().user?.role === 'teacher',
+      isStudent: () => get().user?.role === 'student',
+
+      // Set loading state
+      setLoading: (loading) => set({ loading }),
+
+      // Set error state
+      setError: (error) => set({ error }),
+
+      // Clear error state
+      clearError: () => set({ error: null }),
+
+      // Verify token with backend
       verifyToken: async () => {
-        const { token } = get();
+        const { token, setLoading, clearUser } = get();
+        
         if (!token) {
-          console.log('No token found for verification');
           return false;
         }
+
+        setLoading(true);
         
         try {
           const API_URL = import.meta.env.VITE_API_URL;
-          console.log('🔍 verifyToken: API_URL is:', API_URL);
-          
-          if (!API_URL) {
-            console.error('API_URL not configured');
-            return null; // Return null for configuration errors
-          }
-
-          const url = `${API_URL}/users/verify-token`;
-          console.log('🔍 verifyToken: Attempting to fetch:', url);
-
-          const response = await fetch(url, {
+          const response = await fetch(`${API_URL}/users/verify-token`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
-            }
+            },
           });
-          
-          console.log('🔍 verifyToken: Response status:', response.status);
-          console.log('🔍 verifyToken: Response ok:', response.ok);
-          
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('🔍 verifyToken: Received user data:', userData);
-            
-            // Verify we got valid user data
-            if (userData && userData._id && userData.role) {
-              set({ 
-                user: userData, 
-                isAuthenticated: true 
-              });
-              console.log('Token verified successfully for user:', userData.email);
-              return true;
-            } else {
-              console.error('Invalid user data received from token verification');
-              get().clearUser();
-              return false;
-            }
-          } else if (response.status === 401 || response.status === 403) {
-            // Explicit authentication failure
-            const errorData = await response.json().catch(() => ({}));
-            console.log('Token verification failed (unauthorized):', errorData.error || 'Token invalid');
-            get().clearUser();
+
+          if (!response.ok) {
+            // Token is invalid or expired
+            clearUser();
             return false;
+          }
+
+          const userData = await response.json();
+          
+          // Validate that we got proper user data
+          if (userData?._id && userData?.role) {
+            set({ 
+              user: userData, 
+              isAuthenticated: true, 
+              loading: false, 
+              error: null 
+            });
+            return true;
           } else {
-            // Server error (500, etc) - don't clear user
-            console.log('Server error during token verification:', response.status);
-            return null;
+            clearUser();
+            return false;
           }
         } catch (error) {
-          console.error('🔍 verifyToken: Detailed error:', error);
-          console.error('🔍 verifyToken: Error name:', error.name);
-          console.error('🔍 verifyToken: Error message:', error.message);
-          // Network error - don't clear user, return null to indicate network issue
-          return null;
+          console.error('Token verification error:', error);
+          set({ loading: false, error: 'Network error during authentication' });
+          return false;
         }
       },
 
-      // Login helper - combines login API call with state management
+      // Login function
       login: async (loginData) => {
+        const { setLoading, setError, setToken, setUser } = get();
+        
+        setLoading(true);
+        setError(null);
+
         try {
           const API_URL = import.meta.env.VITE_API_URL;
-          
           const response = await fetch(`${API_URL}/users/login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(loginData),
           });
 
-          if (response.ok) {
-            const userData = await response.json();
+          const data = await response.json();
 
-            if (userData && userData.token && userData._id && userData.role) {
-              // Set token first
-              get().setToken(userData.token);
-              
-              // Create clean user object (without token)
-              const cleanUser = {
-                _id: userData._id,
-                fullName: userData.fullName,
-                email: userData.email,
-                role: userData.role,
-                createdAt: userData.createdAt,
-                updatedAt: userData.updatedAt
-              };
-
-              // Set user data
-              get().setUser(cleanUser);
-              
-              return { success: true, user: cleanUser };
-            } else {
-              return { success: false, error: 'Invalid response from server' };
-            }
-          } else {
-            const errorResponse = await response.json();
-            return { 
-              success: false, 
-              error: errorResponse.error || 'Login failed' 
-            };
+          if (!response.ok) {
+            setLoading(false);
+            setError(data.error || 'Login failed');
+            return { success: false, error: data.error || 'Login failed' };
           }
+
+          // Login successful
+          setToken(data.token);
+          setUser({
+            _id: data._id,
+            fullName: data.fullName,
+            email: data.email,
+            role: data.role,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt
+          });
+          setLoading(false);
+
+          return { success: true, user: data };
         } catch (error) {
           console.error('Login error:', error);
-          return { 
-            success: false, 
-            error: 'Network error. Please check your connection and try again.' 
-          };
+          setLoading(false);
+          setError('Network error during login');
+          return { success: false, error: 'Network error during login' };
         }
       },
 
-      // Logout helper
+      // Register function
+      register: async (registerData) => {
+        const { setLoading, setError, setToken, setUser } = get();
+        
+        setLoading(true);
+        setError(null);
+
+        try {
+          const API_URL = import.meta.env.VITE_API_URL;
+          const response = await fetch(`${API_URL}/users`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(registerData),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            setLoading(false);
+            setError(data.error || 'Registration failed');
+            return { success: false, error: data.error || 'Registration failed' };
+          }
+
+          // Registration successful - automatically log in
+          setToken(data.token);
+          setUser({
+            _id: data._id,
+            fullName: data.fullName,
+            email: data.email,
+            role: data.role,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt
+          });
+          setLoading(false);
+
+          return { success: true, user: data };
+        } catch (error) {
+          console.error('Registration error:', error);
+          setLoading(false);
+          setError('Network error during registration');
+          return { success: false, error: 'Network error during registration' };
+        }
+      },
+
+      // Logout function
       logout: () => {
         get().clearUser();
-        console.log('User logged out successfully');
-      }
+      },
+
+      // Update user profile
+      updateProfile: async (profileData) => {
+        const { token, user, setLoading, setError, setUser } = get();
+        
+        if (!token || !user) {
+          return { success: false, error: 'Not authenticated' };
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+          const API_URL = import.meta.env.VITE_API_URL;
+          const response = await fetch(`${API_URL}/users/${user._id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(profileData),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            setLoading(false);
+            setError(data.error || 'Profile update failed');
+            return { success: false, error: data.error || 'Profile update failed' };
+          }
+
+          // Update successful
+          setUser(data);
+          setLoading(false);
+
+          return { success: true, user: data };
+        } catch (error) {
+          console.error('Profile update error:', error);
+          setLoading(false);
+          setError('Network error during profile update');
+          return { success: false, error: 'Network error during profile update' };
+        }
+      },
     }),
     {
       name: 'user-storage',
-      // Only persist user data and authentication status, not the token
-      partialize: (state) => ({ 
-        user: state.user, 
-        isAuthenticated: state.isAuthenticated 
+      // Only persist user data and auth state, not temporary states like loading/error
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )
