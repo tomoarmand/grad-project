@@ -18,6 +18,20 @@ dotenv.config();
 
 const app = express();
 
+// Rate limiting key generator that works with or without authentication
+const getRateLimitKey = (req) => {
+  // If user is authenticated, use their ID
+  if (req.user && req.user.userId) {
+    return req.user.userId;
+  }
+  // If user is authenticated via existing middleware, use their ID
+  if (req.user && req.user._id) {
+    return req.user._id;
+  }
+  // Fall back to IP address
+  return req.ip;
+};
+
 // Security middleware
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
@@ -31,28 +45,59 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting - Global
+// Rate limiting - Global (much more generous for production)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // Increased from 100 to 1000 for production use
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Use safe key generator that works with existing authentication
+  keyGenerator: getRateLimitKey,
+  // Skip rate limiting for health checks
+  skip: (req) => req.path === '/health' || req.path === '/',
 });
 
-// Rate limiting - Auth endpoints
+// Rate limiting - Auth endpoints (more generous)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Increased from 10 to 20 for production use with shared IPs
+  max: 100, // Increased from 20 to 100 for production use
   message: {
     error: 'Too many authentication attempts, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Use safe key generator that works with existing authentication
+  keyGenerator: getRateLimitKey,
 });
 
+// Rate limiting - Exercise/Folder endpoints (separate, more generous)
+const dataLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 800, // 800 requests per 15 minutes for data operations
+  message: {
+    error: 'Too many data requests, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getRateLimitKey,
+});
+
+// Rate limiting - Assignment endpoints (separate)
+const assignmentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // 300 requests per 15 minutes for assignments
+  message: {
+    error: 'Too many assignment operations, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getRateLimitKey,
+});
+
+// Apply global rate limiter only
 app.use(globalLimiter);
 
 // Data sanitization against NoSQL injection
@@ -164,8 +209,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes with security middleware
-app.use('/users', authLimiter, userRoutes);
+// Routes without rate limiting (rate limiters will be applied within routes)
+app.use('/users', userRoutes);
 app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
 app.use('/assignments', assignmentRoutes);
