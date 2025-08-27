@@ -18,21 +18,11 @@ dotenv.config();
 
 const app = express();
 
-// Rate limiting key generator that works with or without authentication
-const getRateLimitKey = (req) => {
-  // If user is authenticated, use their ID
-  if (req.user && req.user.userId) {
-    return req.user.userId;
-  }
-  // If user is authenticated via existing middleware, use their ID
-  if (req.user && req.user._id) {
-    return req.user._id;
-  }
-  // Fall back to IP address
-  return req.ip;
-};
+// Environment check
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Security middleware
+// Enhanced security middleware
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
@@ -45,112 +35,79 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting - Global (much more generous for production)
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased from 100 to 1000 for production use
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Use safe key generator that works with existing authentication
-  keyGenerator: getRateLimitKey,
-  // Skip rate limiting for health checks
-  skip: (req) => req.path === '/health' || req.path === '/',
+// Environment-aware rate limiter factory
+const createRateLimiter = (options) => {
+  if (isDevelopment) {
+    return (req, res, next) => {
+      console.log(`[DEV] Rate limiter bypassed for ${req.method} ${req.path}`);
+      next();
+    };
+  }
+
+  return rateLimit({
+    ...options,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip,
+    onLimitReached: (req, res) => {
+      console.warn(`Rate limit reached for IP ${req.ip} on ${req.method} ${req.path}`);
+    },
+  });
+};
+
+// Specific rate limiters
+const authLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: isProduction ? 100 : 200,
+  message: { error: 'Too many authentication attempts, please try again later.', retryAfter: 15 * 60 },
 });
 
-// Rate limiting - Auth endpoints (more generous)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Increased from 20 to 100 for production use
-  message: {
-    error: 'Too many authentication attempts, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Use safe key generator that works with existing authentication
-  keyGenerator: getRateLimitKey,
+const dataLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: isProduction ? 3000 : 5000,
+  message: { error: 'Too many requests, please try again later.', retryAfter: 15 * 60 },
 });
 
-// Rate limiting - Exercise/Folder endpoints (separate, more generous)
-const dataLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 800, // 800 requests per 15 minutes for data operations
-  message: {
-    error: 'Too many data requests, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: getRateLimitKey,
+const assignmentLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: isProduction ? 500 : 1000,
+  message: { error: 'Too many assignment operations, please try again later.', retryAfter: 15 * 60 },
 });
 
-// Rate limiting - Assignment endpoints (separate)
-const assignmentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // 300 requests per 15 minutes for assignments
-  message: {
-    error: 'Too many assignment operations, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: getRateLimitKey,
-});
-
-// Apply global rate limiter only
-app.use(globalLimiter);
-
-// Data sanitization against NoSQL injection
+// Data sanitization
 app.use(mongoSanitize());
-
-// Data sanitization against XSS
 app.use(xss());
-
-// Prevent parameter pollution
-app.use(hpp({
-  whitelist: ['studentIds', 'exerciseIds']
-}));
-
-// Compression middleware
+app.use(hpp({ whitelist: ['studentIds', 'exerciseIds'] }));
 app.use(compression());
-
-// Body parser with size limits - FIXED: Removed problematic verify function
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Optional: Add request logging for debugging (remove in production)
-if (process.env.NODE_ENV === 'development') {
+// Logging
+if (isDevelopment) {
   app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.path} - Content-Type: ${req.get('content-type') || 'none'}`);
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
     next();
   });
 }
 
-// Enhanced CORS configuration for all environments
+// CORS
 const allowedOrigins = [
-  // Production
   'https://kentone.vercel.app',
-  
-  // Development
-  'http://localhost:5173',  // Vite dev server
-  'http://localhost:4173',  // Vite preview server
-  'http://localhost:3000',  // Alternative dev port
-  
-  // Add your production backend URL if different
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://localhost:3000',
   process.env.FRONTEND_URL
-].filter(Boolean); // Remove any undefined values
+].filter(Boolean);
 
-console.log('🔒 CORS allowed origins:', allowedOrigins);
+console.log('CORS allowed origins:', allowedOrigins);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('❌ CORS blocked origin:', origin);
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -159,115 +116,113 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Connect to MongoDB
+// MongoDB connection
 const uri = process.env.MONGO_KEY;
 
+if (!uri) {
+  console.error('MONGO_KEY environment variable is not set');
+  process.exit(1);
+}
+
+// Disable mongoose buffering explicitly
+mongoose.set('bufferCommands', false);
+
 mongoose.connect(uri, {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  maxPoolSize: isProduction ? 25 : 10,
+  serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
+  maxIdleTimeMS: 30000,
+  family: 4
 });
 
 mongoose.connection.on('connected', () => {
   console.log('✅ Database connected successfully');
 });
-
 mongoose.connection.on('error', (err) => {
   console.error('❌ Database connection error:', err);
 });
-
 mongoose.connection.on('disconnected', () => {
   console.log('📡 Database disconnected');
 });
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  console.log('Database connection closed through app termination');
+const gracefulShutdown = async (signal) => {
+  console.log(`Received ${signal}. Shutting down gracefully...`);
+  try {
+    await mongoose.connection.close();
+    console.log('Database connection closed.');
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+  }
   process.exit(0);
-});
+};
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// Health check endpoints
+// Health check
 app.get('/', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'API is running',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+  res.json({ status: 'ok', message: 'API is running', timestamp: new Date().toISOString(), uptime: process.uptime(), environment: process.env.NODE_ENV || 'development' });
 });
 
 app.get('/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  res.json({
-    status: 'ok',
-    database: dbStatus,
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    memory: process.memoryUsage(),
-    version: process.version
-  });
+  res.json({ status: 'ok', database: dbStatus, uptime: process.uptime(), timestamp: new Date().toISOString(), memory: process.memoryUsage(), version: process.version, environment: process.env.NODE_ENV || 'development' });
 });
 
-// Routes without rate limiting (rate limiters will be applied within routes)
+// Rate limiters
+app.use('/users/login', authLimiter);
+app.use('/users', authLimiter);
+app.use('/exercises', dataLimiter);
+app.use('/folders', dataLimiter);
+app.use('/assignments', assignmentLimiter);
+
+// Routes
 app.use('/users', userRoutes);
 app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
 app.use('/assignments', assignmentRoutes);
 
-// Improved global error handling middleware
+// Error handler
 app.use((error, req, res, next) => {
-  // Don't log routine client errors to reduce noise
-  const routineErrors = [
-    'entity.verify.failed',
-    'entity.parse.failed',
-    'request.aborted',
-    'request.size.invalid'
-  ];
-  
-  if (!routineErrors.includes(error.type)) {
-    console.error('🔥 Server error:', {
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      url: req.url,
-      method: req.method,
-      timestamp: new Date().toISOString()
-    });
+  if (!(error.status < 500)) {
+    console.error('🔥 Server error:', error.message);
   }
-  
-  // Handle specific error types
+
   if (error.type === 'entity.too.large') {
-    return res.status(413).json({
-      error: 'Request payload too large'
-    });
+    return res.status(413).json({ error: 'Request payload too large' });
   }
-  
   if (error.type === 'entity.parse.failed') {
-    return res.status(400).json({
-      error: 'Invalid request format'
-    });
+    return res.status(400).json({ error: 'Invalid request format' });
   }
-  
-  if (process.env.NODE_ENV === 'production') {
-    res.status(error.status || 500).json({
-      error: error.status === 400 ? error.message : 'Something went wrong!'
-    });
-  } else {
-    res.status(error.status || 500).json({
-      error: error.message,
-      stack: error.stack
-    });
+  if (error.status === 429) {
+    return res.status(429).json({ error: 'Too many requests. Please try again later.', retryAfter: error.retryAfter || 900 });
   }
+  if (error.name === 'MongooseError' || error.name === 'MongoError') {
+    return res.status(503).json({ error: 'Database temporarily unavailable' });
+  }
+
+  res.status(error.status || 500).json({
+    error: isProduction ? (error.status === 400 ? error.message : 'Something went wrong!') : error.message,
+    stack: isDevelopment ? error.stack : undefined,
+  });
 });
 
-// Handle 404 routes
+// 404
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: 'Route not found', path: req.originalUrl });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔒 Security middleware active`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📊 Rate limiting: ${!isDevelopment ? 'ACTIVE' : 'DISABLED (development mode)'}`);
 });
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+});
+server.timeout = 60000;
