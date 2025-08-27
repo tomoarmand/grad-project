@@ -18,21 +18,11 @@ dotenv.config();
 
 const app = express();
 
-// Rate limiting key generator that works with or without authentication
-const getRateLimitKey = (req) => {
-  // If user is authenticated, use their ID
-  if (req.user && req.user.userId) {
-    return req.user.userId;
-  }
-  // If user is authenticated via existing middleware, use their ID
-  if (req.user && req.user._id) {
-    return req.user._id;
-  }
-  // Fall back to IP address
-  return req.ip;
-};
+// Environment check
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Security middleware
+// Enhanced security middleware
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
@@ -45,60 +35,60 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting - Global (much more generous for production)
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased from 100 to 1000 for production use
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Use safe key generator that works with existing authentication
-  keyGenerator: getRateLimitKey,
-  // Skip rate limiting for health checks
-  skip: (req) => req.path === '/health' || req.path === '/',
-});
+// Environment-aware rate limiter factory
+const createRateLimiter = (options) => {
+  // Skip rate limiting in development
+  if (isDevelopment) {
+    return (req, res, next) => {
+      console.log(`[DEV] Rate limiter bypassed for ${req.method} ${req.path}`);
+      next();
+    };
+  }
+  
+  return rateLimit({
+    ...options,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      // Use IP address for all rate limiting
+      return req.ip;
+    },
+    // Enhanced logging for production debugging
+    onLimitReached: (req, res) => {
+      console.warn(`Rate limit reached for IP ${req.ip} on ${req.method} ${req.path}`);
+    },
+  });
+};
 
-// Rate limiting - Auth endpoints (more generous)
-const authLimiter = rateLimit({
+// Specific rate limiters with more reasonable limits
+const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Increased from 20 to 100 for production use
+  max: isProduction ? 100 : 200, // More generous limits
   message: {
     error: 'Too many authentication attempts, please try again later.',
+    retryAfter: 15 * 60, // seconds
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Use safe key generator that works with existing authentication
-  keyGenerator: getRateLimitKey,
 });
 
-// Rate limiting - Exercise/Folder endpoints (separate, more generous)
-const dataLimiter = rateLimit({
+const dataLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 800, // 800 requests per 15 minutes for data operations
+  max: isProduction ? 3000 : 5000, // Very generous for data operations
   message: {
-    error: 'Too many data requests, please try again later.',
+    error: 'Too many requests, please try again later.',
+    retryAfter: 15 * 60,
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: getRateLimitKey,
 });
 
-// Rate limiting - Assignment endpoints (separate)
-const assignmentLimiter = rateLimit({
+const assignmentLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // 300 requests per 15 minutes for assignments
+  max: isProduction ? 500 : 1000, // Generous for assignment operations
   message: {
     error: 'Too many assignment operations, please try again later.',
+    retryAfter: 15 * 60,
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: getRateLimitKey,
 });
 
-// Apply global rate limiter only
-app.use(globalLimiter);
+// Remove global rate limiter - apply selectively instead
 
 // Data sanitization against NoSQL injection
 app.use(mongoSanitize());
@@ -114,19 +104,27 @@ app.use(hpp({
 // Compression middleware
 app.use(compression());
 
-// Body parser with size limits - FIXED: Removed problematic verify function
+// Body parser with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Optional: Add request logging for debugging (remove in production)
-if (process.env.NODE_ENV === 'development') {
+// Request logging for debugging (environment-aware)
+if (isDevelopment) {
   app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.path} - Content-Type: ${req.get('content-type') || 'none'}`);
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip} - User-Agent: ${req.get('User-Agent')?.substring(0, 50)}...`);
+    next();
+  });
+} else if (isProduction) {
+  // Minimal logging for production
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/users') || req.path.includes('error')) {
+      console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
+    }
     next();
   });
 }
 
-// Enhanced CORS configuration for all environments
+// Enhanced CORS configuration
 const allowedOrigins = [
   // Production
   'https://kentone.vercel.app',
@@ -138,9 +136,9 @@ const allowedOrigins = [
   
   // Add your production backend URL if different
   process.env.FRONTEND_URL
-].filter(Boolean); // Remove any undefined values
+].filter(Boolean);
 
-console.log('🔒 CORS allowed origins:', allowedOrigins);
+console.log('CORS allowed origins:', allowedOrigins);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -150,7 +148,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('❌ CORS blocked origin:', origin);
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -159,33 +157,53 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Connect to MongoDB
+// Enhanced MongoDB connection with better error handling
 const uri = process.env.MONGO_KEY;
 
+if (!uri) {
+  console.error('MONGO_KEY environment variable is not set');
+  process.exit(1);
+}
+
 mongoose.connect(uri, {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  maxPoolSize: isProduction ? 25 : 10, // Increased pool size for production
+  serverSelectionTimeoutMS: 10000, // Increased timeout
   socketTimeoutMS: 45000,
+  bufferMaxEntries: 0, // Disable mongoose buffering
+  bufferCommands: false, // Disable mongoose buffering
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  family: 4 // Use IPv4, skip trying IPv6
 });
 
 mongoose.connection.on('connected', () => {
-  console.log('✅ Database connected successfully');
+  console.log('Database connected successfully');
+  console.log('Connection state:', mongoose.connection.readyState);
 });
 
 mongoose.connection.on('error', (err) => {
-  console.error('❌ Database connection error:', err);
+  console.error('Database connection error:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.log('📡 Database disconnected');
+  console.log('Database disconnected');
 });
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  console.log('Database connection closed through app termination');
+// Enhanced graceful shutdown
+const gracefulShutdown = async (signal) => {
+  console.log(`Received ${signal}. Shutting down gracefully...`);
+  
+  try {
+    await mongoose.connection.close();
+    console.log('Database connection closed.');
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+  }
+  
   process.exit(0);
-});
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // Health check endpoints
 app.get('/', (req, res) => {
@@ -193,7 +211,8 @@ app.get('/', (req, res) => {
     status: 'ok', 
     message: 'API is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -205,17 +224,36 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     memory: process.memoryUsage(),
-    version: process.version
+    version: process.version,
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Routes without rate limiting (rate limiters will be applied within routes)
+// Rate limit status endpoint for debugging
+app.get('/rate-limit-status', (req, res) => {
+  res.json({
+    ip: req.ip,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    rateLimitingActive: !isDevelopment,
+    message: 'Rate limit status check'
+  });
+});
+
+// Apply rate limiters to specific routes
+app.use('/users/login', authLimiter);
+app.use('/users', authLimiter); // For registration and other auth operations
+app.use('/exercises', dataLimiter);
+app.use('/folders', dataLimiter);
+app.use('/assignments', assignmentLimiter);
+
+// Routes
 app.use('/users', userRoutes);
 app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
 app.use('/assignments', assignmentRoutes);
 
-// Improved global error handling middleware
+// Enhanced error handling middleware
 app.use((error, req, res, next) => {
   // Don't log routine client errors to reduce noise
   const routineErrors = [
@@ -225,12 +263,15 @@ app.use((error, req, res, next) => {
     'request.size.invalid'
   ];
   
-  if (!routineErrors.includes(error.type)) {
-    console.error('🔥 Server error:', {
+  const isRoutineError = routineErrors.includes(error.type) || error.status < 500;
+  
+  if (!isRoutineError) {
+    console.error('Server error:', {
       message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      stack: isDevelopment ? error.stack : undefined,
       url: req.url,
       method: req.method,
+      ip: req.ip,
       timestamp: new Date().toISOString()
     });
   }
@@ -248,7 +289,23 @@ app.use((error, req, res, next) => {
     });
   }
   
-  if (process.env.NODE_ENV === 'production') {
+  // Rate limit errors
+  if (error.status === 429) {
+    return res.status(429).json({
+      error: 'Too many requests. Please try again later.',
+      retryAfter: error.retryAfter || 900 // 15 minutes default
+    });
+  }
+  
+  // MongoDB connection errors
+  if (error.name === 'MongooseError' || error.name === 'MongoError') {
+    console.error('Database error:', error.message);
+    return res.status(503).json({
+      error: 'Database temporarily unavailable'
+    });
+  }
+  
+  if (isProduction) {
     res.status(error.status || 500).json({
       error: error.status === 400 ? error.message : 'Something went wrong!'
     });
@@ -262,12 +319,24 @@ app.use((error, req, res, next) => {
 
 // Handle 404 routes
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.originalUrl
+  });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔒 Security middleware active`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Security middleware active`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Rate limiting: ${!isDevelopment ? 'ACTIVE' : 'DISABLED (development mode)'}`);
 });
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+});
+
+// Set server timeout for long-running requests
+server.timeout = 60000; // 60 seconds
