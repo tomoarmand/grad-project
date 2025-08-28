@@ -96,6 +96,7 @@ function HomePage() {
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
+      console.log('beforeinstallprompt event fired'); // Debug log
       setDeferredPrompt(e);
       // Don't show banner if app was ever installed or currently installed
       if (!checkInstallStatus() && !shouldHideBanner) {
@@ -108,6 +109,7 @@ function HomePage() {
     };
 
     const handleAppInstalled = () => {
+      console.log('App installed event fired'); // Debug log
       // Mark app as permanently installed
       localStorage.setItem('kenToneAppInstalled', 'true');
       localStorage.setItem('kenToneInstallBannerShown', 'true');
@@ -125,8 +127,18 @@ function HomePage() {
       }
     };
 
+    // Remove any existing listeners first
+    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.removeEventListener('appinstalled', handleAppInstalled);
+    
+    // Add the event listeners
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Check if there's already a deferred prompt available (for browsers that fire the event before this component mounts)
+    if ('BeforeInstallPromptEvent' in window || deferredPrompt) {
+      console.log('Checking for existing install prompt capability');
+    }
 
     // Only show banner if not installed and hasn't been shown and app wasn't previously installed
     const timer = setTimeout(() => {
@@ -164,7 +176,7 @@ function HomePage() {
       standaloneMediaQuery.removeListener(handleDisplayModeChange);
       clearTimeout(timer);
     };
-  }, []);
+  }, []); // Keep empty dependency array but ensure proper cleanup
 
   const handleCreateUserClick = () => {
     try {
@@ -178,6 +190,8 @@ function HomePage() {
   };
 
   const handleInstallClick = async () => {
+    console.log('Install clicked. deferredPrompt:', !!deferredPrompt, 'isIOS:', isIOS, 'isDesktop:', isDesktop); // Debug log
+    
     if (isIOS) {
       if (isSafari) {
         setShowIOSModal(true);
@@ -188,11 +202,13 @@ function HomePage() {
       return;
     }
 
-    // For desktop, try to use deferredPrompt first, only show modal as fallback
+    // For desktop and mobile, try to use deferredPrompt first
     if (deferredPrompt) {
       try {
+        console.log('Using deferredPrompt.prompt()'); // Debug log
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
+        console.log('User choice outcome:', outcome); // Debug log
 
         if (outcome === 'accepted') {
           // Mark as installed and hide banner
@@ -202,20 +218,25 @@ function HomePage() {
         }
         setDeferredPrompt(null);
       } catch (error) {
-        if (isDesktop) setShowDesktopModal(true);
+        console.error('Error with deferredPrompt:', error); // Debug log
+        if (isDesktop) {
+          setShowDesktopModal(true);
+        }
         setShowInstallBanner(false);
       }
       return;
     }
 
-    // Only show desktop modal if no deferredPrompt is available
+    // Fallback: show appropriate modal/instructions
     if (isDesktop) {
+      console.log('No deferredPrompt available, showing desktop modal'); // Debug log
       setShowDesktopModal(true);
       setShowInstallBanner(false);
       return;
     }
 
-    // For mobile without deferredPrompt, show install banner was dismissed
+    // For mobile without deferredPrompt, hide banner
+    console.log('No deferredPrompt available for mobile, hiding banner'); // Debug log
     setShowInstallBanner(false);
   };
 
@@ -468,10 +489,9 @@ function HomePage() {
           </button>
         </div>
 
-        {/* Enhanced tip with platform-specific text - Choose between subtle or ghost button */}
+        {/* Enhanced tip with platform-specific text */}
         {shouldShowTip && (
           <div className="mt-6">
-            {/* Option 1: Subtle button (less prominent) */}
             <button 
               onClick={handleInstallClick}
               className="group inline-flex items-center gap-1.5 text-orange-400 hover:text-orange-300 transition-all duration-200 text-xs font-medium px-2 py-1 rounded border border-orange-400/20 hover:border-orange-300/30 hover:bg-orange-400/5 focus:outline-none focus:ring-1 focus:ring-orange-300/40"
@@ -479,17 +499,6 @@ function HomePage() {
               <Download size={12} className="group-hover:animate-bounce" />
               <span>{getTipText()}</span>
             </button>
-
-            {/* Option 2: Ghost button (transparent background, text-like) */}
-            {/* 
-            <button 
-              onClick={handleInstallClick}
-              className="group inline-flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors duration-200 text-sm underline decoration-orange-400/50 underline-offset-2 hover:decoration-orange-300/70 focus:outline-none focus:ring-2 focus:ring-orange-300/50 focus:ring-offset-2 focus:ring-offset-slate-700"
-            >
-              <Download size={14} className="group-hover:animate-bounce" />
-              <span>{getTipText()}</span>
-            </button>
-            */}
             
             <p className="text-gray-500 text-xs mt-2">for the best experience</p>
           </div>
