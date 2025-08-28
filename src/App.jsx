@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Download, Smartphone, Monitor, X, Share, Plus } from 'lucide-react';
+import { Download, Smartphone, Monitor, X } from 'lucide-react';
 import './App.css';
 import logo from './assets/logo.svg';
 import useUserStore from './store/userStore';
@@ -18,8 +18,6 @@ function HomePage() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [showInstalledMessage, setShowInstalledMessage] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [isSafari, setIsSafari] = useState(false);
-  const [showNonSafariIOSModal, setShowNonSafariIOSModal] = useState(false);
   const [browserSupport, setBrowserSupport] = useState({
     isChrome: false,
     isEdge: false,
@@ -36,23 +34,16 @@ function HomePage() {
     const isChrome = userAgent.includes('Chrome') && !userAgent.includes('Edg') && !userAgent.includes('OPR');
     const isEdge = userAgent.includes('Edg');
     const isFirefox = userAgent.includes('Firefox');
-    
-    // Better Safari detection for iOS
-    const isSafariBrowser = iOS && userAgent.includes('Safari') && 
-                          !userAgent.includes('CriOS') && 
-                          !userAgent.includes('FxiOS') && 
-                          !userAgent.includes('EdgiOS') &&
-                          !userAgent.includes('Chrome');
+    const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
 
     setIsIOS(iOS);
     setIsDesktop(desktop);
-    setIsSafari(isSafariBrowser);
 
     setBrowserSupport({
       isChrome,
       isEdge,
       isFirefox,
-      isSafari: isSafariBrowser,
+      isSafari,
       supportsInstall: isChrome || isEdge || (!desktop && !iOS),
     });
 
@@ -96,7 +87,6 @@ function HomePage() {
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
-      console.log('beforeinstallprompt event fired'); // Debug log
       setDeferredPrompt(e);
       // Don't show banner if app was ever installed or currently installed
       if (!checkInstallStatus() && !shouldHideBanner) {
@@ -109,7 +99,6 @@ function HomePage() {
     };
 
     const handleAppInstalled = () => {
-      console.log('App installed event fired'); // Debug log
       // Mark app as permanently installed
       localStorage.setItem('kenToneAppInstalled', 'true');
       localStorage.setItem('kenToneInstallBannerShown', 'true');
@@ -127,18 +116,8 @@ function HomePage() {
       }
     };
 
-    // Remove any existing listeners first
-    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.removeEventListener('appinstalled', handleAppInstalled);
-    
-    // Add the event listeners
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Check if there's already a deferred prompt available (for browsers that fire the event before this component mounts)
-    if ('BeforeInstallPromptEvent' in window || deferredPrompt) {
-      console.log('Checking for existing install prompt capability');
-    }
 
     // Only show banner if not installed and hasn't been shown and app wasn't previously installed
     const timer = setTimeout(() => {
@@ -176,7 +155,7 @@ function HomePage() {
       standaloneMediaQuery.removeListener(handleDisplayModeChange);
       clearTimeout(timer);
     };
-  }, []); // Keep empty dependency array but ensure proper cleanup
+  }, []);
 
   const handleCreateUserClick = () => {
     try {
@@ -190,54 +169,39 @@ function HomePage() {
   };
 
   const handleInstallClick = async () => {
-    console.log('Install clicked. deferredPrompt:', !!deferredPrompt, 'isIOS:', isIOS, 'isDesktop:', isDesktop); // Debug log
-    
     if (isIOS) {
-      if (isSafari) {
-        setShowIOSModal(true);
-      } else {
-        setShowNonSafariIOSModal(true);
-      }
+      setShowIOSModal(true);
       setShowInstallBanner(false);
       return;
     }
 
-    // For desktop and mobile, try to use deferredPrompt first
-    if (deferredPrompt) {
-      try {
-        console.log('Using deferredPrompt.prompt()'); // Debug log
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log('User choice outcome:', outcome); // Debug log
-
-        if (outcome === 'accepted') {
-          // Mark as installed and hide banner
-          localStorage.setItem('kenToneAppInstalled', 'true');
-          setShowInstallBanner(false);
-          setHasShownBanner(true);
-        }
-        setDeferredPrompt(null);
-      } catch (error) {
-        console.error('Error with deferredPrompt:', error); // Debug log
-        if (isDesktop) {
-          setShowDesktopModal(true);
-        }
-        setShowInstallBanner(false);
-      }
-      return;
-    }
-
-    // Fallback: show appropriate modal/instructions
-    if (isDesktop) {
-      console.log('No deferredPrompt available, showing desktop modal'); // Debug log
+    if (isDesktop && !deferredPrompt && !browserSupport.supportsInstall) {
       setShowDesktopModal(true);
       setShowInstallBanner(false);
       return;
     }
 
-    // For mobile without deferredPrompt, hide banner
-    console.log('No deferredPrompt available for mobile, hiding banner'); // Debug log
-    setShowInstallBanner(false);
+    if (!deferredPrompt) {
+      if (isDesktop) setShowDesktopModal(true);
+      setShowInstallBanner(false);
+      return;
+    }
+
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
+      if (outcome === 'accepted') {
+        // Mark as installed and hide banner
+        localStorage.setItem('kenToneAppInstalled', 'true');
+        setShowInstallBanner(false);
+        setHasShownBanner(true);
+      }
+      setDeferredPrompt(null);
+    } catch (error) {
+      if (isDesktop) setShowDesktopModal(true);
+      setShowInstallBanner(false);
+    }
   };
 
   const handleDismissInstalledMessage = () => {
@@ -246,19 +210,6 @@ function HomePage() {
 
   // Check if we should show the tip (not installed AND app was never installed)
   const shouldShowTip = !isInstalled && !localStorage.getItem('kenToneAppInstalled');
-
-  // Generate platform-specific tip text
-  const getTipText = () => {
-    if (isIOS && isSafari) {
-      return 'Tap here to add KenTone to your home screen';
-    } else if (isIOS && !isSafari) {
-      return 'Tap here to get install instructions';
-    } else if (isDesktop) {
-      return 'Click here to install KenTone on your desktop';
-    } else {
-      return 'Tap here to install KenTone';
-    }
-  };
 
   const DesktopInstallModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -275,23 +226,7 @@ function HomePage() {
             <X size={20} />
           </button>
         </div>
-        <div className="text-gray-300 text-sm space-y-3">
-          <p>To install KenTone as a desktop app:</p>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-orange-400 font-semibold">1.</span>
-              <span>Look for the install icon in your browser's address bar</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-orange-400 font-semibold">2.</span>
-              <span>Click it and select "Install"</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-orange-400 font-semibold">3.</span>
-              <span>Or use your browser's menu and look for "Install KenTone"</span>
-            </div>
-          </div>
-        </div>
+        {/* ...desktop modal content... */}
       </div>
     </div>
   );
@@ -300,7 +235,7 @@ function HomePage() {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white text-lg font-semibold">Add to Home Screen</h3>
+          <h3 className="text-white text-lg font-semibold">Install KenTone</h3>
           <button
             onClick={() => setShowIOSModal(false)}
             className="text-gray-400 hover:text-white transition-colors"
@@ -309,83 +244,7 @@ function HomePage() {
             <X size={20} />
           </button>
         </div>
-        <div className="text-gray-300 text-sm space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">1.</span>
-              <div className="flex items-center gap-2">
-                <span>Tap the</span>
-                <div className="inline-flex items-center gap-1 bg-blue-600 px-2 py-1 rounded text-xs">
-                  <Share size={12} />
-                  <span>Share</span>
-                </div>
-                <span>button at the bottom</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">2.</span>
-              <div className="flex items-center gap-2">
-                <span>Scroll down and tap</span>
-                <div className="inline-flex items-center gap-1 bg-gray-600 px-2 py-1 rounded text-xs">
-                  <Plus size={12} />
-                  <span>Add to Home Screen</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">3.</span>
-              <span>Tap "Add" to confirm</span>
-            </div>
-          </div>
-          <div className="bg-blue-900 bg-opacity-30 border border-blue-400 rounded-lg p-3 mt-4">
-            <p className="text-blue-300 text-xs">
-              💡 After adding to home screen, KenTone will open like a native app!
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const NonSafariIOSModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white text-lg font-semibold">Switch to Safari</h3>
-          <button
-            onClick={() => setShowNonSafariIOSModal(false)}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="Close modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="text-gray-300 text-sm space-y-4">
-          <p>To install KenTone on your iPhone, you'll need to use Safari:</p>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">1.</span>
-              <span>Copy this page's URL</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">2.</span>
-              <span>Open Safari browser</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">3.</span>
-              <span>Paste the URL and visit KenTone</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-orange-400 font-semibold mt-0.5">4.</span>
-              <span>You'll then see the option to "Add to Home Screen"</span>
-            </div>
-          </div>
-          <div className="bg-yellow-900 bg-opacity-30 border border-yellow-400 rounded-lg p-3 mt-4">
-            <p className="text-yellow-300 text-xs">
-              ⚠️ iPhone apps can only be installed through Safari, not other browsers.
-            </p>
-          </div>
-        </div>
+        {/* ...iOS modal content... */}
       </div>
     </div>
   );
@@ -439,7 +298,6 @@ function HomePage() {
       )}
 
       {showIOSModal && <IOSInstallModal />}
-      {showNonSafariIOSModal && <NonSafariIOSModal />}
       {showDesktopModal && <DesktopInstallModal />}
 
       {/* Main card */}
@@ -489,19 +347,14 @@ function HomePage() {
           </button>
         </div>
 
-        {/* Enhanced tip with platform-specific text */}
+        {/* Tip only shows if app was never installed */}
         {shouldShowTip && (
-          <div className="mt-6">
-            <button 
-              onClick={handleInstallClick}
-              className="group inline-flex items-center gap-1.5 text-orange-400 hover:text-orange-300 transition-all duration-200 text-xs font-medium px-2 py-1 rounded border border-orange-400/20 hover:border-orange-300/30 hover:bg-orange-400/5 focus:outline-none focus:ring-1 focus:ring-orange-300/40"
-            >
-              <Download size={12} className="group-hover:animate-bounce" />
-              <span>{getTipText()}</span>
-            </button>
-            
-            <p className="text-gray-500 text-xs mt-2">for the best experience</p>
-          </div>
+          <p
+            className="text-gray-400 text-xs mt-4 cursor-pointer hover:underline"
+            onClick={handleInstallClick}
+          >
+            💡 Tip: Add KenTone to your {isDesktop ? 'desktop' : 'home screen'} for the best experience
+          </p>
         )}
       </div>
 
