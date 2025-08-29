@@ -18,6 +18,7 @@ function HomePage() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [showInstalledMessage, setShowInstalledMessage] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [browserSupport, setBrowserSupport] = useState({
     isChrome: false,
     isEdge: false,
@@ -29,6 +30,7 @@ function HomePage() {
   useEffect(() => {
     const userAgent = navigator.userAgent;
     const iOS = /iPad|iPhone|iPod/.test(userAgent);
+    const android = /Android/.test(userAgent);
     const desktop = window.innerWidth > 1024;
 
     const isChrome = userAgent.includes('Chrome') && !userAgent.includes('Edg') && !userAgent.includes('OPR');
@@ -37,6 +39,7 @@ function HomePage() {
     const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
 
     setIsIOS(iOS);
+    setIsAndroid(android);
     setIsDesktop(desktop);
 
     setBrowserSupport({
@@ -155,7 +158,7 @@ function HomePage() {
       standaloneMediaQuery.removeListener(handleDisplayModeChange);
       clearTimeout(timer);
     };
-  }, []);
+  }, []); // Keep empty dependency array to avoid re-running
 
   const handleCreateUserClick = () => {
     try {
@@ -183,6 +186,7 @@ function HomePage() {
 
     if (!deferredPrompt) {
       if (isDesktop) setShowDesktopModal(true);
+      else if (isIOS) setShowIOSModal(true);
       setShowInstallBanner(false);
       return;
     }
@@ -200,6 +204,7 @@ function HomePage() {
       setDeferredPrompt(null);
     } catch (error) {
       if (isDesktop) setShowDesktopModal(true);
+      else if (isIOS) setShowIOSModal(true);
       setShowInstallBanner(false);
     }
   };
@@ -210,6 +215,29 @@ function HomePage() {
 
   // Check if we should show the tip (not installed AND app was never installed)
   const shouldShowTip = !isInstalled && !localStorage.getItem('kenToneAppInstalled');
+
+  // Get device-specific tip text
+  const getTipText = () => {
+    if (isIOS) {
+      return (
+        <>
+          💡 Tip: <span className="underline">Add KenTone to your home screen</span> for the best experience
+        </>
+      );
+    } else if (isAndroid) {
+      return (
+        <>
+          💡 Tip: <span className="underline">Add KenTone to your home screen</span> for the best experience
+        </>
+      );
+    } else {
+      return (
+        <>
+          💡 Tip: <span className="underline">Add KenTone to your desktop</span> for the best experience
+        </>
+      );
+    }
+  };
 
   const DesktopInstallModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -226,7 +254,16 @@ function HomePage() {
             <X size={20} />
           </button>
         </div>
-        {/* ...desktop modal content... */}
+        <div className="text-gray-300 text-sm space-y-3">
+          <p>To install KenTone as a desktop app:</p>
+          <div className="space-y-2">
+            <p><strong>Chrome/Edge:</strong></p>
+            <ul className="list-disc list-inside ml-4 space-y-1">
+              <li>Click the install icon in the address bar</li>
+              <li>Or go to Settings → More tools → Create shortcut</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -235,7 +272,7 @@ function HomePage() {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white text-lg font-semibold">Install KenTone</h3>
+          <h3 className="text-white text-lg font-semibold">Add to Home Screen</h3>
           <button
             onClick={() => setShowIOSModal(false)}
             className="text-gray-400 hover:text-white transition-colors"
@@ -244,7 +281,23 @@ function HomePage() {
             <X size={20} />
           </button>
         </div>
-        {/* ...iOS modal content... */}
+        <div className="text-gray-300 text-sm space-y-3">
+          <p>To add KenTone to your home screen:</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">1.</span>
+              <span>Tap the Share button <strong>⬆️</strong> at the bottom</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">2.</span>
+              <span>Scroll down and tap <strong>"Add to Home Screen"</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">3.</span>
+              <span>Tap <strong>"Add"</strong> to confirm</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -353,7 +406,7 @@ function HomePage() {
             className="text-gray-400 text-xs mt-4 cursor-pointer hover:underline"
             onClick={handleInstallClick}
           >
-            💡 Tip: Add KenTone to your {isDesktop ? 'desktop' : 'home screen'} for the best experience
+            {getTipText()}
           </p>
         )}
       </div>
