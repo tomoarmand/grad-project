@@ -94,6 +94,7 @@ function HomePage() {
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
+      console.log('New beforeinstallprompt event received');
       setDeferredPrompt(e);
       // Don't show banner if app was ever installed or currently installed
       if (!checkInstallStatus() && !shouldHideBanner) {
@@ -194,9 +195,13 @@ function HomePage() {
           setShowInstallBanner(false);
           setHasShownBanner(true);
         }
-        // Don't set deferredPrompt to null if user dismissed - keep it for future attempts
-        // setDeferredPrompt(null);
+        // Always clear the prompt after use (whether accepted or dismissed)
+        // The browser will provide a new one if conditions are met
+        setDeferredPrompt(null);
       } catch (error) {
+        console.log('Install prompt failed, clearing deferredPrompt');
+        setDeferredPrompt(null);
+        // Show modal as fallback
         if (isDesktop) setShowDesktopModal(true);
         else if (isIOS) setShowIOSModal(true);
         setShowInstallBanner(false);
