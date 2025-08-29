@@ -247,7 +247,7 @@ function HomePage() {
               <div className="bg-yellow-900 bg-opacity-30 border border-yellow-400 rounded-lg p-3 mb-3">
                 <p className="text-yellow-300 text-xs flex items-center gap-2">
                   <span>⚠️</span>
-                  <span>You're using Chrome on iOS. Please open this page in <strong>Safari</strong> to add it to your home screen.</span>
+                  <span>You're using Chrome on iOS. For the best experience, please open this page in <strong>Safari</strong> to add it to your home screen.</span>
                 </p>
               </div>
               <p>To switch to Safari:</p>
