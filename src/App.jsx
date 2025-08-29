@@ -11,74 +11,112 @@ function HomePage() {
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [hasShownBanner, setHasShownBanner] = useState(false);
   const [showDesktopModal, setShowDesktopModal] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
-  const [showAndroidModal, setShowAndroidModal] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showInstalledMessage, setShowInstalledMessage] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [isChromeIOS, setIsChromeIOS] = useState(false);
+  const [showAndroidModal, setShowAndroidModal] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [browserSupport, setBrowserSupport] = useState({
+    isChrome: false,
+    isEdge: false,
+    isFirefox: false,
+    isSafari: false,
+    isChromeIOS: false,
+    supportsInstall: false,
+  });
 
   useEffect(() => {
     const userAgent = navigator.userAgent;
     const iOS = /iPad|iPhone|iPod/.test(userAgent);
     const android = /Android/.test(userAgent);
     const desktop = window.innerWidth > 1024;
-    const chromeIOS = iOS && userAgent.includes('Chrome') && !userAgent.includes('Edg');
+
+    const isChrome = userAgent.includes('Chrome') && !userAgent.includes('Edg') && !userAgent.includes('OPR');
+    const isEdge = userAgent.includes('Edg');
+    const isFirefox = userAgent.includes('Firefox');
+    const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+    const isChromeIOS = iOS && isChrome;
 
     setIsIOS(iOS);
     setIsAndroid(android);
     setIsDesktop(desktop);
-    setIsChromeIOS(chromeIOS);
 
-    // Check if app is installed (running in standalone mode)
+    setBrowserSupport({
+      isChrome,
+      isEdge,
+      isFirefox,
+      isSafari,
+      isChromeIOS,
+      supportsInstall: isChrome || isEdge || (!desktop && !iOS),
+    });
+
+    // Improved PWA detection
     const checkInstallStatus = () => {
-      return window.matchMedia('(display-mode: standalone)').matches ||
-             window.navigator.standalone === true ||
-             document.referrer.includes('android-app://');
+      // Check if running in standalone mode (PWA)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          window.navigator.standalone === true ||
+                          document.referrer.includes('android-app://');
+      
+      // Additional check for mobile PWA
+      const isMobilePWA = !desktop && (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true
+      );
+      
+      return isStandalone || isMobilePWA;
     };
 
     const installedStatus = checkInstallStatus();
     setIsInstalled(installedStatus);
 
-    // Show installed message if in PWA mode and haven't shown it before
+    // Check if app has ever been installed (persistent flag)
+    const appEverInstalled = localStorage.getItem('kenToneAppInstalled');
+    
+    // Check if the installed message should be shown
     const hasShownInstalledMessage = localStorage.getItem('kenToneInstalledMessageShown');
+    
+    // Show installed message only when actually in PWA mode
     if (installedStatus && !hasShownInstalledMessage) {
       setShowInstalledMessage(true);
       localStorage.setItem('kenToneInstalledMessageShown', 'true');
     }
 
-    // Check if we should show the install banner (only once)
-    const hasShownBanner = localStorage.getItem('kenToneInstallBannerShown');
-    const appEverInstalled = localStorage.getItem('kenToneAppInstalled');
-    
-    if (hasShownBanner || appEverInstalled || installedStatus) {
-      return; // Don't show banner
-    }
+    // Check if the install banner has been shown before OR if app was ever installed
+    const hasShownInstallBanner = localStorage.getItem('kenToneInstallBannerShown');
+    const shouldHideBanner = !!hasShownInstallBanner || !!appEverInstalled || installedStatus;
+    setHasShownBanner(shouldHideBanner);
+
+    const delay = desktop ? 500 : 300;
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      
-      // Show banner after short delay
-      const delay = desktop ? 500 : 300;
-      setTimeout(() => {
-        setShowInstallBanner(true);
-        localStorage.setItem('kenToneInstallBannerShown', 'true');
-      }, delay);
+      // Don't show banner if app was ever installed or currently installed
+      if (!checkInstallStatus() && !shouldHideBanner) {
+        setTimeout(() => {
+          setShowInstallBanner(true);
+          localStorage.setItem('kenToneInstallBannerShown', 'true');
+          setHasShownBanner(true);
+        }, delay);
+      }
     };
 
     const handleAppInstalled = () => {
+      // Mark app as permanently installed
       localStorage.setItem('kenToneAppInstalled', 'true');
       localStorage.setItem('kenToneInstallBannerShown', 'true');
+      
       setIsInstalled(true);
       setShowInstallBanner(false);
       setShowDesktopModal(false);
-      setShowIOSModal(false);
-      setShowAndroidModal(false);
+      setDeferredPrompt(null);
+      setHasShownBanner(true);
       
+      // Only show installed message if actually in PWA mode
       if (checkInstallStatus()) {
         setShowInstalledMessage(true);
         localStorage.setItem('kenToneInstalledMessageShown', 'true');
@@ -88,20 +126,43 @@ function HomePage() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Show banner for iOS/unsupported browsers after delay if conditions are met
-    if (!installedStatus && !hasShownBanner && !appEverInstalled && (iOS || !deferredPrompt)) {
-      const delay = desktop ? 500 : 300;
-      setTimeout(() => {
+    // Only show banner if not installed and hasn't been shown and app wasn't previously installed
+    const timer = setTimeout(() => {
+      const shouldShowBanner =
+        !checkInstallStatus() &&
+        !shouldHideBanner &&
+        !appEverInstalled &&
+        (iOS || deferredPrompt || (!desktop && browserSupport.supportsInstall));
+
+      if (shouldShowBanner) {
         setShowInstallBanner(true);
         localStorage.setItem('kenToneInstallBannerShown', 'true');
-      }, delay);
-    }
+        setHasShownBanner(true);
+      }
+    }, delay);
+
+    // Listen for display mode changes
+    const standaloneMediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleDisplayModeChange = (e) => {
+      const newInstalledStatus = checkInstallStatus();
+      setIsInstalled(newInstalledStatus);
+      
+      // If we're now in standalone mode and haven't shown the message
+      if (newInstalledStatus && !localStorage.getItem('kenToneInstalledMessageShown')) {
+        setShowInstalledMessage(true);
+        localStorage.setItem('kenToneInstalledMessageShown', 'true');
+      }
+    };
+    
+    standaloneMediaQuery.addListener(handleDisplayModeChange);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      standaloneMediaQuery.removeListener(handleDisplayModeChange);
+      clearTimeout(timer);
     };
-  }, []);
+  }, []); // Keep empty dependency array to avoid re-running
 
   const handleCreateUserClick = () => {
     try {
@@ -115,51 +176,75 @@ function HomePage() {
   };
 
   const handleInstallClick = async () => {
-    // Close banner first
-    setShowInstallBanner(false);
-
-    // iOS always shows manual instructions
     if (isIOS) {
       setShowIOSModal(true);
+      setShowInstallBanner(false);
       return;
     }
 
-    // If we have auto prompt, try it
+    // If we have a deferred prompt, use it
     if (deferredPrompt) {
       try {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        
+
         if (outcome === 'accepted') {
+          // Mark as installed and hide banner
           localStorage.setItem('kenToneAppInstalled', 'true');
+          setShowInstallBanner(false);
+          setHasShownBanner(true);
         }
-        
-        // Clear prompt after use (accepted or dismissed)
-        setDeferredPrompt(null);
-        return;
+        // Don't set deferredPrompt to null if user dismissed - keep it for future attempts
+        // setDeferredPrompt(null);
       } catch (error) {
-        console.log('Auto prompt failed');
+        if (isDesktop) setShowDesktopModal(true);
+        else if (isIOS) setShowIOSModal(true);
+        setShowInstallBanner(false);
       }
+      return;
     }
 
-    // No auto prompt available - show manual instructions
+    // No deferred prompt available - show appropriate modal/instructions
     if (isDesktop) {
       setShowDesktopModal(true);
-    } else if (isAndroid) {
+    } else if (isAndroid && browserSupport.supportsInstall) {
+      // For modern Android browsers, show instructions as fallback
       setShowAndroidModal(true);
+    } else if (isIOS) {
+      setShowIOSModal(true);
     }
+    // Note: Most Android users should never reach this point because they'll have deferredPrompt
+    setShowInstallBanner(false);
+  };
+
+  const handleDismissInstalledMessage = () => {
+    setShowInstalledMessage(false);
   };
 
   // Check if we should show the tip (not installed AND app was never installed)
   const shouldShowTip = !isInstalled && !localStorage.getItem('kenToneAppInstalled');
 
+  // Get device-specific tip text
   const getTipText = () => {
-    const actionText = isDesktop ? "Add KenTone to your desktop" : "Add KenTone to your home screen";
-    return (
-      <>
-        💡 Tip: <span className="underline">{actionText}</span> for the best experience
-      </>
-    );
+    if (isIOS) {
+      return (
+        <>
+          💡 Tip: <span className="underline">Add KenTone to your home screen</span> for the best experience
+        </>
+      );
+    } else if (isAndroid) {
+      return (
+        <>
+          💡 Tip: <span className="underline">Add KenTone to your home screen</span> for the best experience
+        </>
+      );
+    } else {
+      return (
+        <>
+          💡 Tip: <span className="underline">Add KenTone to your desktop</span> for the best experience
+        </>
+      );
+    }
   };
 
   const DesktopInstallModal = () => (
@@ -182,8 +267,8 @@ function HomePage() {
           <div className="space-y-2">
             <p><strong>Chrome/Edge:</strong></p>
             <ul className="list-disc list-inside ml-4 space-y-1">
-              <li>Look for the install icon in the address bar</li>
-              <li>Or go to browser menu → "Install KenTone" or "Create shortcut"</li>
+              <li>Click the install icon in the address bar</li>
+              <li>Or go to Settings → More tools → Create shortcut</li>
             </ul>
           </div>
         </div>
@@ -208,7 +293,7 @@ function HomePage() {
         </div>
         <div className="text-gray-300 text-sm space-y-3">
           <p>The automatic install prompt isn't available right now.</p>
-          <p>To add KenTone to your home screen:</p>
+          <p>To add KenTone to your home screen manually:</p>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-lg">1.</span>
@@ -220,8 +305,13 @@ function HomePage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-lg">3.</span>
-              <span>Tap <strong>"Add"</strong> to confirm</span>
+              <span>Tap <strong>"Add"</strong> or <strong>"Install"</strong> to confirm</span>
             </div>
+          </div>
+          <div className="bg-blue-900 bg-opacity-30 border border-blue-400 rounded-lg p-3 mt-3">
+            <p className="text-blue-300 text-xs">
+              💡 Try refreshing the page to see if the install prompt appears.
+            </p>
           </div>
         </div>
       </div>
@@ -242,7 +332,7 @@ function HomePage() {
           </button>
         </div>
         <div className="text-gray-300 text-sm space-y-3">
-          {isChromeIOS && (
+          {browserSupport.isChromeIOS ? (
             <>
               <div className="bg-yellow-900 bg-opacity-30 border border-yellow-400 rounded-lg p-3 mb-3">
                 <p className="text-yellow-300 text-xs flex items-center gap-2">
@@ -267,8 +357,8 @@ function HomePage() {
               </div>
               <hr className="border-gray-600 my-4" />
             </>
-          )}
-          <p>To add KenTone to your home screen{isChromeIOS ? ' (in Safari)' : ''}:</p>
+          ) : null}
+          <p>To add KenTone to your home screen{browserSupport.isChromeIOS ? ' (in Safari)' : ''}:</p>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-lg">1.</span>
@@ -292,7 +382,11 @@ function HomePage() {
     <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 relative">
       
       {showInstallBanner && !isInstalled && (
-        <div className="fixed top-4 left-4 right-4 bg-[#334155] border border-orange-400 rounded-lg p-4 shadow-lg z-40 animate-slideDown">
+        <div
+          className="fixed top-4 left-4 right-4 bg-[#334155] border border-orange-400 rounded-lg p-4 shadow-lg z-40 animate-slideDown"
+          role="banner"
+          aria-live="polite"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-400 rounded-lg">
@@ -316,6 +410,7 @@ function HomePage() {
               <button
                 onClick={handleInstallClick}
                 className="bg-orange-400 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                aria-label="Install KenTone app"
               >
                 <Download size={14} /> Install
               </button>
@@ -357,7 +452,7 @@ function HomePage() {
               <span className="text-green-400">✓</span> Great! You're using the KenTone app
             </p>
             <button
-              onClick={() => setShowInstalledMessage(false)}
+              onClick={handleDismissInstalledMessage}
               className="absolute top-1 right-1 text-green-400 hover:text-green-300 p-1"
               aria-label="Dismiss message"
             >
@@ -368,7 +463,9 @@ function HomePage() {
 
         <div className="flex flex-col gap-4">
           <Link to="/LoginPage" className="w-full">
-            <button className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300">
+            <button
+              className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+            >
               Log In
             </button>
           </Link>
@@ -380,6 +477,7 @@ function HomePage() {
           </button>
         </div>
 
+        {/* Tip only shows if app was never installed */}
         {shouldShowTip && (
           <p
             className="text-gray-400 text-xs mt-4 cursor-pointer hover:underline"
