@@ -18,12 +18,14 @@ function HomePage() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [showInstalledMessage, setShowInstalledMessage] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [showAndroidModal, setShowAndroidModal] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const [browserSupport, setBrowserSupport] = useState({
     isChrome: false,
     isEdge: false,
     isFirefox: false,
     isSafari: false,
+    isChromeIOS: false,
     supportsInstall: false,
   });
 
@@ -37,6 +39,7 @@ function HomePage() {
     const isEdge = userAgent.includes('Edg');
     const isFirefox = userAgent.includes('Firefox');
     const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+    const isChromeIOS = iOS && isChrome;
 
     setIsIOS(iOS);
     setIsAndroid(android);
@@ -47,6 +50,7 @@ function HomePage() {
       isEdge,
       isFirefox,
       isSafari,
+      isChromeIOS,
       supportsInstall: isChrome || isEdge || (!desktop && !iOS),
     });
 
@@ -178,35 +182,39 @@ function HomePage() {
       return;
     }
 
-    if (isDesktop && !deferredPrompt && !browserSupport.supportsInstall) {
-      setShowDesktopModal(true);
-      setShowInstallBanner(false);
-      return;
-    }
+    // If we have a deferred prompt, use it
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
 
-    if (!deferredPrompt) {
-      if (isDesktop) setShowDesktopModal(true);
-      else if (isIOS) setShowIOSModal(true);
-      setShowInstallBanner(false);
-      return;
-    }
-
-    try {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-
-      if (outcome === 'accepted') {
-        // Mark as installed and hide banner
-        localStorage.setItem('kenToneAppInstalled', 'true');
+        if (outcome === 'accepted') {
+          // Mark as installed and hide banner
+          localStorage.setItem('kenToneAppInstalled', 'true');
+          setShowInstallBanner(false);
+          setHasShownBanner(true);
+        }
+        // Don't set deferredPrompt to null if user dismissed - keep it for future attempts
+        // setDeferredPrompt(null);
+      } catch (error) {
+        if (isDesktop) setShowDesktopModal(true);
+        else if (isIOS) setShowIOSModal(true);
         setShowInstallBanner(false);
-        setHasShownBanner(true);
       }
-      setDeferredPrompt(null);
-    } catch (error) {
-      if (isDesktop) setShowDesktopModal(true);
-      else if (isIOS) setShowIOSModal(true);
-      setShowInstallBanner(false);
+      return;
     }
+
+    // No deferred prompt available - show appropriate modal/instructions
+    if (isDesktop) {
+      setShowDesktopModal(true);
+    } else if (isAndroid && browserSupport.supportsInstall) {
+      // For modern Android browsers, show instructions as fallback
+      setShowAndroidModal(true);
+    } else if (isIOS) {
+      setShowIOSModal(true);
+    }
+    // Note: Most Android users should never reach this point because they'll have deferredPrompt
+    setShowInstallBanner(false);
   };
 
   const handleDismissInstalledMessage = () => {
@@ -268,6 +276,48 @@ function HomePage() {
     </div>
   );
 
+  const AndroidInstallModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-white text-lg font-semibold flex items-center gap-2">
+            <Smartphone size={20} /> Add to Home Screen
+          </h3>
+          <button
+            onClick={() => setShowAndroidModal(false)}
+            className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Close modal"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="text-gray-300 text-sm space-y-3">
+          <p>The automatic install prompt isn't available right now.</p>
+          <p>To add KenTone to your home screen manually:</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">1.</span>
+              <span>Tap the menu button <strong>⋮</strong> (three dots)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">2.</span>
+              <span>Look for <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">3.</span>
+              <span>Tap <strong>"Add"</strong> or <strong>"Install"</strong> to confirm</span>
+            </div>
+          </div>
+          <div className="bg-blue-900 bg-opacity-30 border border-blue-400 rounded-lg p-3 mt-3">
+            <p className="text-blue-300 text-xs">
+              💡 Try refreshing the page to see if the install prompt appears.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const IOSInstallModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
@@ -282,7 +332,33 @@ function HomePage() {
           </button>
         </div>
         <div className="text-gray-300 text-sm space-y-3">
-          <p>To add KenTone to your home screen:</p>
+          {browserSupport.isChromeIOS ? (
+            <>
+              <div className="bg-yellow-900 bg-opacity-30 border border-yellow-400 rounded-lg p-3 mb-3">
+                <p className="text-yellow-300 text-xs flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>You're using Chrome on iOS. For the best experience, please open this page in <strong>Safari</strong> to add it to your home screen.</span>
+                </p>
+              </div>
+              <p>To switch to Safari:</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">1.</span>
+                  <span>Copy this page's URL</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">2.</span>
+                  <span>Open Safari and paste the URL</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">3.</span>
+                  <span>Follow the instructions below</span>
+                </div>
+              </div>
+              <hr className="border-gray-600 my-4" />
+            </>
+          ) : null}
+          <p>To add KenTone to your home screen{browserSupport.isChromeIOS ? ' (in Safari)' : ''}:</p>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-lg">1.</span>
@@ -352,6 +428,7 @@ function HomePage() {
 
       {showIOSModal && <IOSInstallModal />}
       {showDesktopModal && <DesktopInstallModal />}
+      {showAndroidModal && <AndroidInstallModal />}
 
       {/* Main card */}
       <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-8 sm:p-10 text-center">
