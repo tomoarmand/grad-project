@@ -1,13 +1,42 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Download, Smartphone, Monitor, X } from 'lucide-react';
 import './App.css';
 import logo from './assets/logo.svg';
 import useUserStore from './store/userStore';
 
+// Custom hook for page tracking
+function usePageTracking() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Track page view with gtag (production only)
+    if (process.env.NODE_ENV === 'production' && window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_title: document.title,
+        page_location: window.location.href,
+        page_path: location.pathname + location.search
+      });
+    }
+  }, [location]);
+}
+
+// Helper function to track events
+function trackAnalyticsEvent(category, action, label = '') {
+  if (process.env.NODE_ENV === 'production' && window.gtag) {
+    window.gtag('event', action, {
+      event_category: category,
+      event_label: label
+    });
+  }
+}
+
 function HomePage() {
   const { clearUser } = useUserStore();
   const navigate = useNavigate();
+
+  // Use the page tracking hook
+  usePageTracking();
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -166,6 +195,7 @@ function HomePage() {
 
   const handleCreateUserClick = () => {
     try {
+      trackAnalyticsEvent('Navigation', 'Create_User_Click', 'HomePage');
       clearUser();
       localStorage.removeItem('authToken');
       navigate('/CreateUserPage');
@@ -175,7 +205,13 @@ function HomePage() {
     }
   };
 
+  const handleLoginClick = () => {
+    trackAnalyticsEvent('Navigation', 'Login_Click', 'HomePage');
+  };
+
   const handleInstallClick = async () => {
+    trackAnalyticsEvent('PWA', 'Install_Click', isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop');
+    
     if (isIOS) {
       setShowIOSModal(true);
       setShowInstallBanner(false);
@@ -189,10 +225,13 @@ function HomePage() {
         const { outcome } = await deferredPrompt.userChoice;
 
         if (outcome === 'accepted') {
+          trackAnalyticsEvent('PWA', 'Install_Accepted', 'Native_Prompt');
           // Mark as installed and hide banner
           localStorage.setItem('kenToneAppInstalled', 'true');
           setShowInstallBanner(false);
           setHasShownBanner(true);
+        } else {
+          trackAnalyticsEvent('PWA', 'Install_Dismissed', 'Native_Prompt');
         }
         // Don't set deferredPrompt to null if user dismissed - keep it for future attempts
         // setDeferredPrompt(null);
@@ -218,6 +257,7 @@ function HomePage() {
   };
 
   const handleDismissInstalledMessage = () => {
+    trackAnalyticsEvent('PWA', 'Installed_Message_Dismissed');
     setShowInstalledMessage(false);
   };
 
@@ -462,7 +502,7 @@ function HomePage() {
         )}
 
         <div className="flex flex-col gap-4">
-          <Link to="/LoginPage" className="w-full">
+          <Link to="/LoginPage" className="w-full" onClick={handleLoginClick}>
             <button
               className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
             >

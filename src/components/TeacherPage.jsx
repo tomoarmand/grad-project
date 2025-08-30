@@ -9,18 +9,27 @@ import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
 
+// Helper function to track events
+function trackAnalyticsEvent(category, action, label = '') {
+  if (process.env.NODE_ENV === 'production' && window.gtag) {
+    window.gtag('event', action, {
+      event_category: category,
+      event_label: label
+    });
+  }
+}
+
 function TeacherPage() {
   const [activeTab, setActiveTab] = useState('create');
   const { user, logout } = useUserStore();
   const navigate = useNavigate();
-
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [folders, setFolders] = useState([]);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-
   const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogout = () => {
+    trackAnalyticsEvent('Teacher', 'Sign_Out', user?.fullName);
     logout();
     navigate('/');
   };
@@ -64,10 +73,12 @@ function TeacherPage() {
   };
 
   const handleFolderSelect = (folder) => {
+    trackAnalyticsEvent('Teacher', 'Folder_Selected', folder?.name);
     setSelectedFolder(folder);
   };
 
   const handleTabChange = (tab) => {
+    trackAnalyticsEvent('Teacher', 'Tab_Changed', tab);
     setActiveTab(tab);
     // Reset folder selection when switching to unassign tab
     if (tab === 'unassign') {
@@ -193,6 +204,7 @@ function TeacherPage() {
           <CreateTab 
             user={user} 
             selectedFolder={selectedFolder}
+            onExerciseCreate={() => trackAnalyticsEvent('Teacher', 'Create_Exercise', selectedFolder?.name)}
           />
         )}
         
@@ -200,13 +212,16 @@ function TeacherPage() {
           <AssignTab 
             user={user} 
             selectedFolder={selectedFolder}
+            onAssignExercises={(count) => trackAnalyticsEvent('Teacher', 'Assign_Exercises', `Assigned ${count} exercises`)}
           />
         )}
         
         {activeTab === 'unassign' && (
-          <UnassignTab user={user} />
+          <UnassignTab 
+            user={user}
+            onUnassignExercises={(count) => trackAnalyticsEvent('Teacher', 'Unassign_Exercises', `Unassigned ${count} exercises`)}
+          />
         )}
-
       </div>
 
       {/* Sign Out Link - positioned below the card */}
@@ -229,7 +244,6 @@ function TeacherPage() {
         cancelText="Cancel"
         type="danger"
       />
-
     </div>
   );
 }

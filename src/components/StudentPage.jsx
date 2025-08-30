@@ -6,6 +6,16 @@ import useUserStore from '../store/userStore';
 import { PuffLoader } from "react-spinners";
 import MusicSymbolButton from './MusicSymbolButton';
 
+// Helper function to track events
+function trackAnalyticsEvent(category, action, label = '') {
+  if (process.env.NODE_ENV === 'production' && window.gtag) {
+    window.gtag('event', action, {
+      event_category: category,
+      event_label: label
+    });
+  }
+}
+
 function StudentPage() {
   const [exercises, setExercises] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -19,13 +29,13 @@ function StudentPage() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-
   const inputRef = useRef();
   const { user, logout } = useUserStore();
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogout = () => {
+    trackAnalyticsEvent('Student', 'Sign_Out', user?.fullName);
     logout();
     navigate('/');
   };
@@ -66,7 +76,6 @@ function StudentPage() {
     const duration = 1500;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
     const interval = setInterval(() => {
       const timeLeft = animationEnd - Date.now();
       if (timeLeft <= 0) return clearInterval(interval);
@@ -94,6 +103,7 @@ function StudentPage() {
     const trimmedAnswer = correctAnswer.replaceAll(" ", "");
 
     if (trimmedInput === trimmedAnswer) {
+      trackAnalyticsEvent('Student', 'Correct_Answer', `Exercise_${currentExerciseIndex}`);
       celebrate();
       triggerSuccess();
       setInputValue("");
@@ -104,11 +114,17 @@ function StudentPage() {
     } else {
       setFailedAttempts((prev) => {
         const newAttempts = prev + 1;
+        trackAnalyticsEvent('Student', 'Wrong_Answer', `Attempt_${newAttempts}`);
         triggerTryAgain(newAttempts);
         if (newAttempts >= 3) setShowAnswer(true);
         return newAttempts;
       });
     }
+  };
+
+  const handleShowAnswer = () => {
+    trackAnalyticsEvent('Student', 'Show_Answer_Used', `Exercise_${currentExerciseIndex}_Attempts_${failedAttempts}`);
+    setFeedback(exercises[currentExerciseIndex].correctAnswer);
   };
 
   const getRandomIndex = (length, except = null) => {
@@ -124,6 +140,7 @@ function StudentPage() {
     setShowAnswer(false);
     setFeedback("");
     setFailedAttempts(0);
+    trackAnalyticsEvent('Student', 'New_Exercise_Started', `Exercise_${newIndex}`);
   };
 
   const fetchExercises = async () => {
@@ -136,9 +153,13 @@ function StudentPage() {
       if (data.length > 0) {
         const randomIndex = getRandomIndex(data.length);
         setCurrentExerciseIndex(randomIndex);
+        trackAnalyticsEvent('Student', 'Exercises_Loaded', `Count_${data.length}`);
+      } else {
+        trackAnalyticsEvent('Student', 'No_Exercises_Available');
       }
     } catch (error) {
       console.error('Error fetching exercises:', error);
+      trackAnalyticsEvent('Student', 'Exercise_Load_Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -172,7 +193,7 @@ function StudentPage() {
           <div className="flex flex-col items-center justify-center text-center text-white gap-4">
             <p className="text-lg sm:text-xl font-medium">No exercises yet 🎶</p>
             <p className="text-sm opacity-80">
-              Your teacher hasn’t assigned you anything yet.<br />
+              Your teacher hasn't assigned you anything yet.<br />
               Check back soon!
             </p>
           </div>
@@ -202,8 +223,12 @@ function StudentPage() {
                   <p className="text-white text-center text-sm sm:text-base mb-4">
                     Listen to the recording and type your answer below
                   </p>
-                  <audio controls src={exercises[currentExerciseIndex].audioData} className="w-full mb-6 rounded" />
-
+                  <audio 
+                    controls 
+                    src={exercises[currentExerciseIndex].audioData} 
+                    className="w-full mb-6 rounded"
+                    onPlay={() => trackAnalyticsEvent('Student', 'Audio_Played', `Exercise_${currentExerciseIndex}`)}
+                  />
                   <div className="flex flex-row gap-2 w-full items-center">
                     <div className="relative flex-grow">
                       <input
@@ -223,7 +248,6 @@ function StudentPage() {
                       <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
                     </div>
                   </div>
-
                   <button
                     disabled={!inputValue.trim()}
                     onClick={handleSubmit}
@@ -241,7 +265,7 @@ function StudentPage() {
                   <div className="mt-4 flex flex-col items-center">
                     {!feedback ? (
                       <button
-                        onClick={() => setFeedback(exercises[currentExerciseIndex].correctAnswer)}
+                        onClick={handleShowAnswer}
                         className="text-sm sm:text-base md:text-lg text-[#f8fafc] bg-[#f87171] hover:bg-[#ef4444] px-4 py-2 rounded shadow"
                       >
                         Show Answer
