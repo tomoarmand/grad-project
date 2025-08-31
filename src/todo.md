@@ -1,7 +1,5 @@
 ## To Do 
 
-- Fix tip text and banner showing frequency
-
 - Fix app logo
 
 - Error message display issue
@@ -27,6 +25,8 @@
 - Edit home page (3 hours) **
 
 ----------------------------------------------------
+
+- Fix tip text and banner showing frequency [2 hours]
 
 - Download PWA link on home page [1 day]
 
