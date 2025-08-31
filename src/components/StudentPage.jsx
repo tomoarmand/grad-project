@@ -56,12 +56,12 @@ function StudentPage() {
   const getEncouragementMessage = (attempts) => {
     switch (attempts) {
       case 1:
-        return { title: "Almost there!", subtitle: "Give it another try!" };
+        return { title: "Not quite right", subtitle: "Try again!" };
       case 2:
-        return { title: "You're getting closer!", subtitle: "One more time!" };
+        return { title: "Keep trying!", subtitle: "Take another listen" };
       case 3:
       default:
-        return { title: "Don't worry, this is challenging.", subtitle: "Here's some help..." };
+        return { title: "This one's tricky", subtitle: "Need some help?" };
     }
   };
 
