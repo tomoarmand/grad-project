@@ -22,7 +22,9 @@ const app = express();
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Enhanced security middleware
+// SECURITY HEADERS: Comprehensive protection via Helmet middleware
+// WHY: Prevents common web vulnerabilities (XSS, clickjacking, etc.)
+// NOTE: CSP allows necessary resources while blocking malicious scripts and styles
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
@@ -36,7 +38,9 @@ app.use(helmet({
   },
 }));
 
-// Environment-aware rate limiter factory
+// ENVIRONMENT-AWARE RATE LIMITING: Bypass in dev, enforce in production
+// WHY: Prevents abuse while allowing development flexibility
+// NOTE: Different limits for auth (stricter) vs data operations (more lenient)
 const createRateLimiter = (options) => {
   if (isDevelopment) {
     return (req, res, next) => {
@@ -91,7 +95,9 @@ if (isDevelopment) {
   });
 }
 
-// CORS - Fixed to handle trailing slashes and ensure proper origin matching
+// SECURE CORS: Allow specific origins with trailing slash normalization
+// WHY: Prevents unauthorized cross-origin requests while supporting deployment
+// NOTE: Handles mobile apps, development servers, and production domains
 const allowedOrigins = [
   'https://kentone.vercel.app',
   'http://localhost:5173',

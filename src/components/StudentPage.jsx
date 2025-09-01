@@ -53,6 +53,9 @@ function StudentPage() {
     setTimeout(() => setShowCorrect(false), 2000);
   };
 
+  // PROGRESSIVE ENCOURAGEMENT: Provides contextual feedback based on attempt count
+  // WHY: Motivates students differently based on their persistence level
+  // NOTE: Messages escalate from gentle encouragement to hints after 3 attempts
   const getEncouragementMessage = (attempts) => {
     switch (attempts) {
       case 1:
@@ -72,6 +75,9 @@ function StudentPage() {
     setTimeout(() => setShowTryAgain(false), 2000);
   };
 
+  // CELEBRATION: Multi-burst confetti animation for correct answers
+  // WHY: Provides immediate positive reinforcement to maintain student engagement
+  // NOTE: Uses canvas-confetti library with calculated particle reduction over time
   const celebrate = () => {
     const duration = 1500;
     const animationEnd = Date.now() + duration;
@@ -89,6 +95,9 @@ function StudentPage() {
 
   const handleInputFocus = () => setIsInputFocused(true);
 
+  // FAB INTERACTION: Prevent input blur when clicking floating action button
+  // WHY: Maintains input focus for better UX during exercise completion
+  // NOTE: Uses setTimeout to handle React's event timing and prevent focus loss
   const handleInputBlur = (e) => {
     setTimeout(() => {
       if (!e.relatedTarget || !e.relatedTarget.closest('[data-fab]')) {
@@ -97,6 +106,9 @@ function StudentPage() {
     }, 150);
   };
 
+  // EXERCISE VALIDATION: Check student answer against correct solution
+  // WHY: Core learning logic with immediate feedback and attempt tracking
+  // NOTE: Uses normalized comparison to handle spacing variations and case insensitivity
   const handleSubmit = () => {
     const correctAnswer = exercises[currentExerciseIndex].correctAnswer.toLowerCase();
     const trimmedInput = inputValue.replaceAll(" ", "").toLowerCase();

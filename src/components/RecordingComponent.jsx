@@ -17,7 +17,9 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
 
-  // Input validation functions
+  // INPUT SANITIZATION: Remove dangerous characters and normalize input
+  // WHY: Security critical - prevents XSS attacks and ensures clean data
+  // NOTE: Removes HTML tags, scripts, and event handlers while preserving musical notation
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
@@ -28,6 +30,9 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       .replace(/on\w+=/gi, ''); // Remove event handlers
   };
 
+  // ANSWER VALIDATION: Ensure exercise answers meet requirements
+  // WHY: Maintains data quality and prevents empty or malicious answers
+  // NOTE: Allows musical notation characters while enforcing length limits
   const validateCorrectAnswer = (answer) => {
     const sanitized = sanitizeInput(answer);
     if (!sanitized || sanitized.length < 1) {
@@ -44,6 +49,9 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
     return { isValid: true, sanitized };
   };
 
+  // ID VALIDATION: Verify MongoDB ObjectId format for security
+  // WHY: Prevents injection attacks and ensures data integrity
+  // NOTE: MongoDB ObjectIds are 24-character hexadecimal strings
   const validateIds = (teacherId, folderId) => {
     // Basic validation for MongoDB ObjectId format
     const objectIdRegex = /^[0-9a-fA-F]{24}$/;
@@ -85,12 +93,18 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
     }
   };
 
+  // AUDIO FORMAT DETECTION: Determine best supported audio format for recording
+  // WHY: Ensures cross-browser compatibility for audio recording
+  // NOTE: Prefers MP4 for better quality, falls back to WebM for older browsers
   const getAudioMimeType = () => {
     return MediaRecorder.isTypeSupported("audio/mp4")
       ? "audio/mp4"
       : "audio/webm";
   };
 
+  // AUDIO RECORDING: Handle browser MediaRecorder API with comprehensive error handling
+  // WHY: Core functionality allowing teachers to record custom audio exercises
+  // NOTE: Includes permission handling, format detection, and upload preparation
   const startRecording = async () => {
     // Validate answer before starting recording
     const answerValidation = validateCorrectAnswer(correctAnswer);
@@ -113,15 +127,20 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
       audioChunks.current = [];
 
+      // AUDIO DATA COLLECTION: Accumulate audio data in chunks during recording
+      // WHY: MediaRecorder provides data in chunks, need to collect them for complete audio
       mediaRecorderRef.current.ondataavailable = (event) => {
         audioChunks.current.push(event.data);
       };
 
+      // UPLOAD PROCESSING: Handle recording completion and initiate upload
+      // WHY: Need to process audio data and send to cloud storage after recording ends
       mediaRecorderRef.current.onstop = async () => {
         setIsUploading(true);
         const blob = new Blob(audioChunks.current, { type: mimeType });
 
-        // Validate file size (limit to 10MB)
+        // FILE SIZE VALIDATION: Prevent abuse with large file uploads
+        // WHY: Security measure to prevent storage abuse and long upload times
         if (blob.size > 10 * 1024 * 1024) {
           setError("Recording is too large. Please record a shorter exercise.");
           setIsUploading(false);
@@ -188,6 +207,8 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
         stream.getTracks().forEach(track => track.stop());
       };
 
+      // ERROR HANDLING: Handle recording failures gracefully
+      // WHY: Recording can fail due to permissions, hardware issues, or browser limitations
       mediaRecorderRef.current.onerror = (event) => {
         console.error("Recording error:", event.error);
         setError("Recording failed. Please try again.");
@@ -199,6 +220,8 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       setIsRecording(true);
       setError("");
     } catch (err) {
+      // PERMISSION & COMPATIBILITY HANDLING: Handle various recording failure scenarios
+      // WHY: Different browsers and devices have different audio recording capabilities
       console.error("Failed to start recording", err);
       if (err.name === 'NotAllowedError') {
         setError("Microphone access denied. Please allow microphone access and try again.");

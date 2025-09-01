@@ -1,5 +1,7 @@
 ## To Do 
 
+- Add comments suggested by cursor incl. for recordingcomponent
+
 - Fix app logo
 
 - Error message display issue

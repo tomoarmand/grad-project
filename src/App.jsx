@@ -83,7 +83,9 @@ function HomePage() {
       supportsInstall: isChrome || isEdge || (!desktop && !iOS),
     });
 
-    // Improved PWA detection
+    // PWA DETECTION: Check multiple browser indicators for installed status
+    // WHY: Critical for showing appropriate install prompts and UI states
+    // NOTE: Covers different browsers (Chrome, Safari, Firefox) and display modes
     const checkInstallStatus = () => {
       // Check if running in standalone mode (PWA)
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
@@ -121,6 +123,9 @@ function HomePage() {
 
     const delay = desktop ? 500 : 300;
 
+    // INSTALL PROMPT: Capture and defer native PWA install prompt
+    // WHY: Ensures users get native install experience when available
+    // NOTE: Must prevent default to control when prompt appears, critical for UX
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
