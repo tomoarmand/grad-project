@@ -12,7 +12,7 @@ function AssignTab({ user, selectedFolder }) {
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState(null); // ✅ holds success/error messages
+  const [feedback, setFeedback] = useState(null); // Holds success/error messages
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -31,7 +31,7 @@ function AssignTab({ user, selectedFolder }) {
     setSelectedExerciseIds([]);
   }, [selectedFolder]);
 
-  // ✅ auto-clear feedback after 3s
+  // Auto-clear feedback messages after 3 seconds
   useEffect(() => {
     if (feedback) {
       const timer = setTimeout(() => setFeedback(null), 3000);
@@ -102,9 +102,9 @@ function AssignTab({ user, selectedFolder }) {
       });
 
       if (response.ok) {
-        // ✅ Fixed grammar - properly handles singular/plural
+        // Handle singular/plural grammar for exercise count
         const exerciseText = selectedExerciseIds.length === 1 ? 'Exercise' : 'Exercises';
-        setFeedback({ type: 'success', msg: `✅ ${exerciseText} assigned successfully!` });
+        setFeedback({ type: 'success', msg: `${exerciseText} assigned successfully!` });
         setSelectedExerciseIds([]);
         setSelectedStudentIds([]);
       } else {
@@ -120,7 +120,7 @@ function AssignTab({ user, selectedFolder }) {
 
   return (
     <div className="space-y-6 relative">
-      {/* ✅ Mobile-optimized feedback bar */}
+      {/* Mobile-optimized feedback bar */}
       {feedback && (
         <div
           className={`fixed top-4 left-4 right-4 mx-auto max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-500 z-50 ${
@@ -145,7 +145,7 @@ function AssignTab({ user, selectedFolder }) {
 
       {!selectedFolder ? (
         <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
-          <p className="text-white text-lg">📁 Select a folder above to begin assigning exercises</p>
+          <p className="text-white text-lg">Select a folder above to begin assigning exercises</p>
         </div>
       ) : (
         <>

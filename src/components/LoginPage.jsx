@@ -13,6 +13,8 @@ function LoginPage() {
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
+  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
+  // WHY: User input becomes part of authentication process and needs security validation
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
@@ -23,6 +25,8 @@ function LoginPage() {
       .replace(/on\w+=/gi, '');
   };
 
+  // EMAIL VALIDATION: Ensure proper email format and prevent malicious input
+  // WHY: Critical for user authentication and security
   const validateEmail = (email) => {
     const sanitized = sanitizeInput(email);
     if (!sanitized) {
@@ -38,6 +42,8 @@ function LoginPage() {
     return { isValid: true, sanitized };
   };
 
+  // ACCESS CODE VALIDATION: Verify teacher access codes meet requirements
+  // WHY: Security measure to prevent unauthorized teacher account creation
   const validateAccessCode = (code) => {
     const sanitized = sanitizeInput(code);
     if (!sanitized) {

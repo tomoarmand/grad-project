@@ -12,7 +12,8 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
   const inputRef = useRef(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
-  // Input validation functions
+  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
+  // WHY: Exercise names are displayed in UI and could contain malicious content
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
@@ -23,6 +24,9 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
       .replace(/on\w+=/gi, ''); // Remove event handlers
   };
 
+  // EXERCISE NAME VALIDATION: Ensure names meet requirements and contain valid characters
+  // WHY: Maintains data quality and prevents inappropriate content
+  // NOTE: Allows musical notation characters while enforcing length limits
   const validateExerciseName = (name) => {
     const sanitized = sanitizeInput(name);
     if (!sanitized || sanitized.length < 1) {

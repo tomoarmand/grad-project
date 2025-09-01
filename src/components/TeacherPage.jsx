@@ -54,6 +54,8 @@ function TeacherPage() {
     }
   };
 
+  // FOLDER STATE MANAGEMENT: Handle folder updates while preserving selection
+  // WHY: Maintains UI consistency when folders are modified or deleted
   const handleFoldersUpdate = (updatedFolders) => {
     const sorted = [...updatedFolders].sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
@@ -151,9 +153,9 @@ function TeacherPage() {
                   activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500 active:bg-slate-400'
                 }`}
               >
-                {tab === 'create' && '📝 Create & Organise'}
-                {tab === 'assign' && '📤 Assign Exercises'}
-                {tab === 'unassign' && '📋 Manage Assignments'}
+                {tab === 'create' && 'Create & Organise'}
+                {tab === 'assign' && 'Assign Exercises'}
+                {tab === 'unassign' && 'Manage Assignments'}
               </button>
             ))}
           </div>

@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import Exercise from '../models/Exercise.js';
-import User from '../models/User.js';  // <-- Make sure this is here!
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -70,7 +70,7 @@ router.get('/folder/:folderId', async (req, res) => {
   }
 });
 
-// --- THIS ROUTE MUST BE ABOVE THE "/:id" ROUTE ---
+// THIS ROUTE MUST BE ABOVE THE "/:id" ROUTE
 router.get('/student-by-email/:email', async (req, res) => {
   try {
     // Decode email param (e.g. student%40gmail.com -> student@gmail.com)

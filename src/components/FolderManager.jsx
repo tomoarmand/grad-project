@@ -23,7 +23,8 @@ function FolderManager({
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Input validation functions
+  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
+  // WHY: Folder names are user-controlled and displayed in UI
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
@@ -34,6 +35,9 @@ function FolderManager({
       .replace(/on\w+=/gi, ''); // Remove event handlers
   };
 
+  // FOLDER NAME VALIDATION: Ensure folder names meet requirements and prevent duplicates
+  // WHY: Maintains data integrity and prevents naming conflicts
+  // NOTE: Checks for existing folder names to prevent duplicates
   const validateFolderName = (name) => {
     const sanitized = sanitizeInput(name);
     if (!sanitized || sanitized.length < 1) {

@@ -12,6 +12,8 @@ function CreateUserPage() {
   const navigate = useNavigate();
   const { setUser } = useUserStore();
 
+  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
+  // WHY: User registration data needs security validation before database storage
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
@@ -107,7 +109,7 @@ function CreateUserPage() {
         if (user.role === 'teacher') {
           navigate('/TeacherPage');
         } else {
-          navigate('/StudentPage'); // change this path if your student dashboard/home is different
+          navigate('/StudentPage');
         }
       } else {
         const error = await response.json();
