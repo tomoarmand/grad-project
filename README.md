@@ -75,7 +75,7 @@ KenTone is an ear training and music education platform that bridges traditional
 #### 1. Clone the Repository
 ```bash
 git clone https://github.com/tomoarmand/grad-project.git
-cd kentone
+cd grad-project
 ```
 
 #### 2. Frontend Setup
@@ -104,17 +104,19 @@ cp .env.example .env
 **Frontend (.env):**
 ```env
 VITE_API_URL=http://localhost:3000
-# For production: VITE_API_URL=https://grad-project-al5i.onrender.com
 ```
 
 **Backend (grad-api/.env):**
 ```env
-MONGODB_URI=mongodb://localhost:27017/kentone
+MONGODB_URI=your_mongo_uri
 JWT_SECRET=your_super_secure_jwt_secret_here
+JWT_EXPIRES_IN=7d
+API_SECRET=fallback_for_jwt_secret
+CLOUDINARY_API_KEY=your_cloudinary_key_here
 NODE_ENV=development
 PORT=3000
+TEACHER_PIN=your_access_code
 FRONTEND_URL=http://localhost:5173
-# For production: FRONTEND_URL=https://kentone.vercel.app
 ```
 
 #### 5. Running the Application
@@ -188,7 +190,6 @@ kentone/
 ## 🔗 Links
 
 - **Live Demo**: [KenTone App] https://kentone.vercel.app
-- **GitHub Repository**: https://github.com/tomoarmand/grad-project
 
 ## 🎯 Impact
 
@@ -197,4 +198,4 @@ KenTone enhances music education by making ear training:
 - **More Accessible**: PWA works on any device, remote assignment capability
 - **More Effective**: Real-time feedback and progress tracking
 - **More Scalable**: Teachers can manage entire classes efficiently
-- **More Inclusive**: Works for different learning paces and styles
+- **More Inclusive**: Works for different learning paces and styles# For production: VITE_API_URL=https://grad-project-al5i.onrender.com
