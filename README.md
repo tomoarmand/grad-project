@@ -1,10 +1,10 @@
-# 🎵 KenTone - Interactive Ear Training Platform
+# KenTone - Interactive Ear Training Platform
 
-## 🎯 What is KenTone?
+## What is KenTone?
 
 KenTone is an ear training and music education platform that bridges traditional music theory instruction with modern interactive learning. Teachers can remotely create, record, and assign personalized listening exercises while students develop aural skills through an engaging, gamified environment accessible from anywhere.
 
-## 👥 Who Uses KenTone?
+## Who Uses KenTone?
 
 ### For Music Teachers:
 - Create custom listening exercises with audio recordings
@@ -20,7 +20,7 @@ KenTone is an ear training and music education platform that bridges traditional
 - Access exercises offline through PWA functionality
 - Experience gamified learning with attempt-based encouragement
 
-## 🚀 Key Features
+## Key Features
 
 ### Teacher Dashboard
 - **Exercise Creation**: Record and upload custom audio exercises
@@ -34,15 +34,14 @@ KenTone is an ear training and music education platform that bridges traditional
 - **Progressive Difficulty**: Encouragement messages based on attempt count
 - **Celebration System**: Multi-burst confetti animations for correct answers
 - **Visual Feedback**: Shake animations and hints for incorrect attempts
-- **PWA Support**: Install as native app on mobile and desktop
 
 ### Technical Features
-- **Progressive Web App (PWA)**: Offline functionality and native app experience
+- **Progressive Web App (PWA)**: Install as web app on mobile and desktop devices
 - **Cross-Platform Compatibility**: Works on desktop, tablet, and mobile
 - **Responsive Design**: Optimized for all screen sizes
 - **Enterprise Security**: JWT authentication, advanced rate limiting, CORS protection, and multi-layer data sanitization
 
-## 🛠 Technology Stack
+## Technology Stack
 
 ### Frontend
 - **React 19** with modern hooks and functional components
@@ -55,14 +54,15 @@ KenTone is an ear training and music education platform that bridges traditional
 ### Backend
 - **Node.js + Express** API server
 - **MongoDB + Mongoose** for data persistence
-- **Enterprise Security**: JWT authentication, environment-aware rate limiting (100-3000 req/15min), data sanitization, and strict CORS policies
+- **JWT authentication** with environment-aware rate limiting (100-3000 req/15min)
+- **Data sanitization** and strict CORS policies
 - **File Upload Support** for audio exercise recordings
 
 ### Infrastructure
-- **Progressive Web App (PWA)** with service worker caching
+- **Progressive Web App (PWA)** with service worker caching for static assets and web app installation
 - **Google Analytics** for usage tracking and insights
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js (version 18 or higher)
@@ -136,7 +136,6 @@ npm run dev
 ```
 
 #### 6. Access the Application
-
 - Open http://localhost:5173 in your browser
 - Create a teacher or student account
 - Local testing: Limited to account creation and interface exploration
@@ -168,8 +167,7 @@ npm start            # Start production server
 npm run dev          # Start development with nodemon
 ```
 
-## 📁 Project Structure
-
+## Project Structure
 ```
 kentone/
 ├── src/                 # Frontend React application
@@ -187,15 +185,5 @@ kentone/
 └── package.json        # Project dependencies and scripts
 ```
 
-## 🔗 Links
-
-- **Live Demo**: [KenTone App] https://kentone.vercel.app
-
-## 🎯 Impact
-
-KenTone enhances music education by making ear training:
-- **More Engaging**: Gamified learning with celebrations
-- **More Accessible**: PWA works on any device, remote assignment capability
-- **More Effective**: Real-time feedback and progress tracking
-- **More Scalable**: Teachers can manage entire classes efficiently
-- **More Inclusive**: Works for different learning paces and styles# For production: VITE_API_URL=https://grad-project-al5i.onrender.com
+## Links
+- **Live Demo**: [KenTone App](https://kentone.vercel.app)
