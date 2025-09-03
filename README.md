@@ -1,45 +1,23 @@
 # KenTone - Interactive Ear Training Platform
 
-## What is KenTone?
+## Overview
 
-KenTone is an ear training and music education platform that bridges traditional music theory instruction with modern interactive learning. Teachers can remotely create, record, and assign personalized listening exercises while students develop aural skills through an engaging, gamified environment accessible from anywhere.
+KenTone is an interactive ear training and music education platform that bridges traditional music theory instruction with modern learning technology. Teachers can remotely create, record, and assign personalized listening exercises while students develop aural skills through an engaging, gamified environment accessible from anywhere.
 
-## Who Uses KenTone?
+## Features
 
-### For Music Teachers:
-- Create custom listening exercises with audio recordings
-- Assign exercises to individual students or entire classes
-- Track student progress with real-time analytics
-- Organize exercises with folders and manage recordings
-- Monitor completion rates and identify struggling students
-
-### For Music Students:
-- Practice ear training in an interactive, mobile-friendly interface
-- Receive immediate feedback with encouraging animations
-- Track personal progress over time
-- Access exercises offline through PWA functionality
-- Experience gamified learning with attempt-based encouragement
-
-## Key Features
-
-### Teacher Dashboard
+### For Teachers
 - **Exercise Creation**: Record and upload custom audio exercises
-- **Bulk Assignment**: Assign multiple exercises to multiple students simultaneously
-- **Progress Monitoring**: Real-time student performance analytics
-- **Content Organization**: Add, remove, and rename folders and recordings
-- **Class Management**: Monitor student progress across assignments
+- **Bulk Assignment**: Assign multiple exercises to individual or multiple students
+- **Content Organization**: Manage exercises with folders for better structure
+- **Student Overview**: View enrolled students and track assigned work
 
-### Student Learning Interface
-- **Interactive Exercises**: Real-time answer validation
-- **Progressive Difficulty**: Encouragement messages based on attempt count
-- **Celebration System**: Multi-burst confetti animations for correct answers
-- **Visual Feedback**: Shake animations and hints for incorrect attempts
-
-### Technical Features
-- **Progressive Web App (PWA)**: Install as web app on mobile and desktop devices
-- **Cross-Platform Compatibility**: Works on desktop, tablet, and mobile
-- **Responsive Design**: Optimized for all screen sizes
-- **Enterprise Security**: JWT authentication, advanced rate limiting, CORS protection, and multi-layer data sanitization
+### For Students
+- **Interactive Exercises**: Real-time validation with visual feedback
+- **Progressive Support**: Contextual hints and supportive messages based on attempts
+- **Celebration System**: Confetti animations for correct answers
+- **Gamified Learning**: Encouraging feedback and progress-based motivation
+- **Cross-Platform Access**: Install on mobile or desktop for quick access
 
 ## Technology Stack
 
@@ -59,8 +37,12 @@ KenTone is an ear training and music education platform that bridges traditional
 - **File Upload Support** for audio exercise recordings
 
 ### Infrastructure
-- **Progressive Web App (PWA)** with service worker caching for static assets and web app installation
-- **Google Analytics** for usage tracking and insights
+- **Frontend Hosting**: Vercel
+- **Backend Hosting**: Render
+- **Database**: MongoDB Atlas
+- **File Storage**: Cloudinary for audio uploads
+- **Analytics**: Google Analytics for usage monitoring
+- **PWA Support**: Progressive Web App with basic offline caching
 
 ## Getting Started
 
@@ -83,7 +65,7 @@ cd grad-project
 # Install frontend dependencies
 npm install
 
-# Create environment file for frontend
+# Create environment file
 cp .env.example .env
 ```
 
@@ -95,11 +77,11 @@ cd grad-api
 # Install backend dependencies
 npm install
 
-# Create environment file for backend
+# Create environment file
 cp .env.example .env
 ```
 
-#### 4. Environment Variables
+#### 4. Environment Configuration
 
 **Frontend (.env):**
 ```env
@@ -138,31 +120,20 @@ npm run dev
 #### 6. Access the Application
 - Open http://localhost:5173 in your browser
 - Create a teacher or student account
-- Local testing: Limited to account creation and interface exploration
-- Note: Exercise creation requires Cloudinary API access, and new accounts start empty - use live demo for full functionality with sample data
+- **Note**: Local testing is limited to account creation and interface exploration. Exercise creation requires Cloudinary API access, and new accounts start empty. Use the [live demo](https://kentone.vercel.app) for full functionality with sample data.
 
-### Production Deployment
+## Available Scripts
 
-#### Build for Production
+### Frontend
 ```bash
-npm run build
-# Production files in dist/ folder
-```
-
-#### Deploy Options
-- **Vercel**: Frontend deployed at https://kentone.vercel.app
-- **Render**: Backend API deployed at https://grad-project-al5i.onrender.com
-- **Local Alternative**: Upload dist/ folder to Netlify or connect via Git
-
-### Available Scripts
-```bash
-# Development
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
+```
 
-# Backend (in grad-api/)
+### Backend (in grad-api/)
+```bash
 npm start            # Start production server
 npm run dev          # Start development with nodemon
 ```
@@ -181,9 +152,17 @@ kentone/
 │   ├── middleware/     # Custom middleware
 │   └── index.js        # Server entry point
 ├── public/             # Static files and PWA assets
-├── dist/               # Production build output
+├── dist/               # Production build output (generated)
 └── package.json        # Project dependencies and scripts
 ```
 
-## Links
-- **Live Demo**: [KenTone App](https://kentone.vercel.app)
+## Deployment
+
+### Production Build
+```bash
+npm run build
+# Production files generated in dist/ folder
+```
+
+### Live Demo
+- **Application**: https://kentone.vercel.app
