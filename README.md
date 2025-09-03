@@ -21,7 +21,7 @@ KenTone is an interactive ear training and music education platform that bridges
 - **Gamified Learning**: Encouraging feedback and progress-based motivation
 - **Cross-Platform Access**: Install on mobile or desktop for quick access
 
-## Security Features
+## Security
 
 **Multi-layered enterprise security:**
 - **Authentication**: JWT + bcrypt-hashed PIN + RBAC
