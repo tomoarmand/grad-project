@@ -4,13 +4,15 @@
 
 KenTone is an interactive ear training and music education platform that bridges traditional music theory instruction with modern learning technology. Teachers can remotely create, record, and assign personalized listening exercises while students develop aural skills through an engaging, gamified environment accessible from anywhere.
 
+![KenTone Wireframe](../public/wireframe.png)
+
 ## Features
 
 ### For Teachers
 - **Exercise Creation**: Record and upload custom audio exercises
 - **Bulk Assignment**: Assign multiple exercises to individual or multiple students
 - **Content Organization**: Manage exercises with folders for better structure
-- **Student Overview**: View enrolled students and track assigned work
+- **Student Overview**: View enrolled students and track/manage assigned work
 
 ### For Students
 - **Interactive Exercises**: Real-time validation with visual feedback
