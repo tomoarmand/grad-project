@@ -130,16 +130,21 @@ router.post('/', validateUserCreation, async (req, res) => {
       }
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    // Check if user already exists - case insensitive check
+    const normalizedEmail = email.toLowerCase().trim();
+    const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existingUser = await User.findOne({ 
+      email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
+    });
+    
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
-    // Create new user
+    // Create new user with normalized email
     const user = await User.create({
       fullName,
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       role
     });
 
@@ -170,7 +175,7 @@ router.post('/', validateUserCreation, async (req, res) => {
   }
 });
 
-// Login - using validation middleware  
+// Login - using validation middleware with case-insensitive email search
 router.post('/login', validateUserLogin, async (req, res) => {
   try {
     // Ensure PIN hash is initialized
@@ -180,8 +185,13 @@ router.post('/login', validateUserLogin, async (req, res) => {
 
     const { email, accessCode } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // Case-insensitive email search to handle mixed-case emails in database
+    const normalizedEmail = email.toLowerCase().trim();
+    const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await User.findOne({ 
+      email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
+    });
+    
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
