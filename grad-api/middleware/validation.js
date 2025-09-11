@@ -59,7 +59,7 @@ export const validateUserCreation = [
     .withMessage('Email cannot exceed 100 characters')
     .isEmail()
     .withMessage('Please enter a valid email address')
-    .normalizeEmail()
+    // REMOVED .normalizeEmail() - this was corrupting emails with dots
     .customSanitizer(sanitizeInput),
   
   body('role')
@@ -87,7 +87,7 @@ export const validateUserLogin = [
     .withMessage('Email cannot exceed 100 characters')
     .isEmail()
     .withMessage('Please enter a valid email address')
-    .normalizeEmail()
+    // REMOVED .normalizeEmail() - this was corrupting emails with dots
     .customSanitizer(sanitizeInput),
   
   // Changed from 'pin' to 'accessCode' to match your route files
