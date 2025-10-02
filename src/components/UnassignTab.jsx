@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { PuffLoader } from 'react-spinners';
 import useUserStore from '../store/userStore';
+import ConfirmDialog from './ConfirmDialog';
 
 function UnassignTab({ user }) {
   const { getAuthHeader } = useUserStore();
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [exercises, setExercises] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState('');
-
+  const [showUnassignAllDialog, setShowUnassignAllDialog] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -24,7 +25,7 @@ function UnassignTab({ user }) {
       setStudentsLoading(true);
       setError('');
       
-      const res = await fetch(`${API_URL}/assignments/students/by-teacher/${user._id}`, {
+      const res = await fetch(`${API_URL}/folder-assignments/students/by-teacher/${user._id}`, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
@@ -42,23 +43,23 @@ function UnassignTab({ user }) {
         )
       );
       setStudents(sortedStudents);
-      console.log('✅ Successfully fetched students with assignments:', sortedStudents.length);
+      console.log('✅ Successfully fetched students with folder assignments:', sortedStudents.length);
       
     } catch (error) {
-      console.error("Failed to fetch students with assignments:", error);
+      console.error("Failed to fetch students with folder assignments:", error);
       setError(`Failed to load students: ${error.message}`);
     } finally {
       setStudentsLoading(false);
     }
   };
 
-  const fetchExercises = async (student) => {
+  const fetchFolders = async (student) => {
     setSelectedStudent(student);
     setLoading(true);
     setError('');
     
     try {
-      const res = await fetch(`${API_URL}/exercises?studentId=${student._id}&userId=${user._id}`, {
+      const res = await fetch(`${API_URL}/folder-assignments/student/${student._id}/folders`, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
@@ -66,57 +67,97 @@ function UnassignTab({ user }) {
       });
       
       if (!res.ok) {
-        throw new Error(`Failed to fetch exercises: ${res.status} ${res.statusText}`);
+        throw new Error(`Failed to fetch folders: ${res.status} ${res.statusText}`);
       }
       
       const data = await res.json();
-      const sortedExercises = data.sort((a, b) => {
-        const nameA = (a.correctAnswer?.trim() || 'Exercise name missing').toLowerCase();
-        const nameB = (b.correctAnswer?.trim() || 'Exercise name missing').toLowerCase();
+      const sortedFolders = data.sort((a, b) => {
+        const nameA = (a.name || 'Folder name missing').toLowerCase();
+        const nameB = (b.name || 'Folder name missing').toLowerCase();
         return nameA.localeCompare(nameB);
       });
-      setExercises(sortedExercises);
+      setFolders(sortedFolders);
     } catch (error) {
-      console.error("Failed to fetch exercises for unassign:", error);
-      setError(`Failed to load exercises: ${error.message}`);
+      console.error("Failed to fetch folders for unassign:", error);
+      setError(`Failed to load folders: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUnassign = async (exerciseId) => {
+  const handleUnassign = async (folderId) => {
     try {
-      const res = await fetch(`${API_URL}/assignments/unassign`, {
+      const res = await fetch(`${API_URL}/folder-assignments/unassign`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           ...getAuthHeader()
         },
         body: JSON.stringify({
-          exerciseId,
+          folderId,
           studentId: selectedStudent._id,
         }),
       });
       
       if (res.ok) {
-        // Refresh the exercises for the selected student
-        fetchExercises(selectedStudent);
+        // Refresh the folders for the selected student
+        fetchFolders(selectedStudent);
         // Also refresh the student list in case this was their last assignment
         fetchStudents();
       } else {
         const errorData = await res.json().catch(() => ({}));
-        alert(`Failed to unassign exercise: ${errorData.error || 'Unknown error'}`);
+        alert(`Failed to unassign folder: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Failed to unassign:", error);
-      alert('Error occurred while unassigning exercise.');
+      alert('Error occurred while unassigning folder.');
+    }
+  };
+
+  const confirmUnassignAll = () => {
+    setShowUnassignAllDialog(true);
+  };
+
+  const handleUnassignAll = async () => {
+    try {
+      // Unassign all folders for this student
+      const unassignPromises = folders.map(folder => 
+        fetch(`${API_URL}/folder-assignments/unassign`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({
+            folderId: folder._id,
+            studentId: selectedStudent._id,
+          }),
+        })
+      );
+
+      const results = await Promise.all(unassignPromises);
+      const allSuccessful = results.every(res => res.ok);
+
+      if (allSuccessful) {
+        setShowUnassignAllDialog(false);
+        // Refresh both lists
+        await fetchStudents();
+        // Clear selected student since they have no more assignments
+        setSelectedStudent(null);
+        setFolders([]);
+      } else {
+        alert('Some folders failed to unassign. Please try again.');
+      }
+    } catch (error) {
+      console.error("Failed to unassign all folders:", error);
+      alert('Error occurred while unassigning folders.');
     }
   };
 
   // Reset when component unmounts or when switching tabs
   const resetState = () => {
     setSelectedStudent(null);
-    setExercises([]);
+    setFolders([]);
     setError('');
   };
 
@@ -142,12 +183,12 @@ function UnassignTab({ user }) {
             <PuffLoader color="#ffffff" size={25} speedMultiplier={1.2} />
           </div>
         ) : students.length === 0 ? (
-          <p className="text-white text-base">No students with assignments found.</p>
+          <p className="text-white text-base">No students with folder assignments found.</p>
         ) : (
           <select
             onChange={(e) => {
               const student = students.find(s => s._id === e.target.value);
-              if (student) fetchExercises(student);
+              if (student) fetchFolders(student);
             }}
             className="w-full bg-slate-700 text-white rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
             defaultValue=""
@@ -167,45 +208,49 @@ function UnassignTab({ user }) {
 
       {selectedStudent && (
         <div className="bg-slate-600 rounded-lg p-4">
-          <h3 className="text-white text-lg font-semibold mb-3">
-            Assigned to{' '}
-            <span className="text-orange-400">{selectedStudent.fullName}</span>
-          </h3>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-white text-lg font-semibold">
+              Assigned Folders for{' '}
+              <span className="text-orange-400">{selectedStudent.fullName}</span>
+            </h3>
+            {folders.length > 0 && (
+              <button
+                onClick={confirmUnassignAll}
+                className="text-red-400 hover:text-red-300 text-sm font-medium underline transition"
+              >
+                Unassign All
+              </button>
+            )}
+          </div>
           
           {loading ? (
             <div className="flex justify-center py-8">
               <PuffLoader color="#ffffff" size={40} speedMultiplier={1.2} />
             </div>
-          ) : exercises.length === 0 ? (
-            <p className="text-white text-base">No exercises assigned to this student.</p>
+          ) : folders.length === 0 ? (
+            <p className="text-white text-base">No folders assigned to this student.</p>
           ) : (
             <>
               <div className="mb-4 p-3 bg-orange-400 rounded-lg text-black text-base font-medium">
-                {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} assigned
+                {folders.length} folder{folders.length !== 1 ? 's' : ''} assigned
               </div>
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {exercises.map(ex => (
+                {folders.map(folder => (
                   <div
-                    key={ex._id}
+                    key={folder._id}
                     className="bg-slate-700 p-4 rounded-lg flex flex-col gap-3"
                   >
                     <div className="flex justify-between items-start gap-3">
                       <p className="text-white text-base font-medium flex-grow">
-                        {ex.correctAnswer?.trim() || 'Exercise name missing'}
+                        {folder.name || 'Folder name missing'}
                       </p>
                       <button
-                        onClick={() => handleUnassign(ex._id)}
+                        onClick={() => handleUnassign(folder._id)}
                         className="text-yellow-300 hover:text-yellow-400 transition text-sm font-medium bg-slate-600 px-3 py-2 rounded-lg flex-shrink-0"
                       >
                         Unassign
                       </button>
                     </div>
-                    <audio 
-                      controls 
-                      src={ex.audioData} 
-                      className="w-full rounded-lg" 
-                      style={{height: '40px'}}
-                    />
                   </div>
                 ))}
               </div>
@@ -213,6 +258,18 @@ function UnassignTab({ user }) {
           )}
         </div>
       )}
+
+      {/* Unassign all confirmation */}
+      <ConfirmDialog
+        isOpen={showUnassignAllDialog}
+        onClose={() => setShowUnassignAllDialog(false)}
+        onConfirm={handleUnassignAll}
+        title="Unassign All Folders"
+        message={`Are you sure you want to unassign ALL ${folders.length} folder${folders.length !== 1 ? 's' : ''} from ${selectedStudent?.fullName}? This action cannot be undone.`}
+        confirmText="Unassign All"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 }

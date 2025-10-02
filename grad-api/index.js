@@ -13,6 +13,7 @@ import userRoutes from './routes/userRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
 import folderRoutes from './routes/folderRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
+import folderAssignmentRoutes from './routes/folderAssignmentRoutes.js';
 
 dotenv.config();
 
@@ -82,7 +83,7 @@ const assignmentLimiter = createRateLimiter({
 // Data sanitization and parsing
 app.use(mongoSanitize());
 app.use(xss());
-app.use(hpp({ whitelist: ['studentIds', 'exerciseIds'] }));
+app.use(hpp({ whitelist: ['studentIds', 'exerciseIds', 'folderIds'] }));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -147,15 +148,15 @@ mongoose.connect(uri, {
 });
 
 mongoose.connection.on('connected', () => {
-  console.log('✅ Database connected successfully');
+  console.log('Database connected successfully');
 });
 
 mongoose.connection.on('error', (err) => {
-  console.error('❌ Database connection error:', err);
+  console.error('Database connection error:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.log('📡 Database disconnected');
+  console.log('Database disconnected');
 });
 
 // Graceful shutdown
@@ -203,18 +204,20 @@ app.use('/users', authLimiter);
 app.use('/exercises', dataLimiter);
 app.use('/folders', dataLimiter);
 app.use('/assignments', assignmentLimiter);
+app.use('/folder-assignments', assignmentLimiter);
 
 // Routes
 app.use('/users', userRoutes);
 app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
 app.use('/assignments', assignmentRoutes);
+app.use('/folder-assignments', folderAssignmentRoutes);
 
 // Enhanced error handler
 app.use((error, req, res, next) => {
   // Don't log client errors (4xx) as server errors
   if (!(error.status < 500)) {
-    console.error('🔥 Server error:', error.message);
+    console.error('Server error:', error.message);
   }
 
   // Handle specific error types
@@ -257,10 +260,10 @@ app.use('*', (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔒 Security middleware active`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Rate limiting: ${!isDevelopment ? 'ACTIVE' : 'DISABLED (development mode)'}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Security middleware active`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Rate limiting: ${!isDevelopment ? 'ACTIVE' : 'DISABLED (development mode)'}`);
 });
 
 // Handle server errors

@@ -2,34 +2,27 @@ import { useState, useEffect } from 'react';
 import { PuffLoader } from 'react-spinners';
 import useUserStore from '../store/userStore';
 
-function AssignTab({ user, selectedFolder }) {
+function AssignTab({ user }) {
   const { getAuthHeader } = useUserStore();
-  const [exercises, setExercises] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [students, setStudents] = useState([]);
-  const [selectedExerciseIds, setSelectedExerciseIds] = useState([]);
+  const [selectedFolderIds, setSelectedFolderIds] = useState([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
+  const [selectAllFolders, setSelectAllFolders] = useState(false);
+  const [selectAllStudents, setSelectAllStudents] = useState(false);
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState(null); // Holds success/error messages
-
+  const [feedback, setFeedback] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     if (user) {
       fetchStudents();
+      fetchFolders();
     }
   }, [user]);
-
-  useEffect(() => {
-    if (selectedFolder) {
-      fetchExercisesForFolder(selectedFolder._id);
-    } else {
-      setExercises([]);
-    }
-    setSelectedExerciseIds([]);
-  }, [selectedFolder]);
 
   // Auto-clear feedback messages after 3 seconds
   useEffect(() => {
@@ -61,55 +54,80 @@ function AssignTab({ user, selectedFolder }) {
     }
   };
 
-  const fetchExercisesForFolder = async (folderId) => {
+  const fetchFolders = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`${API_URL}/exercises/folder/${folderId}`, {
+      const response = await fetch(`${API_URL}/folders/${user._id}`, {
         headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       });
       if (!response.ok) throw new Error(`Failed: ${response.status}`);
       const data = await response.json();
-      setExercises(
-        data.sort((a, b) =>
-          (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise')
-            .toLowerCase()
-            .localeCompare((b.correctAnswer?.trim() || b.question?.trim() || 'Exercise').toLowerCase())
-        )
+      setFolders(
+        data.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
       );
     } catch (error) {
-      setError(`Failed to load exercises: ${error.message}`);
+      setError(`Failed to load folders: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExercise = (id) =>
-    setSelectedExerciseIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
-  const toggleStudent = (id) =>
-    setSelectedStudentIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  const toggleFolder = (id) => {
+    const newSelection = selectedFolderIds.includes(id) 
+      ? selectedFolderIds.filter((i) => i !== id) 
+      : [...selectedFolderIds, id];
+    setSelectedFolderIds(newSelection);
+    setSelectAllFolders(newSelection.length === folders.length);
+  };
+
+  const toggleStudent = (id) => {
+    const newSelection = selectedStudentIds.includes(id) 
+      ? selectedStudentIds.filter((i) => i !== id) 
+      : [...selectedStudentIds, id];
+    setSelectedStudentIds(newSelection);
+    setSelectAllStudents(newSelection.length === students.length);
+  };
+
+  const handleSelectAllFolders = () => {
+    if (selectAllFolders) {
+      setSelectedFolderIds([]);
+    } else {
+      setSelectedFolderIds(folders.map(f => f._id));
+    }
+    setSelectAllFolders(!selectAllFolders);
+  };
+
+  const handleSelectAllStudents = () => {
+    if (selectAllStudents) {
+      setSelectedStudentIds([]);
+    } else {
+      setSelectedStudentIds(students.map(s => s._id));
+    }
+    setSelectAllStudents(!selectAllStudents);
+  };
 
   const handleAssign = async () => {
-    if (selectedExerciseIds.length === 0 || selectedStudentIds.length === 0) {
-      return setFeedback({ type: 'error', msg: 'Select both exercises and students.' });
+    if (selectedFolderIds.length === 0 || selectedStudentIds.length === 0) {
+      return setFeedback({ type: 'error', msg: 'Select both folders and students.' });
     }
     setAssignmentLoading(true);
     try {
-      const response = await fetch(`${API_URL}/assignments/assign`, {
+      const response = await fetch(`${API_URL}/folder-assignments/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({ exerciseIds: selectedExerciseIds, studentIds: selectedStudentIds }),
+        body: JSON.stringify({ folderIds: selectedFolderIds, studentIds: selectedStudentIds }),
       });
-
       if (response.ok) {
-        // Handle singular/plural grammar for exercise count
-        const exerciseText = selectedExerciseIds.length === 1 ? 'Exercise' : 'Exercises';
-        setFeedback({ type: 'success', msg: `${exerciseText} assigned successfully!` });
-        setSelectedExerciseIds([]);
+        const folderText = selectedFolderIds.length === 1 ? 'Folder' : 'Folders';
+        setFeedback({ type: 'success', msg: `${folderText} assigned successfully!` });
+        setSelectedFolderIds([]);
         setSelectedStudentIds([]);
+        setSelectAllFolders(false);
+        setSelectAllStudents(false);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        setFeedback({ type: 'error', msg: errorData.error || 'Failed to assign exercises' });
+        setFeedback({ type: 'error', msg: errorData.error || 'Failed to assign folders' });
       }
     } catch {
       setFeedback({ type: 'error', msg: 'Error occurred during assignment.' });
@@ -143,129 +161,151 @@ function AssignTab({ user, selectedFolder }) {
 
       {error && <div className="bg-red-600 text-white p-3 rounded-lg text-sm">{error}</div>}
 
-      {!selectedFolder ? (
-        <div className="w-full bg-slate-600 rounded-lg p-6 text-center">
-          <p className="text-white text-lg">Select a folder above to begin assigning exercises</p>
-        </div>
-      ) : (
-        <>
-          {/* Exercises */}
-          <div className="bg-slate-600 rounded-lg p-3">
-            <h3 className="text-white text-sm font-semibold mb-2">
-              Select Exercises from &quot;{selectedFolder.name}&quot;
-            </h3>
-            {loading ? (
-              <div className="flex justify-center py-4">
-                <PuffLoader color="#ffffff" size={25} />
-              </div>
-            ) : exercises.length === 0 ? (
-              <p className="text-white text-xs">No exercises found in this folder.</p>
-            ) : (
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {exercises.map((ex) => (
-                  <label
-                    key={ex._id}
-                    className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedExerciseIds.includes(ex._id)}
-                      onChange={() => toggleExercise(ex._id)}
-                      className="mr-2 w-4 h-4"
-                    />
-                    <span className="truncate">
-                      {ex.correctAnswer?.trim() || ex.question?.trim() || 'Exercise'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-            {selectedExerciseIds.length > 0 && (
-              <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
-                {selectedExerciseIds.length} exercise
-                {selectedExerciseIds.length !== 1 ? 's' : ''} selected
-              </div>
-            )}
-          </div>
+      {/* Bulk Selection Buttons - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button
+          onClick={handleSelectAllFolders}
+          disabled={loading || folders.length === 0}
+          className={`px-3 py-2 rounded text-xs font-medium transition ${
+            selectAllFolders 
+              ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+              : 'bg-slate-500 hover:bg-slate-600 text-white'
+          } ${(loading || folders.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {selectAllFolders ? 'Deselect All Folders' : 'Select All Folders'}
+        </button>
+        <button
+          onClick={handleSelectAllStudents}
+          disabled={studentsLoading || students.length === 0}
+          className={`px-3 py-2 rounded text-xs font-medium transition ${
+            selectAllStudents 
+              ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+              : 'bg-slate-500 hover:bg-slate-600 text-white'
+          } ${(studentsLoading || students.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {selectAllStudents ? 'Deselect All Students' : 'Select All Students'}
+        </button>
+      </div>
 
-          {/* Students */}
-          <div className="bg-slate-600 rounded-lg p-3">
-            <h3 className="text-white text-sm font-semibold mb-2">
-              Select Students{' '}
-              {!studentsLoading && students.length > 0 && (
-                <span className="text-orange-400 font-normal ml-1">({students.length} available)</span>
-              )}
-            </h3>
-            {studentsLoading ? (
-              <div className="flex justify-center py-4">
-                <PuffLoader color="#ffffff" size={20} />
-              </div>
-            ) : students.length === 0 ? (
-              <p className="text-white text-xs">No students found.</p>
-            ) : (
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {students.map((st) => (
-                  <label
-                    key={st._id}
-                    className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedStudentIds.includes(st._id)}
-                      onChange={() => toggleStudent(st._id)}
-                      className="mr-2 w-4 h-4"
-                    />
-                    <span className="truncate">
-                      {st.fullName || 'Unnamed Student'}
-                      <span className="text-xs text-gray-400 ml-1">({st.email})</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-            {selectedStudentIds.length > 0 && (
-              <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
-                {selectedStudentIds.length} student
-                {selectedStudentIds.length !== 1 ? 's' : ''} selected
-              </div>
-            )}
+      {/* Folders */}
+      <div className="bg-slate-600 rounded-lg p-3">
+        <h3 className="text-white text-sm font-semibold mb-2">
+          Select Folders to Assign
+        </h3>
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <PuffLoader color="#ffffff" size={25} />
           </div>
+        ) : folders.length === 0 ? (
+          <p className="text-white text-xs">No folders found. Create some folders first.</p>
+        ) : (
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {folders.map((folder) => (
+              <label
+                key={folder._id}
+                className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedFolderIds.includes(folder._id)}
+                  onChange={() => toggleFolder(folder._id)}
+                  className="mr-2 w-4 h-4"
+                />
+                <span className="truncate">
+                  {folder.name}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+        {selectedFolderIds.length > 0 && (
+          <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
+            {selectedFolderIds.length} folder
+            {selectedFolderIds.length !== 1 ? 's' : ''} selected
+          </div>
+        )}
+      </div>
 
-          {/* Assign button */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleAssign}
-              disabled={
-                selectedExerciseIds.length === 0 ||
-                selectedStudentIds.length === 0 ||
-                assignmentLoading ||
-                studentsLoading
-              }
-              className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
-                selectedExerciseIds.length === 0 ||
-                selectedStudentIds.length === 0 ||
-                assignmentLoading ||
-                studentsLoading
-                  ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-                  : 'bg-orange-500 hover:bg-orange-600 text-white'
-              }`}
-            >
-              {assignmentLoading ? (
-                <div className="flex items-center gap-2 justify-center">
-                  <PuffLoader color="#ffffff" size={16} />
-                  Assigning...
+      {/* Students */}
+      <div className="bg-slate-600 rounded-lg p-3">
+        <h3 className="text-white text-sm font-semibold mb-2">
+          Select Students{' '}
+          {!studentsLoading && students.length > 0 && (
+            <span className="text-orange-400 font-normal ml-1">({students.length} available)</span>
+          )}
+        </h3>
+        {studentsLoading ? (
+          <div className="flex justify-center py-4">
+            <PuffLoader color="#ffffff" size={20} />
+          </div>
+        ) : students.length === 0 ? (
+          <p className="text-white text-xs">No students found.</p>
+        ) : (
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {students.map((st) => (
+              <label
+                key={st._id}
+                className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedStudentIds.includes(st._id)}
+                  onChange={() => toggleStudent(st._id)}
+                  className="mr-2 w-4 h-4 flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="truncate font-medium">
+                    {st.fullName || 'Unnamed Student'}
+                  </div>
+                  <div className="text-xs text-gray-400 truncate">
+                    {st.email.length > 25 ? st.email.substring(0, 25) + '...' : st.email}
+                  </div>
                 </div>
-              ) : (
-                `Assign ${selectedExerciseIds.length || 0} Exercise${
-                  selectedExerciseIds.length !== 1 ? 's' : ''
-                } to ${selectedStudentIds.length || 0} Student${
-                  selectedStudentIds.length !== 1 ? 's' : ''
-                }`
-              )}
-            </button>
+              </label>
+            ))}
           </div>
-        </>
-      )}
+        )}
+        {selectedStudentIds.length > 0 && (
+          <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
+            {selectedStudentIds.length} student
+            {selectedStudentIds.length !== 1 ? 's' : ''} selected
+          </div>
+        )}
+      </div>
+
+      {/* Assign button */}
+      <div className="flex justify-center">
+        <button
+          onClick={handleAssign}
+          disabled={
+            selectedFolderIds.length === 0 ||
+            selectedStudentIds.length === 0 ||
+            assignmentLoading ||
+            studentsLoading
+          }
+          className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
+            selectedFolderIds.length === 0 ||
+            selectedStudentIds.length === 0 ||
+            assignmentLoading ||
+            studentsLoading
+              ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+              : 'bg-orange-500 hover:bg-orange-600 text-white'
+          }`}
+        >
+          {assignmentLoading ? (
+            <div className="flex items-center gap-2 justify-center">
+              <PuffLoader color="#ffffff" size={16} />
+              Assigning...
+            </div>
+          ) : (
+            `Assign ${selectedFolderIds.length || 0} Folder${
+              selectedFolderIds.length !== 1 ? 's' : ''
+            } to ${selectedStudentIds.length || 0} Student${
+              selectedStudentIds.length !== 1 ? 's' : ''
+            }`
+          )}
+        </button>
+      </div>
     </div>
   );
 }

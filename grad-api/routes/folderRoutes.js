@@ -1,13 +1,17 @@
 import express from 'express';
 import Folder from '../models/Folder.js';
-import Exercise from '../models/Exercise.js'; // ← Add this
+import Exercise from '../models/Exercise.js';
 
 const router = express.Router();
 
 // POST folder
 router.post('/', async (req, res) => {
-  const { name, teacherId } = req.body;
-  const folder = await Folder.create({ name, teacherId });
+  const { name, teacherId, instructions } = req.body;
+  const folder = await Folder.create({ 
+    name, 
+    teacherId, 
+    instructions: instructions || '' 
+  });
   res.json(folder);
 });
 
@@ -35,20 +39,26 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// PUT rename folder
+// PUT rename folder and update instructions
 router.put('/:id', async (req, res) => {
-  const { name } = req.body;
+  const { name, instructions } = req.body;
   try {
+    const updateData = { name };
+    // Only update instructions if it's provided in the request
+    if (instructions !== undefined) {
+      updateData.instructions = instructions;
+    }
+    
     const updated = await Folder.findByIdAndUpdate(
       req.params.id,
-      { name },
+      updateData,
       { new: true }
     );
     if (!updated) return res.status(404).json({ error: 'Folder not found' });
     res.json(updated);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error while renaming folder' });
+    res.status(500).json({ error: 'Server error while updating folder' });
   }
 });
 

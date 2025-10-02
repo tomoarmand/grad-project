@@ -29,6 +29,12 @@ function StudentPage() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  
+  // New state for folder selection
+  const [assignedFolders, setAssignedFolders] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [showFolderSelection, setShowFolderSelection] = useState(false);
+  
   const inputRef = useRef();
   const { user, logout } = useUserStore();
   const navigate = useNavigate();
@@ -155,11 +161,41 @@ function StudentPage() {
     trackAnalyticsEvent('Student', 'New_Exercise_Started', `Exercise_${newIndex}`);
   };
 
-  const fetchExercises = async () => {
+  // Fetch assigned folders for the student
+  const fetchAssignedFolders = async () => {
     if (!user) return;
-    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/exercises?studentId=${user._id}`);
+      const res = await fetch(`${API_URL}/folder-assignments/student/${user._id}/folders`);
+      const folders = await res.json();
+      setAssignedFolders(folders);
+      
+      if (folders.length === 1) {
+        // If only one folder, auto-select it
+        setSelectedFolder(folders[0]);
+        fetchExercisesFromFolder(folders[0]._id);
+      } else if (folders.length > 1) {
+        // If multiple folders, show selection
+        setShowFolderSelection(true);
+      }
+    } catch (error) {
+      console.error('Error fetching assigned folders:', error);
+      trackAnalyticsEvent('Student', 'Folder_Load_Error', error.message);
+    }
+  };
+
+  // Fetch exercises from a specific folder
+  const fetchExercisesFromFolder = async (folderId) => {
+    if (!folderId) return;
+    setLoading(true);
+    // Reset all exercise-related states
+    setFeedback("");
+    setShowAnswer(false);
+    setFailedAttempts(0);
+    setShowCorrect(false);
+    setShowTryAgain(false);
+    setInputValue("");
+    try {
+      const res = await fetch(`${API_URL}/exercises/folder/${folderId}`);
       const data = await res.json();
       setExercises(data);
       if (data.length > 0) {
@@ -177,9 +213,31 @@ function StudentPage() {
     }
   };
 
+  // Update the useEffect to call fetchAssignedFolders instead
   useEffect(() => {
-    if (user) fetchExercises();
+    if (user) fetchAssignedFolders();
   }, [user]);
+
+  // Add folder selection handler
+  const handleFolderSelect = (folder) => {
+    setSelectedFolder(folder);
+    setShowFolderSelection(false);
+    // Reset all exercise-related states
+    setFeedback("");
+    setShowAnswer(false);
+    setFailedAttempts(0);
+    setShowCorrect(false);
+    setShowTryAgain(false);
+    setInputValue("");
+    fetchExercisesFromFolder(folder._id);
+    trackAnalyticsEvent('Student', 'Folder_Selected', folder.name);
+  };
+
+  // Add folder change handler
+  const handleChangeFolder = () => {
+    setShowFolderSelection(true);
+    trackAnalyticsEvent('Student', 'Change_Folder_Requested');
+  };
 
   if (!user) {
     return (
@@ -196,18 +254,74 @@ function StudentPage() {
           Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
         </h1>
 
+        {/* Folder selection screen */}
+        {showFolderSelection && (
+          <div className="w-full flex flex-col items-center gap-4">
+            <h2 className="text-xl text-white font-semibold text-center">Choose a Folder to Practice</h2>
+            <div className="w-full space-y-2">
+              {assignedFolders.map((folder) => (
+                <button
+                  key={folder._id}
+                  onClick={() => handleFolderSelect(folder)}
+                  className="w-full p-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition text-left"
+                >
+                  {folder.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Folder info and change button when a folder is selected */}
+        {selectedFolder && !showFolderSelection && (
+          <div className="w-full text-center">
+            <div className="bg-slate-600 rounded-lg p-3 mb-4">
+              <p className="text-white text-sm">
+                Practicing from: <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
+              </p>
+              {assignedFolders.length > 1 && (
+                <button
+                  onClick={handleChangeFolder}
+                  className="text-orange-400 hover:text-orange-300 text-xs underline mt-1"
+                >
+                  Change folder
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Folder Instructions - Only show if instructions exist */}
+        {selectedFolder && selectedFolder.instructions && selectedFolder.instructions.trim() && !showFolderSelection && (
+          <div className="w-full bg-blue-600 rounded-lg p-4">
+            <h3 className="text-white text-sm font-semibold mb-2">Instructions:</h3>
+            <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+              {selectedFolder.instructions}
+            </p>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex flex-col items-center justify-center text-white text-xl">
             <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
             <p className="mt-4">Loading exercises...</p>
           </div>
-        ) : exercises.length === 0 ? (
+        ) : exercises.length === 0 && !showFolderSelection ? (
           <div className="flex flex-col items-center justify-center text-center text-white gap-4">
-            <p className="text-lg sm:text-xl font-medium">No exercises yet 🎶</p>
+            <p className="text-lg sm:text-xl font-medium">No exercises yet</p>
             <p className="text-sm opacity-80">
-              Your teacher hasn't assigned you anything yet.<br />
+              {selectedFolder ? `The folder "${selectedFolder.name}" doesn't have any exercises yet.` : 'No folders have been assigned to you yet.'}
+              <br />
               Check back soon!
             </p>
+            {assignedFolders.length > 1 && (
+              <button
+                onClick={handleChangeFolder}
+                className="text-orange-400 hover:text-orange-300 text-sm underline mt-2"
+              >
+                Try a different folder
+              </button>
+            )}
           </div>
         ) : (
           <>

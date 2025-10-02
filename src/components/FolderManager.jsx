@@ -11,8 +11,10 @@ function FolderManager({
   activeTab
 }) {
   const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderInstructions, setNewFolderInstructions] = useState('');
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [editedName, setEditedName] = useState('');
+  const [editedInstructions, setEditedInstructions] = useState('');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -120,6 +122,13 @@ function FolderManager({
     }
   };
 
+  const handleNewFolderInstructionsChange = (e) => {
+    const value = e.target.value;
+    if (value.length <= 500) { // Enforce max length
+      setNewFolderInstructions(value);
+    }
+  };
+
   const handleEditedNameChange = (e) => {
     const value = e.target.value;
     if (value.length <= 50) { // Enforce max length
@@ -128,6 +137,13 @@ function FolderManager({
       if (errors.editFolder) {
         setErrors(prev => ({ ...prev, editFolder: '' }));
       }
+    }
+  };
+
+  const handleEditedInstructionsChange = (e) => {
+    const value = e.target.value;
+    if (value.length <= 500) { // Enforce max length
+      setEditedInstructions(value);
     }
   };
 
@@ -145,7 +161,8 @@ function FolderManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           name: validation.sanitized, 
-          teacherId: sanitizeInput(teacherId?.toString() || '') 
+          teacherId: sanitizeInput(teacherId?.toString() || ''),
+          instructions: newFolderInstructions.trim()
         })
       });
 
@@ -153,6 +170,7 @@ function FolderManager({
         const newFolder = await response.json();
         onFoldersUpdate([...folders, newFolder]);
         setNewFolderName('');
+        setNewFolderInstructions('');
         setErrors(prev => ({ ...prev, newFolder: '' }));
       } else {
         const error = await response.json();
@@ -176,15 +194,20 @@ function FolderManager({
       const response = await fetch(`${API_URL}/folders/${encodeURIComponent(folderId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: validation.sanitized })
+        body: JSON.stringify({ 
+          name: validation.sanitized,
+          instructions: editedInstructions.trim()
+        })
       });
 
       if (response.ok) {
+        const updatedFolder = await response.json();
         onFoldersUpdate(
-          folders.map((f) => (f._id === folderId ? { ...f, name: validation.sanitized } : f))
+          folders.map((f) => (f._id === folderId ? updatedFolder : f))
         );
         setRenamingFolderId(null);
         setEditedName('');
+        setEditedInstructions('');
         setErrors(prev => ({ ...prev, editFolder: '' }));
       } else {
         const error = await response.json();
@@ -231,6 +254,7 @@ function FolderManager({
       if (action === handleRenameFolder) {
         setRenamingFolderId(null);
         setEditedName('');
+        setEditedInstructions('');
         setErrors(prev => ({ ...prev, editFolder: '' }));
       }
     }
@@ -252,30 +276,41 @@ function FolderManager({
 
         {activeTab === 'create' && (
           <div className="mb-4">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="New folder name"
-                  value={newFolderName}
-                  onChange={handleNewFolderNameChange}
-                  onKeyDown={(e) => handleKeyDown(e, handleAddFolder)}
-                  className={`w-full p-2 rounded border bg-slate-100 text-black transition ${
-                    errors.newFolder 
-                      ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                      : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
-                  }`}
-                  maxLength="50"
-                />
-                {errors.newFolder && <p className="text-red-400 text-sm mt-1">{errors.newFolder}</p>}
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="New folder name"
+                    value={newFolderName}
+                    onChange={handleNewFolderNameChange}
+                    onKeyDown={(e) => handleKeyDown(e, handleAddFolder)}
+                    className={`w-full p-2 rounded border bg-slate-100 text-black transition ${
+                      errors.newFolder 
+                        ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
+                        : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                    }`}
+                    maxLength="50"
+                  />
+                  {errors.newFolder && <p className="text-red-400 text-sm mt-1">{errors.newFolder}</p>}
+                </div>
+                <button
+                  onClick={handleAddFolder}
+                  className={`bg-${tabColor} hover:bg-${tabColorHover} text-white px-4 py-2 rounded transition`}
+                  disabled={!newFolderName.trim()}
+                >
+                  Add
+                </button>
               </div>
-              <button
-                onClick={handleAddFolder}
-                className={`bg-${tabColor} hover:bg-${tabColorHover} text-white px-4 py-2 rounded transition`}
-                disabled={!newFolderName.trim()}
-              >
-                Add
-              </button>
+              <textarea
+                placeholder="Instructions for students (optional)"
+                value={newFolderInstructions}
+                onChange={handleNewFolderInstructionsChange}
+                className="w-full p-2 rounded border border-slate-300 bg-slate-100 text-black text-sm focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition resize-none"
+                rows="2"
+                maxLength="500"
+              />
+              <p className="text-slate-300 text-xs text-right">{newFolderInstructions.length}/500</p>
             </div>
           </div>
         )}
@@ -328,6 +363,7 @@ function FolderManager({
                             e.stopPropagation();
                             setRenamingFolderId(null);
                             setEditedName('');
+                            setEditedInstructions('');
                             setErrors(prev => ({ ...prev, editFolder: '' }));
                           }}
                           className="p-1.5 bg-gray-400 hover:bg-gray-500 rounded text-white flex items-center justify-center transition"
@@ -337,6 +373,16 @@ function FolderManager({
                           <X size={14} />
                         </button>
                       </div>
+                      <textarea
+                        value={editedInstructions}
+                        onChange={handleEditedInstructionsChange}
+                        onClick={(e) => e.stopPropagation()}
+                        placeholder="Instructions (optional)"
+                        className="w-full p-1 rounded text-black text-xs border border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition resize-none"
+                        rows="2"
+                        maxLength="500"
+                      />
+                      <p className="text-xs text-right">{editedInstructions.length}/500</p>
                       {errors.editFolder && <p className="text-red-400 text-xs">{errors.editFolder}</p>}
                     </div>
                   ) : (
@@ -370,14 +416,16 @@ function FolderManager({
               >
                 <button
                   onClick={() => {
+                    const folder = folders.find(f => f._id === menuOpenId);
                     setRenamingFolderId(menuOpenId);
-                    setEditedName(folders.find(f => f._id === menuOpenId)?.name || '');
+                    setEditedName(folder?.name || '');
+                    setEditedInstructions(folder?.instructions || '');
                     setMenuOpenId(null);
                     setErrors(prev => ({ ...prev, editFolder: '' }));
                   }}
                   className="block w-full text-left px-3 py-2 hover:bg-gray-100 rounded-t transition"
                 >
-                  Rename
+                  Edit
                 </button>
                 <button
                   onClick={() => confirmDeleteFolder(menuOpenId)}

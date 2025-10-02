@@ -154,7 +154,7 @@ function TeacherPage() {
                 }`}
               >
                 {tab === 'create' && 'Create & Organise'}
-                {tab === 'assign' && 'Assign Exercises'}
+                {tab === 'assign' && 'Assign Folders'}
                 {tab === 'unassign' && 'Manage Assignments'}
               </button>
             ))}
@@ -171,15 +171,15 @@ function TeacherPage() {
                 }`}
               >
                 {tab === 'create' && 'Create & Organise'}
-                {tab === 'assign' && 'Assign Exercises'}
+                {tab === 'assign' && 'Assign Folders'}
                 {tab === 'unassign' && 'Manage Assignments'}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Show folder manager for create and assign tabs */}
-        {(activeTab === 'create' || activeTab === 'assign') && (
+        {/* Show folder manager only for create tab */}
+        {activeTab === 'create' && (
           <FolderManager
             teacherId={user._id}
             onFolderSelect={handleFolderSelect}
@@ -190,8 +190,8 @@ function TeacherPage() {
           />
         )}
 
-        {/* Show selected folder info for create and assign tabs */}
-        {(activeTab === 'create' || activeTab === 'assign') && selectedFolder && (
+        {/* Show selected folder info only for create tab */}
+        {activeTab === 'create' && selectedFolder && (
           <div className="text-center text-white text-sm">
             Selected Folder:{' '}
             <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
@@ -212,16 +212,15 @@ function TeacherPage() {
         
         {activeTab === 'assign' && (
           <AssignTab 
-            user={user} 
-            selectedFolder={selectedFolder}
-            onAssignExercises={(count) => trackAnalyticsEvent('Teacher', 'Assign_Exercises', `Assigned ${count} exercises`)}
+            user={user}
+            onAssignExercises={(count) => trackAnalyticsEvent('Teacher', 'Assign_Folders', `Assigned ${count} folders`)}
           />
         )}
         
         {activeTab === 'unassign' && (
           <UnassignTab 
             user={user}
-            onUnassignExercises={(count) => trackAnalyticsEvent('Teacher', 'Unassign_Exercises', `Unassigned ${count} exercises`)}
+            onUnassignExercises={(count) => trackAnalyticsEvent('Teacher', 'Unassign_Folders', `Unassigned ${count} folders`)}
           />
         )}
       </div>

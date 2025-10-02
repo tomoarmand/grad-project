@@ -21,6 +21,11 @@ const userSchema = new mongoose.Schema({
     enum: ['teacher', 'student'],
     default: 'student',
   },
+  // Add assigned folders for students
+  assignedFolders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Folder'
+  }]
 },
 {
   timestamps: true,
