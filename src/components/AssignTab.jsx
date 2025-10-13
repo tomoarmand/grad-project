@@ -8,8 +8,6 @@ function AssignTab({ user }) {
   const [students, setStudents] = useState([]);
   const [selectedFolderIds, setSelectedFolderIds] = useState([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
-  const [selectAllFolders, setSelectAllFolders] = useState(false);
-  const [selectAllStudents, setSelectAllStudents] = useState(false);
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -78,7 +76,6 @@ function AssignTab({ user }) {
       ? selectedFolderIds.filter((i) => i !== id) 
       : [...selectedFolderIds, id];
     setSelectedFolderIds(newSelection);
-    setSelectAllFolders(newSelection.length === folders.length);
   };
 
   const toggleStudent = (id) => {
@@ -86,25 +83,6 @@ function AssignTab({ user }) {
       ? selectedStudentIds.filter((i) => i !== id) 
       : [...selectedStudentIds, id];
     setSelectedStudentIds(newSelection);
-    setSelectAllStudents(newSelection.length === students.length);
-  };
-
-  const handleSelectAllFolders = () => {
-    if (selectAllFolders) {
-      setSelectedFolderIds([]);
-    } else {
-      setSelectedFolderIds(folders.map(f => f._id));
-    }
-    setSelectAllFolders(!selectAllFolders);
-  };
-
-  const handleSelectAllStudents = () => {
-    if (selectAllStudents) {
-      setSelectedStudentIds([]);
-    } else {
-      setSelectedStudentIds(students.map(s => s._id));
-    }
-    setSelectAllStudents(!selectAllStudents);
   };
 
   const handleAssign = async () => {
@@ -123,8 +101,6 @@ function AssignTab({ user }) {
         setFeedback({ type: 'success', msg: `${folderText} assigned successfully!` });
         setSelectedFolderIds([]);
         setSelectedStudentIds([]);
-        setSelectAllFolders(false);
-        setSelectAllStudents(false);
       } else {
         const errorData = await response.json().catch(() => ({}));
         setFeedback({ type: 'error', msg: errorData.error || 'Failed to assign folders' });
@@ -160,32 +136,6 @@ function AssignTab({ user }) {
       )}
 
       {error && <div className="bg-red-600 text-white p-3 rounded-lg text-sm">{error}</div>}
-
-      {/* Bulk Selection Buttons - Mobile Optimized */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <button
-          onClick={handleSelectAllFolders}
-          disabled={loading || folders.length === 0}
-          className={`px-3 py-2 rounded text-xs font-medium transition ${
-            selectAllFolders 
-              ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-              : 'bg-slate-500 hover:bg-slate-600 text-white'
-          } ${(loading || folders.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {selectAllFolders ? 'Deselect All Folders' : 'Select All Folders'}
-        </button>
-        <button
-          onClick={handleSelectAllStudents}
-          disabled={studentsLoading || students.length === 0}
-          className={`px-3 py-2 rounded text-xs font-medium transition ${
-            selectAllStudents 
-              ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-              : 'bg-slate-500 hover:bg-slate-600 text-white'
-          } ${(studentsLoading || students.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {selectAllStudents ? 'Deselect All Students' : 'Select All Students'}
-        </button>
-      </div>
 
       {/* Folders */}
       <div className="bg-slate-600 rounded-lg p-3">

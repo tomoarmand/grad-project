@@ -229,6 +229,7 @@ function StudentPage() {
     setShowCorrect(false);
     setShowTryAgain(false);
     setInputValue("");
+    setCurrentExerciseIndex(null);
     fetchExercisesFromFolder(folder._id);
     trackAnalyticsEvent('Student', 'Folder_Selected', folder.name);
   };
@@ -254,16 +255,16 @@ function StudentPage() {
           Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
         </h1>
 
-        {/* Folder selection screen */}
+        {/* Folder selection screen - ONLY show this when in folder selection mode */}
         {showFolderSelection && (
           <div className="w-full flex flex-col items-center gap-4">
             <h2 className="text-xl text-white font-semibold text-center">Choose a Folder to Practice</h2>
-            <div className="w-full space-y-2">
+            <div className="w-full max-h-[400px] overflow-y-auto space-y-2 px-1">
               {assignedFolders.map((folder) => (
                 <button
                   key={folder._id}
                   onClick={() => handleFolderSelect(folder)}
-                  className="w-full p-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition text-left"
+                  className="w-full p-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition text-left shadow-md hover:shadow-lg"
                 >
                   {folder.name}
                 </button>
@@ -272,136 +273,141 @@ function StudentPage() {
           </div>
         )}
 
-        {/* Folder info and change button when a folder is selected */}
-        {selectedFolder && !showFolderSelection && (
-          <div className="w-full text-center">
-            <div className="bg-slate-600 rounded-lg p-3 mb-4">
-              <p className="text-white text-sm">
-                Practicing from: <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
-              </p>
-              {assignedFolders.length > 1 && (
-                <button
-                  onClick={handleChangeFolder}
-                  className="text-orange-400 hover:text-orange-300 text-xs underline mt-1"
-                >
-                  Change folder
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Folder Instructions - Only show if instructions exist */}
-        {selectedFolder && selectedFolder.instructions && selectedFolder.instructions.trim() && !showFolderSelection && (
-          <div className="w-full bg-blue-600 rounded-lg p-4">
-            <h3 className="text-white text-sm font-semibold mb-2">Instructions:</h3>
-            <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
-              {selectedFolder.instructions}
-            </p>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center text-white text-xl">
-            <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
-            <p className="mt-4">Loading exercises...</p>
-          </div>
-        ) : exercises.length === 0 && !showFolderSelection ? (
-          <div className="flex flex-col items-center justify-center text-center text-white gap-4">
-            <p className="text-lg sm:text-xl font-medium">No exercises yet</p>
-            <p className="text-sm opacity-80">
-              {selectedFolder ? `The folder "${selectedFolder.name}" doesn't have any exercises yet.` : 'No folders have been assigned to you yet.'}
-              <br />
-              Check back soon!
-            </p>
-            {assignedFolders.length > 1 && (
-              <button
-                onClick={handleChangeFolder}
-                className="text-orange-400 hover:text-orange-300 text-sm underline mt-2"
-              >
-                Try a different folder
-              </button>
-            )}
-          </div>
-        ) : (
+        {/* Everything below only shows when NOT in folder selection mode */}
+        {!showFolderSelection && (
           <>
-            {showCorrect && (
-              <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
-                <div className="bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-green-600">
-                  <p className="text-2xl font-bold text-center">Correct!</p>
-                  <p className="text-sm text-center mt-1 opacity-90">Excellent work!</p>
-                </div>
-              </div>
-            )}
-
-            {showTryAgain && (
-              <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
-                <div className="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-red-600">
-                  <p className="text-2xl font-bold text-center">{getEncouragementMessage(failedAttempts).title}</p>
-                  <p className="text-sm text-center mt-1 opacity-90">{getEncouragementMessage(failedAttempts).subtitle}</p>
-                </div>
-              </div>
-            )}
-
-            {currentExerciseIndex !== null && exercises[currentExerciseIndex] && (
-              <>
-                <div className="flex flex-col items-center w-full">
-                  <p className="text-white text-center text-sm sm:text-base mb-4">
-                    Listen to the recording and type your answer below
+            {/* Folder info and change button when a folder is selected */}
+            {selectedFolder && (
+              <div className="w-full text-center">
+                <div className="bg-slate-600 rounded-lg p-3 mb-4">
+                  <p className="text-white text-sm">
+                    Practicing from: <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
                   </p>
-                  <audio 
-                    controls 
-                    src={exercises[currentExerciseIndex].audioData} 
-                    className="w-full mb-6 rounded"
-                    onPlay={() => trackAnalyticsEvent('Student', 'Audio_Played', `Exercise_${currentExerciseIndex}`)}
-                  />
-                  <div className="flex flex-row gap-2 w-full items-center">
-                    <div className="relative flex-grow">
-                      <input
-                        ref={inputRef}
-                        className="w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
-                        placeholder="Enter your answer here..."
-                        onChange={handleInputChange}
-                        value={inputValue}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && inputValue.trim()) handleSubmit();
-                        }}
-                        onFocus={handleInputFocus}
-                        onBlur={handleInputBlur}
-                      />
-                    </div>
-                    <div data-fab>
-                      <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
-                    </div>
-                  </div>
-                  <button
-                    disabled={!inputValue.trim()}
-                    onClick={handleSubmit}
-                    className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${
-                      inputValue.trim() 
-                        ? "bg-[#64748b] hover:bg-[#fb923c]" 
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    Submit
-                  </button>
+                  {assignedFolders.length > 1 && (
+                    <button
+                      onClick={handleChangeFolder}
+                      className="text-orange-400 hover:text-orange-300 text-xs underline mt-1"
+                    >
+                      Change folder
+                    </button>
+                  )}
                 </div>
+              </div>
+            )}
 
-                {showAnswer && (
-                  <div className="mt-4 flex flex-col items-center">
-                    {!feedback ? (
-                      <button
-                        onClick={handleShowAnswer}
-                        className="text-sm sm:text-base md:text-lg text-[#f8fafc] bg-[#f87171] hover:bg-[#ef4444] px-4 py-2 rounded shadow"
-                      >
-                        Show Answer
-                      </button>
-                    ) : (
-                      <p className="mt-2 text-white text-lg transition-opacity duration-500 ease-in opacity-100">
-                        Answer: {feedback}
-                      </p>
-                    )}
+            {/* Folder Instructions - Only show if instructions exist */}
+            {selectedFolder && selectedFolder.instructions && selectedFolder.instructions.trim() && (
+              <div className="w-full bg-blue-600 rounded-lg p-4">
+                <h3 className="text-white text-sm font-semibold mb-2">Instructions:</h3>
+                <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+                  {selectedFolder.instructions}
+                </p>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center text-white text-xl">
+                <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
+                <p className="mt-4">Loading exercises...</p>
+              </div>
+            ) : exercises.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center text-white gap-4">
+                <p className="text-lg sm:text-xl font-medium">No exercises yet</p>
+                <p className="text-sm opacity-80">
+                  {selectedFolder ? `The folder "${selectedFolder.name}" doesn't have any exercises yet.` : 'No folders have been assigned to you yet.'}
+                  <br />
+                  Check back soon!
+                </p>
+                {assignedFolders.length > 1 && (
+                  <button
+                    onClick={handleChangeFolder}
+                    className="text-orange-400 hover:text-orange-300 text-sm underline mt-2"
+                  >
+                    Try a different folder
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {showCorrect && (
+                  <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
+                    <div className="bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-green-600">
+                      <p className="text-2xl font-bold text-center">Correct!</p>
+                      <p className="text-sm text-center mt-1 opacity-90">Excellent work!</p>
+                    </div>
                   </div>
+                )}
+
+                {showTryAgain && (
+                  <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
+                    <div className="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-red-600">
+                      <p className="text-2xl font-bold text-center">{getEncouragementMessage(failedAttempts).title}</p>
+                      <p className="text-sm text-center mt-1 opacity-90">{getEncouragementMessage(failedAttempts).subtitle}</p>
+                    </div>
+                  </div>
+                )}
+
+                {currentExerciseIndex !== null && exercises[currentExerciseIndex] && (
+                  <>
+                    <div className="flex flex-col items-center w-full">
+                      <p className="text-white text-center text-sm sm:text-base mb-4">
+                        Listen to the recording and type your answer below
+                      </p>
+                      <audio 
+                        controls 
+                        src={exercises[currentExerciseIndex].audioData} 
+                        className="w-full mb-6 rounded"
+                        onPlay={() => trackAnalyticsEvent('Student', 'Audio_Played', `Exercise_${currentExerciseIndex}`)}
+                      />
+                      <div className="flex flex-row gap-2 w-full items-center">
+                        <div className="relative flex-grow">
+                          <input
+                            ref={inputRef}
+                            className="w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
+                            placeholder="Enter your answer here..."
+                            onChange={handleInputChange}
+                            value={inputValue}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && inputValue.trim()) handleSubmit();
+                            }}
+                            onFocus={handleInputFocus}
+                            onBlur={handleInputBlur}
+                          />
+                        </div>
+                        <div data-fab>
+                          <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
+                        </div>
+                      </div>
+                      <button
+                        disabled={!inputValue.trim()}
+                        onClick={handleSubmit}
+                        className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${
+                          inputValue.trim() 
+                            ? "bg-[#64748b] hover:bg-[#fb923c]" 
+                            : "bg-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        Submit
+                      </button>
+                    </div>
+
+                    {showAnswer && (
+                      <div className="mt-4 flex flex-col items-center">
+                        {!feedback ? (
+                          <button
+                            onClick={handleShowAnswer}
+                            className="text-sm sm:text-base md:text-lg text-[#f8fafc] bg-[#f87171] hover:bg-[#ef4444] px-4 py-2 rounded shadow"
+                          >
+                            Show Answer
+                          </button>
+                        ) : (
+                          <p className="mt-2 text-white text-lg transition-opacity duration-500 ease-in opacity-100">
+                            Answer: {feedback}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
