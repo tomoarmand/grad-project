@@ -77,6 +77,12 @@ function StudentPage() {
   const triggerInputError = (attempts) => {
     setIsInputShaking(true);
     setShowInputError(true);
+    
+    // Haptic feedback on mobile if supported
+    if (navigator.vibrate) {
+      navigator.vibrate([50, 30, 50]);
+    }
+    
     setTimeout(() => setIsInputShaking(false), 600);
     setTimeout(() => setShowInputError(false), 3000);
   };
@@ -250,22 +256,22 @@ function StudentPage() {
   }
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
-      <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
-        <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
+    <div className="min-h-screen w-screen flex flex-col items-center justify-center gap-3 sm:gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-4">
+      <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 md:p-8 flex flex-col items-center gap-4 sm:gap-6">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl text-white font-bold mb-2 sm:mb-4 text-center">
           Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
         </h1>
 
         {/* Folder selection screen - ONLY show this when in folder selection mode */}
         {showFolderSelection && (
-          <div className="w-full flex flex-col items-center gap-4">
-            <h2 className="text-xl text-white font-semibold text-center">Choose a Folder to Practice</h2>
-            <div className="w-full max-h-[400px] overflow-y-auto space-y-2 px-1">
+          <div className="w-full flex flex-col items-center gap-3 sm:gap-4">
+            <h2 className="text-lg sm:text-xl text-white font-semibold text-center">Choose a Folder to Practice</h2>
+            <div className="w-full max-h-[300px] sm:max-h-[400px] overflow-y-auto space-y-2 px-1">
               {assignedFolders.map((folder) => (
                 <button
                   key={folder._id}
                   onClick={() => handleFolderSelect(folder)}
-                  className="w-full p-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition text-left shadow-md hover:shadow-lg"
+                  className="w-full p-2 sm:p-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition text-left text-sm sm:text-base shadow-md hover:shadow-lg"
                 >
                   {folder.name}
                 </button>
@@ -280,8 +286,8 @@ function StudentPage() {
             {/* Folder info and change button when a folder is selected */}
             {selectedFolder && (
               <div className="w-full text-center">
-                <div className="bg-slate-600 rounded-lg p-3 mb-4">
-                  <p className="text-white text-sm">
+                <div className="bg-slate-600 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+                  <p className="text-white text-xs sm:text-sm">
                     Practicing from: <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
                   </p>
                   {assignedFolders.length > 1 && (
@@ -298,23 +304,23 @@ function StudentPage() {
 
             {/* Folder Instructions - Only show if instructions exist */}
             {selectedFolder && selectedFolder.instructions && selectedFolder.instructions.trim() && (
-              <div className="w-full bg-blue-600 rounded-lg p-4">
-                <h3 className="text-white text-sm font-semibold mb-2">Instructions:</h3>
-                <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+              <div className="w-full bg-blue-600 rounded-lg p-3 sm:p-4">
+                <h3 className="text-white text-xs sm:text-sm font-semibold mb-2">Instructions:</h3>
+                <p className="text-white text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
                   {selectedFolder.instructions}
                 </p>
               </div>
             )}
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center text-white text-xl">
+              <div className="flex flex-col items-center justify-center text-white text-base sm:text-lg">
                 <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
-                <p className="mt-4">Loading exercises...</p>
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base">Loading exercises...</p>
               </div>
             ) : exercises.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center text-white gap-4">
-                <p className="text-lg sm:text-xl font-medium">No exercises yet</p>
-                <p className="text-sm opacity-80">
+              <div className="flex flex-col items-center justify-center text-center text-white gap-3 sm:gap-4">
+                <p className="text-base sm:text-lg font-medium">No exercises yet</p>
+                <p className="text-xs sm:text-sm opacity-80">
                   {selectedFolder ? `The folder "${selectedFolder.name}" doesn't have any exercises yet.` : 'No folders have been assigned to you yet.'}
                   <br />
                   Check back soon!
@@ -322,7 +328,7 @@ function StudentPage() {
                 {assignedFolders.length > 1 && (
                   <button
                     onClick={handleChangeFolder}
-                    className="text-orange-400 hover:text-orange-300 text-sm underline mt-2"
+                    className="text-orange-400 hover:text-orange-300 text-xs sm:text-sm underline mt-2"
                   >
                     Try a different folder
                   </button>
@@ -332,9 +338,9 @@ function StudentPage() {
               <>
                 {showCorrect && (
                   <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
-                    <div className="bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-green-600">
-                      <p className="text-2xl font-bold text-center">Correct!</p>
-                      <p className="text-sm text-center mt-1 opacity-90">Excellent work!</p>
+                    <div className="bg-green-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg shadow-lg border-2 border-green-600">
+                      <p className="text-xl sm:text-2xl font-bold text-center">Correct!</p>
+                      <p className="text-xs sm:text-sm text-center mt-1 opacity-90">Excellent work!</p>
                     </div>
                   </div>
                 )}
@@ -342,26 +348,26 @@ function StudentPage() {
                 {currentExerciseIndex !== null && exercises[currentExerciseIndex] && (
                   <>
                     <div className="flex flex-col items-center w-full">
-                      <p className="text-white text-center text-sm sm:text-base mb-4">
+                      <p className="text-white text-center text-xs sm:text-sm mb-3 sm:mb-4">
                         Listen to the recording and type your answer below
                       </p>
                       <audio 
                         controls 
                         src={exercises[currentExerciseIndex].audioData} 
-                        className="w-full mb-6 rounded"
+                        className="w-full mb-4 sm:mb-6 rounded"
                         onPlay={() => trackAnalyticsEvent('Student', 'Audio_Played', `Exercise_${currentExerciseIndex}`)}
                       />
                       <div className="flex flex-col gap-2 w-full">
-                        <div className="flex flex-row gap-2 w-full items-center">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full items-stretch sm:items-center">
                           <div className="relative flex-grow">
                             <input
                               ref={inputRef}
-                              className={`w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 placeholder-gray-500 border-2 transition-all duration-200 ${
+                              className={`w-full text-sm sm:text-base rounded bg-[#f8fafc] text-black px-3 sm:px-4 py-2 sm:py-3 placeholder-gray-500 border-2 sm:border-4 transition-all duration-200 ${
                                 showInputError 
-                                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgba(239,68,68,0.6)]' 
+                                  ? 'border-red-500 bg-red-50 focus:border-red-500 focus:shadow-[0_0_12px_rgba(239,68,68,0.8),inset_0_0_8px_rgba(239,68,68,0.2)]' 
                                   : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
                               } ${isInputShaking ? 'animate-input-shake' : ''}`}
-                              placeholder="Enter your answer here..."
+                              placeholder="Type answer here..."
                               onChange={handleInputChange}
                               value={inputValue}
                               onKeyPress={(e) => {
@@ -371,15 +377,15 @@ function StudentPage() {
                               onBlur={handleInputBlur}
                             />
                           </div>
-                          <div data-fab>
+                          <div data-fab className="flex justify-center sm:justify-start">
                             <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
                           </div>
                         </div>
                         
-                        {/* Inline error message below input */}
+                        {/* Inline error message below input with pulsing glow */}
                         {showInputError && (
-                          <div className="flex items-center gap-2 text-red-400 text-sm animate-fade-in">
-                            <span className="text-lg">❌</span>
+                          <div className="flex items-center gap-2 text-red-500 text-xs sm:text-sm font-semibold animate-fade-in px-1">
+                            <span className="text-base sm:text-lg">❌</span>
                             <span>{getEncouragementMessage(failedAttempts)}</span>
                           </div>
                         )}
@@ -388,7 +394,7 @@ function StudentPage() {
                       <button
                         disabled={!inputValue.trim()}
                         onClick={handleSubmit}
-                        className={`px-6 text-lg sm:text-xl rounded mt-5 h-12 w-30 font-semibold text-white transition duration-200 ${
+                        className={`px-4 sm:px-6 text-sm sm:text-lg rounded mt-4 sm:mt-5 py-2 sm:py-2.5 font-semibold text-white transition duration-200 ${
                           inputValue.trim() 
                             ? "bg-[#64748b] hover:bg-[#fb923c]" 
                             : "bg-gray-400 cursor-not-allowed"
@@ -399,17 +405,17 @@ function StudentPage() {
                     </div>
 
                     {showAnswer && (
-                      <div className="mt-4 flex flex-col items-center">
+                      <div className="mt-3 sm:mt-4 flex flex-col items-center">
                         {!feedback ? (
                           <button
                             onClick={handleShowAnswer}
-                            className="text-sm sm:text-base md:text-lg text-[#f8fafc] bg-[#f87171] hover:bg-[#ef4444] px-4 py-2 rounded shadow"
+                            className="text-xs sm:text-sm md:text-base text-[#f8fafc] bg-[#f87171] hover:bg-[#ef4444] px-3 sm:px-4 py-2 rounded shadow transition"
                           >
                             Show Answer
                           </button>
                         ) : (
-                          <p className="mt-2 text-white text-lg transition-opacity duration-500 ease-in opacity-100">
-                            Answer: {feedback}
+                          <p className="mt-2 text-white text-sm sm:text-base lg:text-lg transition-opacity duration-500 ease-in opacity-100">
+                            Answer: <span className="font-semibold text-orange-300">{feedback}</span>
                           </p>
                         )}
                       </div>
@@ -423,10 +429,10 @@ function StudentPage() {
       </div>
 
       {/* Sign Out Link - positioned below the card */}
-      <div className="text-center mt-4">
+      <div className="text-center mt-2 sm:mt-4">
         <button
           onClick={confirmSignOut}
-          className="text-sm text-white/70 hover:text-white underline transition-colors"
+          className="text-xs sm:text-sm text-white/70 hover:text-white underline transition-colors"
         >
           Sign Out
         </button>
@@ -464,6 +470,14 @@ function StudentPage() {
         }
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;
+        }
+        @keyframes pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.8), inset 0 0 8px rgba(239, 68, 68, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 1), inset 0 0 12px rgba(239, 68, 68, 0.3);
+          }
         }
       `}</style>
     </div>

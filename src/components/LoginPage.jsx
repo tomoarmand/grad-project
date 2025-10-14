@@ -320,7 +320,7 @@ function LoginPage() {
                       : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
                   }`}
                   type="password"
-                  placeholder="Enter password (if required)"
+                  placeholder="Enter password (if set)"
                   value={password}
                   onChange={handlePasswordChange}
                   disabled={isLoading}

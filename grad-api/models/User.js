@@ -23,8 +23,9 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [function() { return this.role === 'student'; }, 'Password is required for students'],
-    minlength: [6, 'Password must be at least 6 characters']
+    minlength: [6, 'Password must be at least 6 characters'],
+    default: null,
+    sparse: true
   },
   // Add assigned folders for students
   assignedFolders: [{
