@@ -43,7 +43,7 @@ export const isValidObjectId = (value) => {
   return mongoose.Types.ObjectId.isValid(value);
 };
 
-// Enhanced user validation rules
+// Enhanced user validation rules for creation
 export const validateUserCreation = [
   body('fullName')
     .trim()
@@ -59,7 +59,6 @@ export const validateUserCreation = [
     .withMessage('Email cannot exceed 100 characters')
     .isEmail()
     .withMessage('Please enter a valid email address')
-    // REMOVED .normalizeEmail() - this was corrupting emails with dots
     .customSanitizer(sanitizeInput),
   
   body('role')
@@ -68,7 +67,14 @@ export const validateUserCreation = [
     .withMessage('Role must be either teacher or student')
     .customSanitizer(sanitizeInput),
 
-  // Changed from 'pin' to 'accessCode' to match your route files
+  // Password is OPTIONAL for students during creation
+  // (allows for creation without password, to be set later on first login)
+  body('password')
+    .optional()
+    .isLength({ min: 6, max: 100 })
+    .withMessage('Password must be between 6 and 100 characters'),
+
+  // Access code for teachers
   body('accessCode')
     .optional()
     .isLength({ min: 4, max: 10 })
@@ -80,6 +86,7 @@ export const validateUserCreation = [
   handleValidationErrors
 ];
 
+// Enhanced user validation rules for login
 export const validateUserLogin = [
   body('email')
     .trim()
@@ -87,10 +94,15 @@ export const validateUserLogin = [
     .withMessage('Email cannot exceed 100 characters')
     .isEmail()
     .withMessage('Please enter a valid email address')
-    // REMOVED .normalizeEmail() - this was corrupting emails with dots
     .customSanitizer(sanitizeInput),
   
-  // Changed from 'pin' to 'accessCode' to match your route files
+  // Password is OPTIONAL for students (may not have set one yet)
+  body('password')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Password cannot exceed 100 characters'),
+  
+  // Access code for teachers
   body('accessCode')
     .optional()
     .isLength({ min: 4, max: 10 })
