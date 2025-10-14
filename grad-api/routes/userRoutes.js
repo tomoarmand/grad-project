@@ -152,17 +152,15 @@ router.post('/', validateUserCreation, async (req, res) => {
 
     // Handle password for students
     if (role === 'student') {
-      if (password) {
-        // Password provided during registration
-        if (password.length < 6) {
-          return res.status(400).json({ error: 'Password must be at least 6 characters' });
-        }
-        userData.password = await bcrypt.hash(password, 12);
-        userData.needsPasswordSetup = false;
-      } else {
-        // No password provided - flag for setup on next login
-        userData.needsPasswordSetup = true;
+      if (!password) {
+        return res.status(400).json({ error: 'Password is required for student registration' });
       }
+      
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      }
+      
+      userData.password = await bcrypt.hash(password, 12);
     }
 
     // Create new user with normalized email
@@ -195,7 +193,7 @@ router.post('/', validateUserCreation, async (req, res) => {
   }
 });
 
-// Login route - UPDATED TO REQUIRE PASSWORD FOR STUDENTS WITH PASSWORDS
+// Login route
 router.post('/login', validateUserLogin, async (req, res) => {
   try {
     // Ensure PIN hash is initialized
@@ -234,23 +232,6 @@ router.post('/login', validateUserLogin, async (req, res) => {
 
     // Student authentication logic
     if (user.role === 'student') {
-      // Check if student needs password setup (no password set yet)
-      if (!user.password) {
-        // Allow login but flag for password setup
-        const token = generateToken(user);
-        return res.json({
-          _id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          role: user.role,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          token,
-          needsPasswordSetup: true
-        });
-      }
-
-      // Student has a password - verify it
       if (!password) {
         return res.status(401).json({ error: 'Password is required' });
       }
@@ -278,58 +259,6 @@ router.post('/login', validateUserLogin, async (req, res) => {
   } catch (error) {
     console.error('POST /users/login error:', error);
     res.status(500).json({ error: 'Server error during login' });
-  }
-});
-
-// Password setup route for existing users
-router.post('/setup-password', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    // Find user by email
-    const normalizedEmail = email.toLowerCase().trim();
-    const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const user = await User.findOne({ 
-      email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Update user with password
-    user.password = hashedPassword;
-    user.needsPasswordSetup = false;
-    await user.save();
-
-    // Generate new token
-    const token = generateToken(user);
-
-    res.json({
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      token,
-      message: 'Password set up successfully'
-    });
-
-  } catch (error) {
-    console.error('Password setup error:', error);
-    res.status(500).json({ error: 'Server error during password setup' });
   }
 });
 

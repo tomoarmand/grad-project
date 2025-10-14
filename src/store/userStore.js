@@ -7,7 +7,6 @@ const useUserStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
-      needsPasswordSetup: false,
       loading: false,
       error: null,
 
@@ -15,7 +14,6 @@ const useUserStore = create(
       setUser: (userData) => set({ 
         user: userData, 
         isAuthenticated: !!userData,
-        needsPasswordSetup: userData?.needsPasswordSetup || false,
         error: null 
       }),
 
@@ -29,16 +27,12 @@ const useUserStore = create(
         }
       },
 
-      // Action to set password setup requirement
-      setNeedsPasswordSetup: (needsSetup) => set({ needsPasswordSetup: needsSetup }),
-
       // Action to clear all user data (logout)
       clearUser: () => {
         set({ 
           user: null, 
           token: null, 
           isAuthenticated: false, 
-          needsPasswordSetup: false,
           loading: false, 
           error: null 
         });
@@ -73,51 +67,6 @@ const useUserStore = create(
 
       // Clear error state
       clearError: () => set({ error: null }),
-
-      // Check if user has password set - NEW METHOD
-      checkUserHasPassword: async (email) => {
-        const { setLoading, setError } = get();
-        
-        if (!email || typeof email !== 'string') {
-          return { success: false, error: 'Email is required' };
-        }
-
-        setLoading(true);
-        setError(null);
-
-        try {
-          const API_URL = import.meta.env.VITE_API_URL;
-          const response = await fetch(`${API_URL}/users/check-password`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: JSON.stringify({ email: email.toLowerCase().trim() }),
-          });
-
-          if (!response.ok) {
-            setLoading(false);
-            setError('Failed to check password status');
-            return { success: false, error: 'Failed to check password status' };
-          }
-
-          const data = await response.json();
-          setLoading(false);
-
-          return {
-            success: true,
-            hasPassword: data.hasPassword,
-            userExists: data.userExists,
-            role: data.role
-          };
-        } catch (error) {
-          console.error('Check password error:', error);
-          setLoading(false);
-          setError('Network error checking password');
-          return { success: false, error: 'Network error checking password' };
-        }
-      },
 
       // Verify token with backend
       verifyToken: async () => {
@@ -192,12 +141,6 @@ const useUserStore = create(
             return { success: false, error: data.error || 'Login failed' };
           }
 
-          // Check if password setup is needed
-          if (data.needsPasswordSetup) {
-            setLoading(false);
-            return { success: true, needsPasswordSetup: true, user: data };
-          }
-
           // Login successful
           setToken(data.token);
           setUser({
@@ -216,52 +159,6 @@ const useUserStore = create(
           setLoading(false);
           setError('Network error during login');
           return { success: false, error: 'Network error during login' };
-        }
-      },
-
-      // Password setup function
-      setupPassword: async (email, password) => {
-        const { setLoading, setError, setToken, setUser } = get();
-        
-        setLoading(true);
-        setError(null);
-
-        try {
-          const API_URL = import.meta.env.VITE_API_URL;
-          const response = await fetch(`${API_URL}/users/setup-password`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            setLoading(false);
-            setError(data.error || 'Password setup failed');
-            return { success: false, error: data.error || 'Password setup failed' };
-          }
-
-          // Password setup successful
-          setToken(data.token);
-          setUser({
-            _id: data._id,
-            fullName: data.fullName,
-            email: data.email,
-            role: data.role,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt
-          });
-          setLoading(false);
-
-          return { success: true, user: data };
-        } catch (error) {
-          console.error('Password setup error:', error);
-          setLoading(false);
-          setError('Network error during password setup');
-          return { success: false, error: 'Network error during password setup' };
         }
       },
 
@@ -366,7 +263,6 @@ const useUserStore = create(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
-        needsPasswordSetup: state.needsPasswordSetup,
       }),
     }
   )
