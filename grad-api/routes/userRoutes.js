@@ -150,7 +150,7 @@ router.post('/', validateUserCreation, async (req, res) => {
       role
     };
 
-    // Handle password for students
+    // Handle password for students - REQUIRED
     if (role === 'student') {
       if (!password) {
         return res.status(400).json({ error: 'Password is required for student registration' });

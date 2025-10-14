@@ -12,8 +12,6 @@ function CreateUserPage() {
   const navigate = useNavigate();
   const { setUser } = useUserStore();
 
-  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
-  // WHY: User registration data needs security validation before database storage
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
@@ -35,6 +33,7 @@ function CreateUserPage() {
 
   const validateForm = () => {
     const newErrors = {};
+    
     const sanitizedName = sanitizeInput(formData.fullName);
     if (!sanitizedName) newErrors.fullName = 'Full name is required';
     else if (!validateFullName(sanitizedName))
@@ -44,19 +43,16 @@ function CreateUserPage() {
     if (!sanitizedEmail) newErrors.email = 'Email is required';
     else if (!validateEmail(sanitizedEmail)) newErrors.email = 'Please enter a valid email address';
 
-    // Add password validation for students
+    const validRoles = ['teacher', 'student'];
+    if (!validRoles.includes(formData.role)) newErrors.role = 'Please select a valid role';
+
+    // Validate based on role
     if (formData.role === 'student') {
       const passwordValidation = validatePassword(formData.password);
       if (!passwordValidation.isValid) {
         newErrors.password = passwordValidation.message;
       }
-    }
-
-    const validRoles = ['teacher', 'student'];
-    if (!validRoles.includes(formData.role)) newErrors.role = 'Please select a valid role';
-
-    // Teacher access code validation - format only, let backend verify actual PIN
-    if (formData.role === 'teacher') {
+    } else if (formData.role === 'teacher') {
       if (!teacherAccessCode.trim()) {
         newErrors.accessCode = 'Teacher access code is required';
       } else if (!/^[a-zA-Z0-9]{4,10}$/.test(teacherAccessCode.trim())) {
@@ -95,7 +91,12 @@ function CreateUserPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!validateForm()) return;
+    console.log('handleSubmit called with role:', formData.role);
+    
+    if (!validateForm()) {
+      console.log('Form validation failed:', errors);
+      return;
+    }
 
     setIsLoading(true);
 
@@ -104,13 +105,19 @@ function CreateUserPage() {
         fullName: sanitizeInput(formData.fullName),
         email: sanitizeInput(formData.email).toLowerCase(),
         role: formData.role,
-        accessCode: formData.role === 'teacher' ? teacherAccessCode.trim() : undefined,
       };
 
-      // Add password for students
+      // Add password only for students
       if (formData.role === 'student') {
         sanitizedData.password = formData.password;
       }
+
+      // Add access code only for teachers
+      if (formData.role === 'teacher') {
+        sanitizedData.accessCode = teacherAccessCode.trim();
+      }
+
+      console.log('Sending data:', sanitizedData);
 
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
@@ -230,6 +237,7 @@ function CreateUserPage() {
                 disabled={isLoading}
                 maxLength="100"
                 autoComplete="new-password"
+                required
               />
               {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
             </div>
