@@ -22,6 +22,7 @@ function StudentPage() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [showCorrect, setShowCorrect] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isInputShaking, setIsInputShaking] = useState(false);
@@ -179,7 +180,7 @@ function StudentPage() {
       if (folders.length === 1) {
         // If only one folder, auto-select it
         setSelectedFolder(folders[0]);
-        fetchExercisesFromFolder(folders[0]._id);
+        await fetchExercisesFromFolder(folders[0]._id);
       } else if (folders.length > 1) {
         // If multiple folders, show selection
         setShowFolderSelection(true);
@@ -187,6 +188,8 @@ function StudentPage() {
     } catch (error) {
       console.error('Error fetching assigned folders:', error);
       trackAnalyticsEvent('Student', 'Folder_Load_Error', error.message);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -287,13 +290,13 @@ function StudentPage() {
             {selectedFolder && (
               <div className="w-full text-center">
                 <div className="bg-slate-600 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
-                  <p className="text-white text-xs sm:text-sm">
+                  <p className="text-white text-sm">
                     Practicing from: <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
                   </p>
                   {assignedFolders.length > 1 && (
                     <button
                       onClick={handleChangeFolder}
-                      className="text-orange-400 hover:text-orange-300 text-xs underline mt-1"
+                      className="text-orange-400 hover:text-orange-300 text-sm underline mt-1"
                     >
                       Change folder
                     </button>
@@ -312,7 +315,12 @@ function StudentPage() {
               </div>
             )}
 
-            {loading ? (
+            {initialLoading ? (
+              <div className="flex flex-col items-center justify-center text-white text-base sm:text-lg">
+                <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base">Loading your exercises...</p>
+              </div>
+            ) : loading ? (
               <div className="flex flex-col items-center justify-center text-white text-base sm:text-lg">
                 <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
                 <p className="mt-3 sm:mt-4 text-sm sm:text-base">Loading exercises...</p>
@@ -358,11 +366,11 @@ function StudentPage() {
                         onPlay={() => trackAnalyticsEvent('Student', 'Audio_Played', `Exercise_${currentExerciseIndex}`)}
                       />
                       <div className="flex flex-col gap-2 w-full">
-                        <div className="flex flex-col sm:flex-row gap-2 w-full items-stretch sm:items-center">
+                        <div className="flex flex-row gap-2 w-full items-center">
                           <div className="relative flex-grow">
                             <input
                               ref={inputRef}
-                              className={`w-full text-sm sm:text-base rounded bg-[#f8fafc] text-black px-3 sm:px-4 py-2 sm:py-3 placeholder-gray-500 border-2 sm:border-4 transition-all duration-200 ${
+                              className={`w-full text-sm sm:text-base rounded bg-[#f8fafc] text-black px-3 sm:px-4 py-3 sm:py-3 placeholder-gray-500 border-2 transition-all duration-200 ${
                                 showInputError 
                                   ? 'border-red-500 bg-red-50 focus:border-red-500 focus:shadow-[0_0_12px_rgba(239,68,68,0.8),inset_0_0_8px_rgba(239,68,68,0.2)]' 
                                   : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
