@@ -21,6 +21,15 @@ const userSchema = new mongoose.Schema({
     enum: ['teacher', 'student'],
     default: 'student',
   },
+  password: {
+    type: String,
+    required: false,
+    minlength: 6
+  },
+  needsPasswordSetup: {
+    type: Boolean,
+    default: false
+  },
   // Add assigned folders for students
   assignedFolders: [{
     type: mongoose.Schema.Types.ObjectId,

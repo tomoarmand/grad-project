@@ -89,6 +89,8 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// ===== NON-PARAMETERIZED ROUTES (defined first) =====
+
 // Get all users (protected route - teacher only)
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -112,7 +114,7 @@ router.post('/', validateUserCreation, async (req, res) => {
       await initializePinHash();
     }
 
-    const { fullName, email, role = 'student', accessCode } = req.body;
+    const { fullName, email, role = 'student', accessCode, password } = req.body;
 
     // Teacher role requires access code verification
     if (role === 'teacher') {
@@ -141,12 +143,30 @@ router.post('/', validateUserCreation, async (req, res) => {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
-    // Create new user with normalized email
-    const user = await User.create({
+    // Prepare user data
+    const userData = {
       fullName,
       email: normalizedEmail,
       role
-    });
+    };
+
+    // Handle password for students
+    if (role === 'student') {
+      if (password) {
+        // Password provided during registration
+        if (password.length < 6) {
+          return res.status(400).json({ error: 'Password must be at least 6 characters' });
+        }
+        userData.password = await bcrypt.hash(password, 12);
+        userData.needsPasswordSetup = false;
+      } else {
+        // No password provided - flag for setup on next login
+        userData.needsPasswordSetup = true;
+      }
+    }
+
+    // Create new user with normalized email
+    const user = await User.create(userData);
 
     // Generate token
     const token = generateToken(user);
@@ -175,7 +195,7 @@ router.post('/', validateUserCreation, async (req, res) => {
   }
 });
 
-// Login - using validation middleware with case-insensitive email search
+// Login route - UPDATED TO REQUIRE PASSWORD FOR STUDENTS WITH PASSWORDS
 router.post('/login', validateUserLogin, async (req, res) => {
   try {
     // Ensure PIN hash is initialized
@@ -183,7 +203,7 @@ router.post('/login', validateUserLogin, async (req, res) => {
       await initializePinHash();
     }
 
-    const { email, accessCode } = req.body;
+    const { email, accessCode, password } = req.body;
 
     // Case-insensitive email search to handle mixed-case emails in database
     const normalizedEmail = email.toLowerCase().trim();
@@ -212,6 +232,35 @@ router.post('/login', validateUserLogin, async (req, res) => {
       }
     }
 
+    // Student authentication logic
+    if (user.role === 'student') {
+      // Check if student needs password setup (no password set yet)
+      if (!user.password) {
+        // Allow login but flag for password setup
+        const token = generateToken(user);
+        return res.json({
+          _id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          token,
+          needsPasswordSetup: true
+        });
+      }
+
+      // Student has a password - verify it
+      if (!password) {
+        return res.status(401).json({ error: 'Password is required' });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Incorrect password' });
+      }
+    }
+
     // Generate token
     const token = generateToken(user);
 
@@ -229,6 +278,58 @@ router.post('/login', validateUserLogin, async (req, res) => {
   } catch (error) {
     console.error('POST /users/login error:', error);
     res.status(500).json({ error: 'Server error during login' });
+  }
+});
+
+// Password setup route for existing users
+router.post('/setup-password', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Find user by email
+    const normalizedEmail = email.toLowerCase().trim();
+    const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await User.findOne({ 
+      email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Update user with password
+    user.password = hashedPassword;
+    user.needsPasswordSetup = false;
+    await user.save();
+
+    // Generate new token
+    const token = generateToken(user);
+
+    res.json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      token,
+      message: 'Password set up successfully'
+    });
+
+  } catch (error) {
+    console.error('Password setup error:', error);
+    res.status(500).json({ error: 'Server error during password setup' });
   }
 });
 
@@ -283,6 +384,8 @@ router.post('/verify-token', (req, res) => {
     }
   });
 });
+
+// ===== PARAMETERIZED ROUTES (defined after non-parameterized routes) =====
 
 // Get single user (protected route)
 router.get('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {

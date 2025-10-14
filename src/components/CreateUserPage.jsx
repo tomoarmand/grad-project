@@ -4,7 +4,7 @@ import useUserStore from '../store/userStore';
 import NavLinks from './NavLinks';
 
 function CreateUserPage() {
-  const [formData, setFormData] = useState({ fullName: '', email: '', role: 'student' });
+  const [formData, setFormData] = useState({ fullName: '', email: '', password: '', role: 'student' });
   const [isLoading, setIsLoading] = useState(false);
   const [teacherAccessCode, setTeacherAccessCode] = useState('');
   const [errors, setErrors] = useState({});
@@ -26,6 +26,12 @@ function CreateUserPage() {
 
   const validateFullName = (name) => /^[a-zA-Z\s\-']{2,50}$/.test(name);
   const validateEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+  
+  const validatePassword = (password) => {
+    if (!password) return { isValid: false, message: 'Password is required' };
+    if (password.length < 6) return { isValid: false, message: 'Password must be at least 6 characters' };
+    return { isValid: true, sanitized: password };
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -37,6 +43,14 @@ function CreateUserPage() {
     const sanitizedEmail = sanitizeInput(formData.email);
     if (!sanitizedEmail) newErrors.email = 'Email is required';
     else if (!validateEmail(sanitizedEmail)) newErrors.email = 'Please enter a valid email address';
+
+    // Add password validation for students
+    if (formData.role === 'student') {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        newErrors.password = passwordValidation.message;
+      }
+    }
 
     const validRoles = ['teacher', 'student'];
     if (!validRoles.includes(formData.role)) newErrors.role = 'Please select a valid role';
@@ -61,6 +75,7 @@ function CreateUserPage() {
     let sanitizedValue = value;
     if (name === 'fullName' && value.length > 50) sanitizedValue = value.slice(0, 50);
     if (name === 'email' && value.length > 100) sanitizedValue = value.slice(0, 100);
+    if (name === 'password' && value.length > 100) sanitizedValue = value.slice(0, 100);
 
     setFormData({ ...formData, [name]: sanitizedValue });
 
@@ -91,6 +106,11 @@ function CreateUserPage() {
         role: formData.role,
         accessCode: formData.role === 'teacher' ? teacherAccessCode.trim() : undefined,
       };
+
+      // Add password for students
+      if (formData.role === 'student') {
+        sanitizedData.password = formData.password;
+      }
 
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
@@ -192,6 +212,28 @@ function CreateUserPage() {
             />
             {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
           </div>
+
+          {/* Password input - only for students */}
+          {formData.role === 'student' && (
+            <div>
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter your password (min 6 characters)"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
+                  errors.password
+                    ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
+                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                }`}
+                disabled={isLoading}
+                maxLength="100"
+                autoComplete="new-password"
+              />
+              {errors.password && <p className="text-red-400 text-sm mt-1">{errors.password}</p>}
+            </div>
+          )}
 
           {/* Access code input - only for teachers */}
           {formData.role === 'teacher' && (

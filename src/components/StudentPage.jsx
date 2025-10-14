@@ -22,10 +22,10 @@ function StudentPage() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showTryAgain, setShowTryAgain] = useState(false);
   const [showCorrect, setShowCorrect] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [isShaking, setIsShaking] = useState(false);
+  const [isInputShaking, setIsInputShaking] = useState(false);
+  const [showInputError, setShowInputError] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
@@ -65,20 +65,20 @@ function StudentPage() {
   const getEncouragementMessage = (attempts) => {
     switch (attempts) {
       case 1:
-        return { title: "Not quite right", subtitle: "Try again!" };
+        return "Not quite right - Try again!";
       case 2:
-        return { title: "Keep trying!", subtitle: "Take another listen" };
+        return "Keep trying! Take another listen";
       case 3:
       default:
-        return { title: "This one's tricky", subtitle: "Need some help?" };
+        return "This one's tricky - Need some help?";
     }
   };
 
-  const triggerTryAgain = (attempts) => {
-    setIsShaking(true);
-    setShowTryAgain(true);
-    setTimeout(() => setIsShaking(false), 600);
-    setTimeout(() => setShowTryAgain(false), 2000);
+  const triggerInputError = (attempts) => {
+    setIsInputShaking(true);
+    setShowInputError(true);
+    setTimeout(() => setIsInputShaking(false), 600);
+    setTimeout(() => setShowInputError(false), 3000);
   };
 
   // CELEBRATION: Multi-burst confetti animation for correct answers
@@ -128,12 +128,13 @@ function StudentPage() {
       setShowAnswer(false);
       setFeedback("");
       setIsInputFocused(false);
+      setShowInputError(false);
       setTimeout(refreshExercise, 1000);
     } else {
       setFailedAttempts((prev) => {
         const newAttempts = prev + 1;
         trackAnalyticsEvent('Student', 'Wrong_Answer', `Attempt_${newAttempts}`);
-        triggerTryAgain(newAttempts);
+        triggerInputError(newAttempts);
         if (newAttempts >= 3) setShowAnswer(true);
         return newAttempts;
       });
@@ -192,7 +193,7 @@ function StudentPage() {
     setShowAnswer(false);
     setFailedAttempts(0);
     setShowCorrect(false);
-    setShowTryAgain(false);
+    setShowInputError(false);
     setInputValue("");
     try {
       const res = await fetch(`${API_URL}/exercises/folder/${folderId}`);
@@ -227,7 +228,7 @@ function StudentPage() {
     setShowAnswer(false);
     setFailedAttempts(0);
     setShowCorrect(false);
-    setShowTryAgain(false);
+    setShowInputError(false);
     setInputValue("");
     setCurrentExerciseIndex(null);
     fetchExercisesFromFolder(folder._id);
@@ -249,7 +250,7 @@ function StudentPage() {
   }
 
   return (
-    <div className={`min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 ${isShaking ? 'animate-shake' : ''}`}>
+    <div className="min-h-screen w-screen flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4">
       <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8 flex flex-col items-center gap-6">
         <h1 className="text-3xl sm:text-4xl text-white font-bold mb-4 text-center">
           Welcome, {user?.fullName?.split(' ')[0] || 'Student'}!
@@ -338,15 +339,6 @@ function StudentPage() {
                   </div>
                 )}
 
-                {showTryAgain && (
-                  <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-bounce">
-                    <div className="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg border-2 border-red-600">
-                      <p className="text-2xl font-bold text-center">{getEncouragementMessage(failedAttempts).title}</p>
-                      <p className="text-sm text-center mt-1 opacity-90">{getEncouragementMessage(failedAttempts).subtitle}</p>
-                    </div>
-                  </div>
-                )}
-
                 {currentExerciseIndex !== null && exercises[currentExerciseIndex] && (
                   <>
                     <div className="flex flex-col items-center w-full">
@@ -359,25 +351,40 @@ function StudentPage() {
                         className="w-full mb-6 rounded"
                         onPlay={() => trackAnalyticsEvent('Student', 'Audio_Played', `Exercise_${currentExerciseIndex}`)}
                       />
-                      <div className="flex flex-row gap-2 w-full items-center">
-                        <div className="relative flex-grow">
-                          <input
-                            ref={inputRef}
-                            className="w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 placeholder-gray-500 border border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition"
-                            placeholder="Enter your answer here..."
-                            onChange={handleInputChange}
-                            value={inputValue}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter' && inputValue.trim()) handleSubmit();
-                            }}
-                            onFocus={handleInputFocus}
-                            onBlur={handleInputBlur}
-                          />
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex flex-row gap-2 w-full items-center">
+                          <div className="relative flex-grow">
+                            <input
+                              ref={inputRef}
+                              className={`w-full text-base sm:text-lg rounded bg-[#f8fafc] text-black px-4 h-12 placeholder-gray-500 border-2 transition-all duration-200 ${
+                                showInputError 
+                                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgba(239,68,68,0.6)]' 
+                                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                              } ${isInputShaking ? 'animate-input-shake' : ''}`}
+                              placeholder="Enter your answer here..."
+                              onChange={handleInputChange}
+                              value={inputValue}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter' && inputValue.trim()) handleSubmit();
+                              }}
+                              onFocus={handleInputFocus}
+                              onBlur={handleInputBlur}
+                            />
+                          </div>
+                          <div data-fab>
+                            <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
+                          </div>
                         </div>
-                        <div data-fab>
-                          <MusicSymbolButton inputRef={inputRef} setterFunction={setInputValue} />
-                        </div>
+                        
+                        {/* Inline error message below input */}
+                        {showInputError && (
+                          <div className="flex items-center gap-2 text-red-400 text-sm animate-fade-in">
+                            <span className="text-lg">❌</span>
+                            <span>{getEncouragementMessage(failedAttempts)}</span>
+                          </div>
+                        )}
                       </div>
+                      
                       <button
                         disabled={!inputValue.trim()}
                         onClick={handleSubmit}
@@ -437,13 +444,26 @@ function StudentPage() {
       />
 
       <style jsx>{`
-        @keyframes shake {
+        @keyframes input-shake {
           0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-          20%, 40%, 60%, 80% { transform: translateX(4px); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+          20%, 40%, 60%, 80% { transform: translateX(8px); }
         }
-        .animate-shake {
-          animation: shake 0.4s ease-in-out;
+        .animate-input-shake {
+          animation: input-shake 0.5s ease-in-out;
+        }
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
         }
       `}</style>
     </div>
