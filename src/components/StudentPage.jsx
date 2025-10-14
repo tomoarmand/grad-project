@@ -296,7 +296,7 @@ function StudentPage() {
                   {assignedFolders.length > 1 && (
                     <button
                       onClick={handleChangeFolder}
-                      className="text-orange-400 hover:text-orange-300 text-sm underline mt-1"
+                      className="text-orange-400 hover:text-orange-300 text-xs sm:text-sm underline mt-1"
                     >
                       Change folder
                     </button>
