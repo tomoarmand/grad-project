@@ -179,10 +179,10 @@ function CreateUserPage() {
               placeholder="Full Name"
               value={formData.fullName}
               onChange={handleChange}
-              className={`w-full px-4 py-3 text-base rounded bg-[#f8fafc] text-black placeholder-gray-500 border-2 transition focus:outline-none ${
+              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
                 errors.fullName
                   ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                  : 'border-gray-300 focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
               }`}
               required
               disabled={isLoading}
@@ -200,10 +200,10 @@ function CreateUserPage() {
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-4 py-3 text-base rounded bg-[#f8fafc] text-black placeholder-gray-500 border-2 transition focus:outline-none ${
+              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
                 errors.email
                   ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                  : 'border-gray-300 focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
               }`}
               required
               disabled={isLoading}
@@ -222,10 +222,10 @@ function CreateUserPage() {
                 placeholder="Password (min 6 characters)"
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 text-base rounded bg-[#f8fafc] text-black placeholder-gray-500 border-2 transition focus:outline-none ${
+                className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
                   errors.password
                     ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                    : 'border-gray-300 focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
                 }`}
                 disabled={isLoading}
                 maxLength="100"
@@ -244,10 +244,10 @@ function CreateUserPage() {
                 placeholder="Access Code"
                 value={teacherAccessCode}
                 onChange={handleAccessCodeChange}
-                className={`w-full px-4 py-3 text-base rounded bg-[#f8fafc] text-black placeholder-gray-500 border-2 transition focus:outline-none ${
+                className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
                   errors.accessCode
                     ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                    : 'border-gray-300 focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
                 }`}
                 disabled={isLoading}
                 maxLength="10"
