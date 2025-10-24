@@ -320,6 +320,48 @@ router.post('/setup-password', async (req, res) => {
   }
 });
 
+// Teacher resets student password (NEW ENDPOINT)
+router.post('/teacher-reset-password', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher') {
+      return res.status(403).json({ error: 'Access denied. Teacher role required.' });
+    }
+
+    const { studentId, newPassword } = req.body;
+
+    if (!studentId || !newPassword) {
+      return res.status(400).json({ error: 'Student ID and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const student = await User.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    if (student.role !== 'student') {
+      return res.status(400).json({ error: 'Can only reset passwords for students' });
+    }
+
+    student.password = await bcrypt.hash(newPassword, 12);
+    await student.save();
+
+    res.json({
+      message: 'Password reset successfully',
+      studentName: student.fullName,
+      studentEmail: student.email
+    });
+
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ error: 'Server error during password reset' });
+  }
+});
+
 // Enhanced token verification endpoint
 router.post('/verify-token', (req, res) => {
   console.log('🔍 Backend: verify-token endpoint called');

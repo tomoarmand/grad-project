@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { PuffLoader } from 'react-spinners';
 import useUserStore from '../store/userStore';
 import ConfirmDialog from './ConfirmDialog';
+import StudentPasswordReset from './StudentPasswordReset';
 
 function UnassignTab({ user }) {
   const { getAuthHeader } = useUserStore();
@@ -12,6 +13,9 @@ function UnassignTab({ user }) {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showUnassignAllDialog, setShowUnassignAllDialog] = useState(false);
+  const [resetPasswordStudent, setResetPasswordStudent] = useState(null);
+  const [showPasswordSuccess, setShowPasswordSuccess] = useState(false);
+  const [newPasswordValue, setNewPasswordValue] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -154,6 +158,12 @@ function UnassignTab({ user }) {
     }
   };
 
+  const handlePasswordResetSuccess = (password) => {
+    setNewPasswordValue(password);
+    setShowPasswordSuccess(true);
+    setResetPasswordStudent(null);
+  };
+
   // Reset when component unmounts or when switching tabs
   const resetState = () => {
     setSelectedStudent(null);
@@ -175,6 +185,25 @@ function UnassignTab({ user }) {
         </div>
       )}
 
+      {/* Password reset success message */}
+      {showPasswordSuccess && (
+        <div className="bg-green-600 text-white p-4 rounded-lg">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="font-semibold mb-1">✅ Password Reset Successfully!</p>
+              <p className="text-sm">New password: <span className="font-mono font-bold">{newPasswordValue}</span></p>
+              <p className="text-xs mt-1 opacity-90">Share this with the student.</p>
+            </div>
+            <button
+              onClick={() => setShowPasswordSuccess(false)}
+              className="text-white hover:text-gray-200 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-slate-600 rounded-lg p-4">
         <h3 className="text-white text-lg font-semibold mb-3">Select a Student</h3>
         
@@ -192,7 +221,7 @@ function UnassignTab({ user }) {
             }}
             className="w-full bg-slate-700 text-white rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
             defaultValue=""
-            key={students.length} // Force re-render when students change
+            key={students.length}
           >
             <option value="" disabled>
               Choose a student...
@@ -213,14 +242,22 @@ function UnassignTab({ user }) {
               Assigned Folders for{' '}
               <span className="text-orange-400">{selectedStudent.fullName}</span>
             </h3>
-            {folders.length > 0 && (
+            <div className="flex gap-2">
               <button
-                onClick={confirmUnassignAll}
-                className="text-red-400 hover:text-red-300 text-sm font-medium underline transition"
+                onClick={() => setResetPasswordStudent(selectedStudent)}
+                className="text-blue-400 hover:text-blue-300 text-sm font-medium underline transition"
               >
-                Unassign All
+                Reset Password
               </button>
-            )}
+              {folders.length > 0 && (
+                <button
+                  onClick={confirmUnassignAll}
+                  className="text-red-400 hover:text-red-300 text-sm font-medium underline transition"
+                >
+                  Unassign All
+                </button>
+              )}
+            </div>
           </div>
           
           {loading ? (
@@ -270,6 +307,15 @@ function UnassignTab({ user }) {
         cancelText="Cancel"
         type="danger"
       />
+
+      {/* Password reset modal */}
+      {resetPasswordStudent && (
+        <StudentPasswordReset
+          student={resetPasswordStudent}
+          onClose={() => setResetPasswordStudent(null)}
+          onSuccess={handlePasswordResetSuccess}
+        />
+      )}
     </div>
   );
 }
