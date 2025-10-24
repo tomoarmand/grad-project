@@ -155,7 +155,7 @@ function TeacherPage() {
               >
                 {tab === 'create' && 'Create & Organise'}
                 {tab === 'assign' && 'Assign Folders'}
-                {tab === 'unassign' && 'Manage Assignments'}
+                {tab === 'unassign' && 'Manage Students'}
               </button>
             ))}
           </div>
@@ -172,7 +172,7 @@ function TeacherPage() {
               >
                 {tab === 'create' && 'Create & Organise'}
                 {tab === 'assign' && 'Assign Folders'}
-                {tab === 'unassign' && 'Manage Assignments'}
+                {tab === 'unassign' && 'Manage Students'}
               </button>
             ))}
           </div>
