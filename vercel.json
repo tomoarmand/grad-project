@@ -1,5 +1,4 @@
 {
-  "nodejs": "22.x",
   "rewrites": [
     {
       "source": "/(.*)",
