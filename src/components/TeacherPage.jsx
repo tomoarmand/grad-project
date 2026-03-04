@@ -9,12 +9,11 @@ import useUserStore from '../store/userStore';
 import { PuffLoader } from 'react-spinners';
 import NavLinks from './NavLinks';
 
-// Helper function to track events
 function trackAnalyticsEvent(category, action, label = '') {
   if (process.env.NODE_ENV === 'production' && window.gtag) {
     window.gtag('event', action, {
       event_category: category,
-      event_label: label
+      event_label: label,
     });
   }
 }
@@ -26,6 +25,7 @@ function TeacherPage() {
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [folders, setFolders] = useState([]);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [exerciseCount, setExerciseCount] = useState(0);
   const API_URL = import.meta.env.VITE_API_URL;
 
   const handleLogout = () => {
@@ -34,14 +34,10 @@ function TeacherPage() {
     navigate('/');
   };
 
-  const confirmSignOut = () => {
-    setShowSignOutDialog(true);
-  };
+  const confirmSignOut = () => setShowSignOutDialog(true);
 
   useEffect(() => {
-    if (user) {
-      fetchFolders();
-    }
+    if (user) fetchFolders();
   }, [user]);
 
   const fetchFolders = async () => {
@@ -54,21 +50,17 @@ function TeacherPage() {
     }
   };
 
-  // FOLDER STATE MANAGEMENT: Handle folder updates while preserving selection
-  // WHY: Maintains UI consistency when folders are modified or deleted
   const handleFoldersUpdate = (updatedFolders) => {
     const sorted = [...updatedFolders].sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     );
     setFolders(sorted);
-    
-    // Update selectedFolder if it exists and has been modified
+
     if (selectedFolder) {
       const updatedSelectedFolder = sorted.find(folder => folder._id === selectedFolder._id);
       if (updatedSelectedFolder) {
         setSelectedFolder(updatedSelectedFolder);
       } else {
-        // If the folder was deleted, clear the selection
         setSelectedFolder(null);
       }
     }
@@ -82,14 +74,8 @@ function TeacherPage() {
   const handleTabChange = (tab) => {
     trackAnalyticsEvent('Teacher', 'Tab_Changed', tab);
     setActiveTab(tab);
-    // Reset folder selection when switching to unassign tab
-    if (tab === 'unassign') {
-      setSelectedFolder(null);
-    }
+    if (tab === 'unassign') setSelectedFolder(null);
   };
-
-  // Get exercise count for the selected folder (for display purposes)
-  const [exerciseCount, setExerciseCount] = useState(0);
 
   const updateExerciseCount = async (folderId) => {
     if (!folderId) {
@@ -116,15 +102,16 @@ function TeacherPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen w-screen flex justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 text-white px-4">
+      <div className="min-h-screen w-screen flex justify-center items-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900 text-white px-4">
         <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-2 py-6 sm:px-4 sm:py-8 overflow-auto">
-      {/* Top Bar with Breadcrumbs - Mobile optimized spacing */}
+    <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-2 py-6 sm:px-4 sm:py-8 overflow-auto">
+
+      {/* Breadcrumb */}
       <div className="w-full max-w-md sm:max-w-4xl mb-4">
         <NavLinks
           links={[
@@ -136,21 +123,24 @@ function TeacherPage() {
         />
       </div>
 
-      <div className="w-full max-w-md sm:max-w-4xl bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-6">
-        <h1 className="text-2xl sm:text-3xl text-white font-bold text-center">
+      <div className="w-full max-w-md sm:max-w-4xl bg-neutral-900 border-2 border-red-600 rounded-lg shadow-lg p-4 sm:p-6 flex flex-col gap-6">
+        <h1 className="text-2xl sm:text-3xl font-heading uppercase tracking-wide text-white text-center">
           Welcome, {user?.fullName?.split(' ')[0] || 'Teacher'}!
         </h1>
 
-        {/* Tabs - Mobile-First Design with better touch targets */}
-        <div className="flex flex-col sm:flex-row bg-slate-600 rounded-lg overflow-hidden">
-          {/* Mobile: Stacked buttons with larger touch areas */}
+        {/* Tabs */}
+        <div className="flex flex-col sm:flex-row bg-neutral-800 border border-white/10 rounded-lg overflow-hidden">
+
+          {/* Mobile: stacked */}
           <div className="flex flex-col sm:hidden">
             {['create', 'assign', 'unassign'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`w-full px-4 py-4 font-medium transition focus:outline-none border-b border-slate-500 last:border-b-0 touch-manipulation ${
-                  activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500 active:bg-slate-400'
+                className={`w-full px-4 py-4 font-heading uppercase tracking-wide transition focus:outline-none border-b border-white/10 last:border-b-0 touch-manipulation ${
+                  activeTab === tab
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-300 hover:bg-neutral-700 active:bg-neutral-600'
                 }`}
               >
                 {tab === 'create' && 'Create & Organise'}
@@ -160,14 +150,16 @@ function TeacherPage() {
             ))}
           </div>
 
-          {/* Desktop: Horizontal tabs */}
+          {/* Desktop: horizontal */}
           <div className="hidden sm:flex w-full">
             {['create', 'assign', 'unassign'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`flex-1 text-sm px-3 py-3 font-medium transition focus:outline-none ${
-                  activeTab === tab ? 'bg-orange-400 text-black' : 'text-white hover:bg-slate-500'
+                className={`flex-1 text-sm px-3 py-3 font-heading uppercase tracking-wide transition focus:outline-none ${
+                  activeTab === tab
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-300 hover:bg-neutral-700'
                 }`}
               >
                 {tab === 'create' && 'Create & Organise'}
@@ -178,7 +170,7 @@ function TeacherPage() {
           </div>
         </div>
 
-        {/* Show folder manager only for create tab */}
+        {/* Folder Manager - create tab only */}
         {activeTab === 'create' && (
           <FolderManager
             teacherId={user._id}
@@ -190,12 +182,12 @@ function TeacherPage() {
           />
         )}
 
-        {/* Show selected folder info only for create tab */}
+        {/* Selected folder info - create tab only */}
         {activeTab === 'create' && selectedFolder && (
-          <div className="text-center text-white text-sm">
+          <div className="text-center text-sm font-body text-gray-300">
             Selected Folder:{' '}
-            <span className="text-orange-400 font-medium">{selectedFolder.name}</span>
-            <span className="ml-2 opacity-75">
+            <span className="text-white font-medium">{selectedFolder.name}</span>
+            <span className="ml-2 text-gray-500">
               ({exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''})
             </span>
           </div>
@@ -203,33 +195,33 @@ function TeacherPage() {
 
         {/* Tab Content */}
         {activeTab === 'create' && (
-          <CreateTab 
-            user={user} 
+          <CreateTab
+            user={user}
             selectedFolder={selectedFolder}
             onExerciseCreate={() => trackAnalyticsEvent('Teacher', 'Create_Exercise', selectedFolder?.name)}
           />
         )}
-        
+
         {activeTab === 'assign' && (
-          <AssignTab 
+          <AssignTab
             user={user}
             onAssignExercises={(count) => trackAnalyticsEvent('Teacher', 'Assign_Folders', `Assigned ${count} folders`)}
           />
         )}
-        
+
         {activeTab === 'unassign' && (
-          <UnassignTab 
+          <UnassignTab
             user={user}
             onUnassignExercises={(count) => trackAnalyticsEvent('Teacher', 'Unassign_Folders', `Unassigned ${count} folders`)}
           />
         )}
       </div>
 
-      {/* Sign Out Link - positioned below the card */}
+      {/* Sign Out */}
       <div className="text-center mt-4">
         <button
           onClick={confirmSignOut}
-          className="text-sm text-white/70 hover:text-white underline transition-colors"
+          className="text-sm font-body text-white/70 hover:text-white underline transition-colors"
         >
           Sign Out
         </button>

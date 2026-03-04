@@ -19,36 +19,28 @@ function UnassignTab({ user }) {
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (user) {
-      fetchStudents();
-    }
+    if (user) fetchStudents();
   }, [user]);
 
   const fetchStudents = async () => {
     try {
       setStudentsLoading(true);
       setError('');
-      
+
       const res = await fetch(`${API_URL}/folder-assignments/students/by-teacher/${user._id}`, {
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json'
-        }
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       });
-      
-      if (!res.ok) {
-        throw new Error(`Failed to fetch students: ${res.status} ${res.statusText}`);
-      }
-      
+
+      if (!res.ok) throw new Error(`Failed to fetch students: ${res.status} ${res.statusText}`);
+
       const data = await res.json();
-      const sortedStudents = data.sort((a, b) => 
+      const sortedStudents = data.sort((a, b) =>
         (a.fullName || 'Unnamed Student').toLowerCase().localeCompare(
           (b.fullName || 'Unnamed Student').toLowerCase()
         )
       );
       setStudents(sortedStudents);
       console.log('✅ Successfully fetched students with folder assignments:', sortedStudents.length);
-      
     } catch (error) {
       console.error("Failed to fetch students with folder assignments:", error);
       setError(`Failed to load students: ${error.message}`);
@@ -61,19 +53,14 @@ function UnassignTab({ user }) {
     setSelectedStudent(student);
     setLoading(true);
     setError('');
-    
+
     try {
       const res = await fetch(`${API_URL}/folder-assignments/student/${student._id}/folders`, {
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json'
-        }
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       });
-      
-      if (!res.ok) {
-        throw new Error(`Failed to fetch folders: ${res.status} ${res.statusText}`);
-      }
-      
+
+      if (!res.ok) throw new Error(`Failed to fetch folders: ${res.status} ${res.statusText}`);
+
       const data = await res.json();
       const sortedFolders = data.sort((a, b) => {
         const nameA = (a.name || 'Folder name missing').toLowerCase();
@@ -93,20 +80,12 @@ function UnassignTab({ user }) {
     try {
       const res = await fetch(`${API_URL}/folder-assignments/unassign`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...getAuthHeader()
-        },
-        body: JSON.stringify({
-          folderId,
-          studentId: selectedStudent._id,
-        }),
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ folderId, studentId: selectedStudent._id }),
       });
-      
+
       if (res.ok) {
-        // Refresh the folders for the selected student
         fetchFolders(selectedStudent);
-        // Also refresh the student list in case this was their last assignment
         fetchStudents();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -118,24 +97,15 @@ function UnassignTab({ user }) {
     }
   };
 
-  const confirmUnassignAll = () => {
-    setShowUnassignAllDialog(true);
-  };
+  const confirmUnassignAll = () => setShowUnassignAllDialog(true);
 
   const handleUnassignAll = async () => {
     try {
-      // Unassign all folders for this student
-      const unassignPromises = folders.map(folder => 
+      const unassignPromises = folders.map(folder =>
         fetch(`${API_URL}/folder-assignments/unassign`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            ...getAuthHeader()
-          },
-          body: JSON.stringify({
-            folderId: folder._id,
-            studentId: selectedStudent._id,
-          }),
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({ folderId: folder._id, studentId: selectedStudent._id }),
         })
       );
 
@@ -144,9 +114,7 @@ function UnassignTab({ user }) {
 
       if (allSuccessful) {
         setShowUnassignAllDialog(false);
-        // Refresh both lists
         await fetchStudents();
-        // Clear selected student since they have no more assignments
         setSelectedStudent(null);
         setFolders([]);
       } else {
@@ -164,35 +132,32 @@ function UnassignTab({ user }) {
     setResetPasswordStudent(null);
   };
 
-  // Reset when component unmounts or when switching tabs
-  const resetState = () => {
-    setSelectedStudent(null);
-    setFolders([]);
-    setError('');
-  };
-
-  // Expose reset function to parent component
   useEffect(() => {
-    return () => resetState();
+    return () => {
+      setSelectedStudent(null);
+      setFolders([]);
+      setError('');
+    };
   }, []);
 
   return (
     <div className="space-y-6">
-      {/* Show error message if any */}
+
+      {/* Error message */}
       {error && (
-        <div className="bg-red-600 text-white p-3 rounded-lg text-sm">
-          {error}
-        </div>
+        <div className="bg-red-600 text-white p-3 rounded-lg text-sm font-body">{error}</div>
       )}
 
-      {/* Password reset success message */}
+      {/* Password reset success */}
       {showPasswordSuccess && (
-        <div className="bg-green-600 text-white p-4 rounded-lg">
+        <div className="bg-green-500 text-white p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-semibold mb-1">✅ Password Reset Successfully!</p>
-              <p className="text-sm">New password: <span className="font-mono font-bold">{newPasswordValue}</span></p>
-              <p className="text-xs mt-1 opacity-90">Share this with the student.</p>
+              <p className="font-heading uppercase tracking-wide mb-1">✅ Password Reset Successfully!</p>
+              <p className="text-sm font-body">
+                New password: <span className="font-mono font-bold">{newPasswordValue}</span>
+              </p>
+              <p className="text-xs font-body mt-1 opacity-90">Share this with the student.</p>
             </div>
             <button
               onClick={() => setShowPasswordSuccess(false)}
@@ -204,28 +169,29 @@ function UnassignTab({ user }) {
         </div>
       )}
 
-      <div className="bg-slate-600 rounded-lg p-4">
-        <h3 className="text-white text-lg font-semibold mb-3">Select a Student</h3>
-        
+      {/* Student selector */}
+      <div className="bg-neutral-900 border border-white/10 rounded-lg p-4">
+        <h3 className="text-white text-lg font-heading uppercase tracking-wide mb-3">
+          Select a Student
+        </h3>
+
         {studentsLoading ? (
           <div className="flex justify-center py-4">
             <PuffLoader color="#ffffff" size={25} speedMultiplier={1.2} />
           </div>
         ) : students.length === 0 ? (
-          <p className="text-white text-base">No students with folder assignments found.</p>
+          <p className="text-gray-400 text-base font-body">No students with folder assignments found.</p>
         ) : (
           <select
             onChange={(e) => {
               const student = students.find(s => s._id === e.target.value);
               if (student) fetchFolders(student);
             }}
-            className="w-full bg-slate-700 text-white rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
+            className="w-full bg-neutral-800 border border-white/10 text-white rounded p-3 text-base font-body focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)] transition"
             defaultValue=""
             key={students.length}
           >
-            <option value="" disabled>
-              Choose a student...
-            </option>
+            <option value="" disabled>Choose a student...</option>
             {students.map(student => (
               <option key={student._id} value={student._id}>
                 {student.fullName || 'Unnamed Student'}
@@ -235,55 +201,58 @@ function UnassignTab({ user }) {
         )}
       </div>
 
+      {/* Assigned folders for selected student */}
       {selectedStudent && (
-        <div className="bg-slate-600 rounded-lg p-4">
+        <div className="bg-neutral-900 border border-white/10 rounded-lg p-4">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-white text-lg font-semibold">
-              Assigned Folders for{' '}
-              <span className="text-orange-400">{selectedStudent.fullName}</span>
+            <h3 className="text-white text-lg font-heading uppercase tracking-wide">
+              Folders for{' '}
+              <span className="text-white normal-case font-body font-medium">
+                {selectedStudent.fullName}
+              </span>
             </h3>
             <div className="flex gap-2">
               <button
                 onClick={() => setResetPasswordStudent(selectedStudent)}
-                className="text-blue-400 hover:text-blue-300 text-sm font-medium underline transition"
+                className="text-gray-400 hover:text-white text-sm font-body underline transition"
               >
                 Reset Password
               </button>
               {folders.length > 0 && (
                 <button
                   onClick={confirmUnassignAll}
-                  className="text-red-400 hover:text-red-300 text-sm font-medium underline transition"
+                  className="text-red-600 hover:text-red-500 text-sm font-body underline transition"
                 >
                   Unassign All
                 </button>
               )}
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center py-8">
               <PuffLoader color="#ffffff" size={40} speedMultiplier={1.2} />
             </div>
           ) : folders.length === 0 ? (
-            <p className="text-white text-base">No folders assigned to this student.</p>
+            <p className="text-gray-400 text-base font-body">No folders assigned to this student.</p>
           ) : (
             <>
-              <div className="mb-4 p-3 bg-orange-400 rounded-lg text-black text-base font-medium">
+              <div className="mb-4 p-3 bg-yellow-500 rounded text-black text-base font-body font-medium">
                 {folders.length} folder{folders.length !== 1 ? 's' : ''} assigned
               </div>
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {folders.map(folder => (
                   <div
                     key={folder._id}
-                    className="bg-slate-700 p-4 rounded-lg flex flex-col gap-3"
+                    className="bg-neutral-800 border border-white/10 p-4 rounded-lg flex flex-col gap-3"
                   >
                     <div className="flex justify-between items-start gap-3">
-                      <p className="text-white text-base font-medium flex-grow">
+                      <p className="text-white text-base font-body font-medium flex-grow">
                         {folder.name || 'Folder name missing'}
                       </p>
                       <button
                         onClick={() => handleUnassign(folder._id)}
-                        className="text-yellow-300 hover:text-yellow-400 transition text-sm font-medium bg-slate-600 px-3 py-2 rounded-lg flex-shrink-0"
+                        className="text-red-600 hover:text-red-500 transition text-sm font-heading uppercase tracking-wide bg-neutral-900 border border-white/10 px-3 py-2 rounded flex-shrink-0"
                       >
                         Unassign
                       </button>

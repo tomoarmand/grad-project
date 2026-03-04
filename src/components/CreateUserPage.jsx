@@ -24,7 +24,7 @@ function CreateUserPage() {
 
   const validateFullName = (name) => /^[a-zA-Z\s\-']{2,50}$/.test(name);
   const validateEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-  
+
   const validatePassword = (password) => {
     if (!password) return { isValid: false, message: 'Password is required' };
     if (password.length < 6) return { isValid: false, message: 'Password must be at least 6 characters' };
@@ -33,7 +33,7 @@ function CreateUserPage() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     const sanitizedName = sanitizeInput(formData.fullName);
     if (!sanitizedName) newErrors.fullName = 'Full name is required';
     else if (!validateFullName(sanitizedName))
@@ -46,7 +46,6 @@ function CreateUserPage() {
     const validRoles = ['teacher', 'student'];
     if (!validRoles.includes(formData.role)) newErrors.role = 'Please select a valid role';
 
-    // Validate based on role
     if (formData.role === 'student') {
       const passwordValidation = validatePassword(formData.password);
       if (!passwordValidation.isValid) {
@@ -102,12 +101,10 @@ function CreateUserPage() {
         role: formData.role,
       };
 
-      // Add password only for students
       if (formData.role === 'student') {
         sanitizedData.password = formData.password;
       }
 
-      // Add access code only for teachers
       if (formData.role === 'teacher') {
         sanitizedData.accessCode = teacherAccessCode.trim();
       }
@@ -125,7 +122,6 @@ function CreateUserPage() {
         const user = await response.json();
         setUser(user);
 
-        // Auto-login & redirect based on role
         if (user.role === 'teacher') {
           navigate('/TeacherPage');
         } else {
@@ -143,33 +139,39 @@ function CreateUserPage() {
     }
   };
 
+  // Shared input classes
+  const inputBase = 'w-full px-4 py-3 text-base sm:text-lg rounded bg-gray-50 text-gray-900 placeholder-gray-400 border transition focus:outline-none';
+  const inputNormal = `${inputBase} border-gray-200 focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)]`;
+  const inputError = `${inputBase} border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)]`;
+
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-6">
-      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl text-white font-bold text-center mb-6">Create Account</h1>
+    <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 py-6">
+      <div className="w-full max-w-sm bg-neutral-900 border-2 border-red-600 rounded-lg shadow-lg p-6 sm:p-8">
+        <h1 className="text-3xl sm:text-4xl font-heading uppercase tracking-wide text-white text-center mb-6">
+          Create Account
+        </h1>
 
         {errors.general && (
-          <div className="bg-red-500 text-white p-3 rounded mb-4 text-sm">
+          <div className="bg-red-600 text-white p-3 rounded mb-4 text-sm font-body">
             {errors.general}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
           {/* Role selector */}
           <div>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className={`w-full px-4 py-3 text-base rounded bg-[#f8fafc] text-black border-2 transition focus:outline-none ${
-                errors.role ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-orange-400'
-              }`}
+              className={errors.role ? inputError : inputNormal}
               disabled={isLoading}
             >
               <option value="student">Student</option>
               <option value="teacher">Teacher</option>
             </select>
-            {errors.role && <p className="text-red-400 text-sm mt-2">{errors.role}</p>}
+            {errors.role && <p className="text-red-500 text-sm font-body mt-2">{errors.role}</p>}
           </div>
 
           {/* Full name input */}
@@ -179,17 +181,13 @@ function CreateUserPage() {
               placeholder="Full Name"
               value={formData.fullName}
               onChange={handleChange}
-              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                errors.fullName
-                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
-              }`}
+              className={errors.fullName ? inputError : inputNormal}
               required
               disabled={isLoading}
               maxLength="50"
               autoComplete="name"
             />
-            {errors.fullName && <p className="text-red-400 text-sm mt-2">{errors.fullName}</p>}
+            {errors.fullName && <p className="text-red-500 text-sm font-body mt-2">{errors.fullName}</p>}
           </div>
 
           {/* Email input */}
@@ -200,17 +198,13 @@ function CreateUserPage() {
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                errors.email
-                  ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                  : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
-              }`}
+              className={errors.email ? inputError : inputNormal}
               required
               disabled={isLoading}
               maxLength="100"
               autoComplete="email"
             />
-            {errors.email && <p className="text-red-400 text-sm mt-2">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-sm font-body mt-2">{errors.email}</p>}
           </div>
 
           {/* Password input - only for students */}
@@ -222,17 +216,13 @@ function CreateUserPage() {
                 placeholder="Password (min 6 characters)"
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                  errors.password
-                    ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
-                }`}
+                className={errors.password ? inputError : inputNormal}
                 disabled={isLoading}
                 maxLength="100"
                 autoComplete="new-password"
                 required
               />
-              {errors.password && <p className="text-red-400 text-sm mt-2">{errors.password}</p>}
+              {errors.password && <p className="text-red-500 text-sm font-body mt-2">{errors.password}</p>}
             </div>
           )}
 
@@ -244,17 +234,13 @@ function CreateUserPage() {
                 placeholder="Access Code"
                 value={teacherAccessCode}
                 onChange={handleAccessCodeChange}
-                className={`w-full px-4 py-3 text-base sm:text-lg rounded bg-[#f8fafc] text-black placeholder-gray-500 border transition ${
-                  errors.accessCode
-                    ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]'
-                    : 'border-gray-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
-                }`}
+                className={errors.accessCode ? inputError : inputNormal}
                 disabled={isLoading}
                 maxLength="10"
                 autoComplete="new-password"
               />
-              {errors.accessCode && <p className="text-red-400 text-sm mt-2">{errors.accessCode}</p>}
-              <p className="text-slate-300 text-xs mt-2">
+              {errors.accessCode && <p className="text-red-500 text-sm font-body mt-2">{errors.accessCode}</p>}
+              <p className="text-gray-400 text-xs font-body mt-2">
                 Teachers must enter the access code.
               </p>
             </div>
@@ -263,8 +249,10 @@ function CreateUserPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 rounded text-lg font-semibold transition duration-200 ${
-              isLoading ? 'bg-gray-400 cursor-not-allowed text-gray-600' : 'bg-[#64748b] hover:bg-[#fb923c] text-white'
+            className={`w-full py-3 rounded text-lg font-heading uppercase tracking-wide shadow-lg transition duration-200 ${
+              isLoading
+                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                : 'bg-red-600 hover:bg-red-700 text-white'
             }`}
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}

@@ -15,13 +15,11 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // Check if device is mobile
     const checkMobile = () => {
       setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
     };
     checkMobile();
 
-    // Check Bravura font availability for proper symbol rendering
     const testDiv = document.createElement('div');
     testDiv.style.fontFamily = 'Bravura';
     testDiv.innerHTML = '𝅝';
@@ -44,13 +42,11 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
         setMenuOpen(false);
       }
     };
-
     if (menuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     } else {
       document.removeEventListener('mousedown', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -72,7 +68,7 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
   return (
     <div ref={containerRef} className="relative z-40" data-fab>
       <button
-        className="w-12 h-12 flex items-center justify-center bg-orange-400 hover:bg-orange-500 text-white rounded transition duration-300 focus:outline-none z-50 relative"
+        className="w-12 h-12 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded shadow-lg transition duration-300 focus:outline-none z-50 relative"
         onClick={toggleMenu}
         onMouseDown={(e) => e.preventDefault()}
       >
@@ -93,7 +89,7 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
             {/* Overlay */}
             <motion.div
               key="overlay"
-              className="fixed inset-0 bg-gray-900 bg-opacity-60 z-30"
+              className="fixed inset-0 bg-black/80 z-30"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -107,9 +103,11 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-full mb-4 right-0 bg-white text-black rounded-lg shadow-xl p-4 max-h-96 overflow-y-auto w-72 z-40"
+              className="absolute bottom-full mb-4 right-0 bg-white border border-gray-200 text-gray-900 rounded-lg shadow-lg p-4 max-h-96 overflow-y-auto w-72 z-40"
             >
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Music Symbols</h3>
+              <h3 className="text-lg font-heading uppercase tracking-wide text-gray-900 mb-3">
+                Music Symbols
+              </h3>
               <div className="grid grid-cols-4 gap-2">
                 {symbols.map((item) => (
                   <button
@@ -121,8 +119,8 @@ export default function MusicSymbolButton({ onInsert, inputRef, setterFunction }
                     }}
                     data-fab
                     title={item.name}
-                    className={`p-3 text-2xl hover:bg-gray-100 rounded-md transition ${
-                      selectedSymbol === item.symbol ? 'border-2 border-white bg-gray-200' : ''
+                    className={`p-3 text-2xl font-body hover:bg-gray-100 rounded transition ${
+                      selectedSymbol === item.symbol ? 'border-2 border-red-600 bg-gray-100' : ''
                     } ${item.useBravura && !isMobile ? 'font-bravura' : ''}`}
                   >
                     {isMobile && item.mobileSymbol ? item.mobileSymbol : item.symbol}

@@ -24,18 +24,18 @@ function CreateTab({ user, selectedFolder }) {
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await fetch(`${API_URL}/exercises/folder/${folderId}`, {
         headers: {
           ...getAuthHeader(),
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch exercises: ${response.status} ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       const sortedExercises = data.sort((a, b) => {
         const nameA = (a.correctAnswer?.trim() || a.question?.trim() || 'Exercise name missing').toLowerCase();
@@ -54,12 +54,12 @@ function CreateTab({ user, selectedFolder }) {
   const addExercise = async (exercise) => {
     try {
       setError('');
-      
+
       const response = await fetch(`${API_URL}/exercises`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader()
+          ...getAuthHeader(),
         },
         body: JSON.stringify({ ...exercise, teacherId: user._id }),
       });
@@ -82,18 +82,18 @@ function CreateTab({ user, selectedFolder }) {
     // Optimistic update - remove from UI first
     const originalExercises = [...exercises];
     setExercises((prev) => prev.filter((ex) => ex._id !== id));
-    
+
     try {
       setError('');
-      
+
       const response = await fetch(`${API_URL}/exercises/${id}?userId=${user._id}`, {
         method: 'DELETE',
         headers: {
           ...getAuthHeader(),
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to delete exercise: ${response.status} ${response.statusText}`);
       }
@@ -120,16 +120,16 @@ function CreateTab({ user, selectedFolder }) {
 
     try {
       setError('');
-      
+
       const response = await fetch(`${API_URL}/exercises/${exerciseId}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader()
+          ...getAuthHeader(),
         },
         body: JSON.stringify({ correctAnswer: newName }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to rename exercise: ${response.status} ${response.statusText}`);
       }
@@ -143,9 +143,8 @@ function CreateTab({ user, selectedFolder }) {
 
   return (
     <>
-      {/* Show error message if any */}
       {error && (
-        <div className="bg-red-600 text-white p-3 rounded-lg text-sm mb-4">
+        <div className="bg-red-600 text-white p-3 rounded-lg text-sm font-body mb-4">
           {error}
         </div>
       )}

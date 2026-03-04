@@ -70,10 +70,10 @@ function AuthWrapper({ children }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900">
+      <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900">
         <div className="flex flex-col items-center gap-4">
           <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
-          <div className="text-white text-lg">Loading...</div>
+          <div className="text-white text-lg font-body">Loading...</div>
         </div>
       </div>
     );

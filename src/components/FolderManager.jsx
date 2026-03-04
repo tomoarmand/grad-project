@@ -25,21 +25,16 @@ function FolderManager({
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
-  // WHY: Folder names are user-controlled and displayed in UI
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
       .trim()
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<[^>]*>/g, '') // Remove all HTML tags
+      .replace(/<[^>]*>/g, '')
       .replace(/javascript:/gi, '')
-      .replace(/on\w+=/gi, ''); // Remove event handlers
+      .replace(/on\w+=/gi, '');
   };
 
-  // FOLDER NAME VALIDATION: Ensure folder names meet requirements and prevent duplicates
-  // WHY: Maintains data integrity and prevents naming conflicts
-  // NOTE: Checks for existing folder names to prevent duplicates
   const validateFolderName = (name) => {
     const sanitized = sanitizeInput(name);
     if (!sanitized || sanitized.length < 1) {
@@ -48,14 +43,12 @@ function FolderManager({
     if (sanitized.length > 50) {
       return { isValid: false, message: 'Folder name must be 50 characters or less' };
     }
-    // Allow letters, numbers, spaces, hyphens, underscores, and common punctuation
     const validNameRegex = /^[a-zA-Z0-9\s\-_.,!()&]+$/;
     if (!validNameRegex.test(sanitized)) {
       return { isValid: false, message: 'Folder name contains invalid characters' };
     }
-    // Check for duplicate names (case-insensitive)
-    const isDuplicate = folders.some(folder => 
-      folder.name.toLowerCase() === sanitized.toLowerCase() && 
+    const isDuplicate = folders.some(folder =>
+      folder.name.toLowerCase() === sanitized.toLowerCase() &&
       folder._id !== renamingFolderId
     );
     if (isDuplicate) {
@@ -64,14 +57,12 @@ function FolderManager({
     return { isValid: true, sanitized };
   };
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpenId(null);
       }
     };
-
     if (menuOpenId) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -86,86 +77,66 @@ function FolderManager({
 
     const containerRect = containerRef.current.getBoundingClientRect();
     const buttonRect = buttonElement.getBoundingClientRect();
-    
-    // Calculate position relative to the container
+
     const relativeTop = buttonRect.top - containerRect.top;
     const relativeRight = containerRect.right - buttonRect.right;
-    
-    // Check if menu would be clipped at bottom
-    const menuHeight = 80; // Approximate height of menu
+
+    const menuHeight = 80;
     const availableSpaceBelow = containerRect.bottom - buttonRect.bottom;
     const availableSpaceAbove = buttonRect.top - containerRect.top;
-    
-    let finalTop = relativeTop + buttonRect.height + 4; // 4px offset
-    
-    // If not enough space below and more space above, show menu above
+
+    let finalTop = relativeTop + buttonRect.height + 4;
+
     if (availableSpaceBelow < menuHeight && availableSpaceAbove > menuHeight) {
       finalTop = relativeTop - menuHeight - 4;
     }
-    
-    setMenuPosition({
-      top: finalTop,
-      right: relativeRight
-    });
-    
+
+    setMenuPosition({ top: finalTop, right: relativeRight });
     setMenuOpenId(folderId);
   };
 
   const handleNewFolderNameChange = (e) => {
     const value = e.target.value;
-    if (value.length <= 50) { // Enforce max length
+    if (value.length <= 50) {
       setNewFolderName(value);
-      // Clear error when user starts typing
-      if (errors.newFolder) {
-        setErrors(prev => ({ ...prev, newFolder: '' }));
-      }
+      if (errors.newFolder) setErrors(prev => ({ ...prev, newFolder: '' }));
     }
   };
 
   const handleNewFolderInstructionsChange = (e) => {
     const value = e.target.value;
-    if (value.length <= 500) { // Enforce max length
-      setNewFolderInstructions(value);
-    }
+    if (value.length <= 500) setNewFolderInstructions(value);
   };
 
   const handleEditedNameChange = (e) => {
     const value = e.target.value;
-    if (value.length <= 50) { // Enforce max length
+    if (value.length <= 50) {
       setEditedName(value);
-      // Clear error when user starts typing
-      if (errors.editFolder) {
-        setErrors(prev => ({ ...prev, editFolder: '' }));
-      }
+      if (errors.editFolder) setErrors(prev => ({ ...prev, editFolder: '' }));
     }
   };
 
   const handleEditedInstructionsChange = (e) => {
     const value = e.target.value;
-    if (value.length <= 500) { // Enforce max length
-      setEditedInstructions(value);
-    }
+    if (value.length <= 500) setEditedInstructions(value);
   };
 
   const handleAddFolder = async () => {
     const validation = validateFolderName(newFolderName);
-    
     if (!validation.isValid) {
       setErrors(prev => ({ ...prev, newFolder: validation.message }));
       return;
     }
-
     try {
       const response = await fetch(`${API_URL}/folders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: validation.sanitized, 
+        body: JSON.stringify({
+          name: validation.sanitized,
           teacherId: sanitizeInput(teacherId?.toString() || ''),
           instructions: newFolderInstructions.trim()
         })
       });
-
       if (response.ok) {
         const newFolder = await response.json();
         onFoldersUpdate([...folders, newFolder]);
@@ -184,27 +155,22 @@ function FolderManager({
 
   const handleRenameFolder = async (folderId) => {
     const validation = validateFolderName(editedName);
-    
     if (!validation.isValid) {
       setErrors(prev => ({ ...prev, editFolder: validation.message }));
       return;
     }
-
     try {
       const response = await fetch(`${API_URL}/folders/${encodeURIComponent(folderId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name: validation.sanitized,
           instructions: editedInstructions.trim()
         })
       });
-
       if (response.ok) {
         const updatedFolder = await response.json();
-        onFoldersUpdate(
-          folders.map((f) => (f._id === folderId ? updatedFolder : f))
-        );
+        onFoldersUpdate(folders.map((f) => (f._id === folderId ? updatedFolder : f)));
         setRenamingFolderId(null);
         setEditedName('');
         setEditedInstructions('');
@@ -224,7 +190,6 @@ function FolderManager({
       const response = await fetch(`${API_URL}/folders/${encodeURIComponent(folderId)}`, {
         method: 'DELETE'
       });
-
       if (response.ok) {
         onFoldersUpdate(folders.filter((f) => f._id !== folderId));
         if (selectedFolder && selectedFolder._id === folderId) {
@@ -261,16 +226,18 @@ function FolderManager({
   };
 
   const sortedFolders = [...folders].sort((a, b) => a.name.localeCompare(b.name));
+  const folderName = folderToDelete
+    ? folders.find(f => f._id === folderToDelete)?.name || 'this folder'
+    : 'this folder';
 
-  const tabColor = activeTab === 'create' ? 'orange-400' : 'slate-500';
-  const tabColorHover = activeTab === 'create' ? 'orange-500' : 'slate-600';
-
-  const folderName = folderToDelete ? folders.find(f => f._id === folderToDelete)?.name || 'this folder' : 'this folder';
+  // Shared input classes
+  const inputNormal = 'w-full p-2 rounded border bg-neutral-800 text-white placeholder-gray-500 border-white/10 focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)] transition';
+  const inputErrorClass = 'w-full p-2 rounded border bg-neutral-800 text-white placeholder-gray-500 border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)] transition focus:outline-none';
 
   return (
     <>
-      <div className="bg-slate-600 p-4 rounded-lg">
-        <h2 className="text-white text-lg font-semibold mb-2">
+      <div className="bg-neutral-900 border border-white/10 p-4 rounded-lg">
+        <h2 className="text-white text-lg font-heading uppercase tracking-wide mb-2">
           {activeTab === 'create' ? 'Organize Your Folders' : 'Choose a Folder to Assign From'}
         </h2>
 
@@ -285,18 +252,16 @@ function FolderManager({
                     value={newFolderName}
                     onChange={handleNewFolderNameChange}
                     onKeyDown={(e) => handleKeyDown(e, handleAddFolder)}
-                    className={`w-full p-2 rounded border bg-slate-100 text-black transition ${
-                      errors.newFolder 
-                        ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                        : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
-                    }`}
+                    className={errors.newFolder ? inputErrorClass : inputNormal}
                     maxLength="50"
                   />
-                  {errors.newFolder && <p className="text-red-400 text-sm mt-1">{errors.newFolder}</p>}
+                  {errors.newFolder && (
+                    <p className="text-red-500 text-sm font-body mt-1">{errors.newFolder}</p>
+                  )}
                 </div>
                 <button
                   onClick={handleAddFolder}
-                  className={`bg-${tabColor} hover:bg-${tabColorHover} text-white px-4 py-2 rounded transition`}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-heading uppercase tracking-wide shadow-lg transition disabled:bg-gray-600 disabled:cursor-not-allowed disabled:text-gray-400"
                   disabled={!newFolderName.trim()}
                 >
                   Add
@@ -306,17 +271,17 @@ function FolderManager({
                 placeholder="Instructions for students (optional)"
                 value={newFolderInstructions}
                 onChange={handleNewFolderInstructionsChange}
-                className="w-full p-2 rounded border border-slate-300 bg-slate-100 text-black text-sm focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition resize-none"
+                className="w-full p-2 rounded border border-white/10 bg-neutral-800 text-white placeholder-gray-500 text-sm font-body focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)] transition resize-none"
                 rows="2"
                 maxLength="500"
               />
-              <p className="text-slate-300 text-xs text-right">{newFolderInstructions.length}/500</p>
+              <p className="text-gray-500 text-xs font-body text-right">{newFolderInstructions.length}/500</p>
             </div>
           </div>
         )}
 
         {folders.length === 0 ? (
-          <p className="text-white text-sm">No folders available.</p>
+          <p className="text-gray-400 text-sm font-body">No folders available.</p>
         ) : (
           <div className="relative" ref={containerRef}>
             <ul className="max-h-48 overflow-y-auto space-y-1">
@@ -325,8 +290,8 @@ function FolderManager({
                   key={folder._id}
                   className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors duration-150 ${
                     selectedFolder?._id === folder._id
-                      ? 'bg-orange-400 text-black'
-                      : 'text-white hover:bg-slate-700'
+                      ? 'bg-blue-50 border-l-4 border-red-600 text-gray-900'
+                      : 'text-gray-200 hover:bg-neutral-800'
                   }`}
                   onClick={() => onFolderSelect(folder)}
                 >
@@ -340,10 +305,10 @@ function FolderManager({
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => handleKeyDown(e, handleRenameFolder, folder._id)}
                           autoFocus
-                          className={`flex-grow p-1 rounded text-black border transition ${
-                            errors.editFolder 
-                              ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                              : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                          className={`flex-grow p-1 rounded text-white border font-body transition focus:outline-none ${
+                            errors.editFolder
+                              ? 'bg-neutral-800 border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)]'
+                              : 'bg-neutral-800 border-white/10 focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)]'
                           }`}
                           maxLength="50"
                         />
@@ -352,7 +317,7 @@ function FolderManager({
                             e.stopPropagation();
                             handleRenameFolder(folder._id);
                           }}
-                          className="p-1.5 bg-green-600 hover:bg-green-700 rounded text-white flex items-center justify-center transition"
+                          className="p-1.5 bg-green-500 hover:bg-green-600 rounded text-white flex items-center justify-center shadow-lg transition"
                           title="Save changes"
                           aria-label="Save changes"
                         >
@@ -366,7 +331,7 @@ function FolderManager({
                             setEditedInstructions('');
                             setErrors(prev => ({ ...prev, editFolder: '' }));
                           }}
-                          className="p-1.5 bg-gray-400 hover:bg-gray-500 rounded text-white flex items-center justify-center transition"
+                          className="p-1.5 border border-white/10 hover:bg-neutral-800 rounded text-white flex items-center justify-center transition"
                           title="Cancel editing"
                           aria-label="Cancel editing"
                         >
@@ -378,22 +343,26 @@ function FolderManager({
                         onChange={handleEditedInstructionsChange}
                         onClick={(e) => e.stopPropagation()}
                         placeholder="Instructions (optional)"
-                        className="w-full p-1 rounded text-black text-xs border border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500 transition resize-none"
+                        className="w-full p-1 rounded text-white text-xs font-body border border-white/10 bg-neutral-800 focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)] transition resize-none"
                         rows="2"
                         maxLength="500"
                       />
-                      <p className="text-xs text-right">{editedInstructions.length}/500</p>
-                      {errors.editFolder && <p className="text-red-400 text-xs">{errors.editFolder}</p>}
+                      <p className="text-gray-500 text-xs font-body text-right">{editedInstructions.length}/500</p>
+                      {errors.editFolder && (
+                        <p className="text-red-500 text-xs font-body">{errors.editFolder}</p>
+                      )}
                     </div>
                   ) : (
-                    <span className="truncate">{sanitizeInput(folder.name) || 'Untitled Folder'}</span>
+                    <span className="truncate font-body">
+                      {sanitizeInput(folder.name) || 'Untitled Folder'}
+                    </span>
                   )}
 
                   {activeTab === 'create' && selectedFolder?._id === folder._id && renamingFolderId !== folder._id && (
                     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => handleMenuToggle(folder._id, e.target)}
-                        className="p-1 rounded hover:bg-slate-700 text-white transition"
+                        className="p-1 rounded hover:bg-neutral-700 text-gray-400 hover:text-white transition"
                         aria-label="Folder options"
                       >
                         <MoreVertical size={16} />
@@ -408,7 +377,7 @@ function FolderManager({
             {menuOpenId && (
               <div
                 ref={menuRef}
-                className="absolute w-28 bg-white text-black rounded shadow-lg z-50 border border-gray-200"
+                className="absolute w-28 bg-white border border-gray-200 rounded shadow-lg z-50"
                 style={{
                   top: `${menuPosition.top}px`,
                   right: `${menuPosition.right}px`,
@@ -423,13 +392,13 @@ function FolderManager({
                     setMenuOpenId(null);
                     setErrors(prev => ({ ...prev, editFolder: '' }));
                   }}
-                  className="block w-full text-left px-3 py-2 hover:bg-gray-100 rounded-t transition"
+                  className="block w-full text-left px-3 py-2 text-gray-900 font-body text-sm hover:bg-gray-100 rounded-t transition"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => confirmDeleteFolder(menuOpenId)}
-                  className="block w-full text-left px-3 py-2 text-red-600 hover:bg-gray-100 rounded-b transition"
+                  className="block w-full text-left px-3 py-2 text-red-600 font-body text-sm hover:bg-gray-100 rounded-b transition"
                 >
                   Delete
                 </button>

@@ -72,15 +72,15 @@ function AssignTab({ user }) {
   };
 
   const toggleFolder = (id) => {
-    const newSelection = selectedFolderIds.includes(id) 
-      ? selectedFolderIds.filter((i) => i !== id) 
+    const newSelection = selectedFolderIds.includes(id)
+      ? selectedFolderIds.filter((i) => i !== id)
       : [...selectedFolderIds, id];
     setSelectedFolderIds(newSelection);
   };
 
   const toggleStudent = (id) => {
-    const newSelection = selectedStudentIds.includes(id) 
-      ? selectedStudentIds.filter((i) => i !== id) 
+    const newSelection = selectedStudentIds.includes(id)
+      ? selectedStudentIds.filter((i) => i !== id)
       : [...selectedStudentIds, id];
     setSelectedStudentIds(newSelection);
   };
@@ -114,18 +114,19 @@ function AssignTab({ user }) {
 
   return (
     <div className="space-y-6 relative">
+
       {/* Mobile-optimized feedback bar */}
       {feedback && (
         <div
-          className={`fixed top-4 left-4 right-4 mx-auto max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-500 z-50 ${
+          className={`fixed top-4 left-4 right-4 mx-auto max-w-sm px-4 py-3 rounded-lg shadow-lg text-sm font-body font-medium transition-all duration-500 z-50 ${
             feedback.type === 'success'
               ? 'bg-green-500 text-white'
-              : 'bg-red-500 text-white'
+              : 'bg-red-600 text-white'
           }`}
         >
           <div className="flex items-center justify-between">
             <span>{feedback.msg}</span>
-            <button 
+            <button
               onClick={() => setFeedback(null)}
               className="ml-2 text-white hover:text-gray-200"
             >
@@ -135,11 +136,13 @@ function AssignTab({ user }) {
         </div>
       )}
 
-      {error && <div className="bg-red-600 text-white p-3 rounded-lg text-sm">{error}</div>}
+      {error && (
+        <div className="bg-red-600 text-white p-3 rounded-lg text-sm font-body">{error}</div>
+      )}
 
       {/* Folders */}
-      <div className="bg-slate-600 rounded-lg p-3">
-        <h3 className="text-white text-sm font-semibold mb-2">
+      <div className="bg-neutral-900 border border-white/10 rounded-lg p-3">
+        <h3 className="text-white text-sm font-heading uppercase tracking-wide mb-2">
           Select Folders to Assign
         </h3>
         {loading ? (
@@ -147,41 +150,40 @@ function AssignTab({ user }) {
             <PuffLoader color="#ffffff" size={25} />
           </div>
         ) : folders.length === 0 ? (
-          <p className="text-white text-xs">No folders found. Create some folders first.</p>
+          <p className="text-gray-400 text-xs font-body">No folders found. Create some folders first.</p>
         ) : (
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {folders.map((folder) => (
               <label
                 key={folder._id}
-                className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
+                className="flex items-center text-sm font-body text-gray-200 p-1 rounded hover:bg-neutral-800"
               >
                 <input
                   type="checkbox"
                   checked={selectedFolderIds.includes(folder._id)}
                   onChange={() => toggleFolder(folder._id)}
-                  className="mr-2 w-4 h-4"
+                  className="mr-2 w-4 h-4 accent-red-600"
                 />
-                <span className="truncate">
-                  {folder.name}
-                </span>
+                <span className="truncate">{folder.name}</span>
               </label>
             ))}
           </div>
         )}
         {selectedFolderIds.length > 0 && (
-          <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
-            {selectedFolderIds.length} folder
-            {selectedFolderIds.length !== 1 ? 's' : ''} selected
+          <div className="mt-2 p-2 bg-yellow-500 rounded text-black text-xs font-body font-medium">
+            {selectedFolderIds.length} folder{selectedFolderIds.length !== 1 ? 's' : ''} selected
           </div>
         )}
       </div>
 
       {/* Students */}
-      <div className="bg-slate-600 rounded-lg p-3">
-        <h3 className="text-white text-sm font-semibold mb-2">
+      <div className="bg-neutral-900 border border-white/10 rounded-lg p-3">
+        <h3 className="text-white text-sm font-heading uppercase tracking-wide mb-2">
           Select Students{' '}
           {!studentsLoading && students.length > 0 && (
-            <span className="text-orange-400 font-normal ml-1">({students.length} available)</span>
+            <span className="text-gray-400 font-body font-normal normal-case ml-1">
+              ({students.length} available)
+            </span>
           )}
         </h3>
         {studentsLoading ? (
@@ -189,24 +191,22 @@ function AssignTab({ user }) {
             <PuffLoader color="#ffffff" size={20} />
           </div>
         ) : students.length === 0 ? (
-          <p className="text-white text-xs">No students found.</p>
+          <p className="text-gray-400 text-xs font-body">No students found.</p>
         ) : (
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {students.map((st) => (
               <label
                 key={st._id}
-                className="flex items-center text-sm text-white p-1 rounded hover:bg-slate-700"
+                className="flex items-center text-sm font-body text-gray-200 p-1 rounded hover:bg-neutral-800"
               >
                 <input
                   type="checkbox"
                   checked={selectedStudentIds.includes(st._id)}
                   onChange={() => toggleStudent(st._id)}
-                  className="mr-2 w-4 h-4 flex-shrink-0"
+                  className="mr-2 w-4 h-4 flex-shrink-0 accent-red-600"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="truncate font-medium">
-                    {st.fullName || 'Unnamed Student'}
-                  </div>
+                  <div className="truncate font-medium">{st.fullName || 'Unnamed Student'}</div>
                   <div className="text-xs text-gray-400 truncate">
                     {st.email.length > 25 ? st.email.substring(0, 25) + '...' : st.email}
                   </div>
@@ -216,9 +216,8 @@ function AssignTab({ user }) {
           </div>
         )}
         {selectedStudentIds.length > 0 && (
-          <div className="mt-2 p-2 bg-orange-400 rounded text-black text-xs">
-            {selectedStudentIds.length} student
-            {selectedStudentIds.length !== 1 ? 's' : ''} selected
+          <div className="mt-2 p-2 bg-yellow-500 rounded text-black text-xs font-body font-medium">
+            {selectedStudentIds.length} student{selectedStudentIds.length !== 1 ? 's' : ''} selected
           </div>
         )}
       </div>
@@ -233,19 +232,19 @@ function AssignTab({ user }) {
             assignmentLoading ||
             studentsLoading
           }
-          className={`w-full sm:w-auto px-6 py-2 rounded-md text-sm font-semibold transition ${
+          className={`w-full sm:w-auto px-6 py-2 rounded text-sm font-heading uppercase tracking-wide shadow-lg transition ${
             selectedFolderIds.length === 0 ||
             selectedStudentIds.length === 0 ||
             assignmentLoading ||
             studentsLoading
-              ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-              : 'bg-orange-500 hover:bg-orange-600 text-white'
+              ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+              : 'bg-red-600 hover:bg-red-700 text-white'
           }`}
         >
           {assignmentLoading ? (
             <div className="flex items-center gap-2 justify-center">
               <PuffLoader color="#ffffff" size={16} />
-              Assigning...
+              <span className="font-body">Assigning...</span>
             </div>
           ) : (
             `Assign ${selectedFolderIds.length || 0} Folder${

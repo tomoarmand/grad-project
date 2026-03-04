@@ -57,20 +57,20 @@ function TeacherExercisesManager() {
   };
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 py-8 overflow-auto">
+    <div className="min-h-screen w-screen flex flex-col items-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 py-8 overflow-auto">
       <div className="w-full max-w-md sm:max-w-xl mb-4">
         <NavLinks
           links={[
             { label: 'Home', to: '/' },
             { label: 'Teacher Dashboard', to: '/TeacherPage' },
-            { label: 'Manage Assignments', to: '/TeacherExercisesManager' }
+            { label: 'Manage Assignments', to: '/TeacherExercisesManager' },
           ]}
           isBreadcrumb
         />
       </div>
 
-      <div className="w-full max-w-md sm:max-w-xl bg-[#334155] rounded-xl shadow-xl p-4 sm:p-6 flex flex-col gap-6">
-        <h1 className="text-2xl sm:text-3xl text-white font-bold text-center">
+      <div className="w-full max-w-md sm:max-w-xl bg-neutral-900 border-2 border-red-600 rounded-lg shadow-lg p-4 sm:p-6 flex flex-col gap-6">
+        <h1 className="text-2xl sm:text-3xl font-heading uppercase tracking-wide text-white text-center">
           Manage Assigned Exercises
         </h1>
 
@@ -80,12 +80,10 @@ function TeacherExercisesManager() {
             const student = students.find(s => s._id === e.target.value);
             handleSelectStudent(student);
           }}
-          className="w-full bg-slate-600 text-white rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="w-full bg-neutral-800 border border-white/10 text-white rounded p-3 text-sm font-body focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)] transition"
           defaultValue=""
         >
-          <option value="" disabled>
-            Select a student
-          </option>
+          <option value="" disabled>Select a student</option>
           {students.map(student => (
             <option key={student._id} value={student._id} className="text-black">
               {student.fullName}
@@ -106,15 +104,15 @@ function TeacherExercisesManager() {
             {exercises.map(ex => (
               <li
                 key={ex._id}
-                className="bg-slate-600 p-4 rounded-xl shadow text-white"
+                className="bg-neutral-800 border border-white/10 p-4 rounded-lg shadow text-white"
               >
-                <p className="font-semibold mb-2 text-sm">
-                  Correct Answer: <span className="text-orange-300">{ex.correctAnswer}</span>
+                <p className="font-body text-sm mb-2">
+                  Correct Answer: <span className="text-white font-medium">{ex.correctAnswer}</span>
                 </p>
                 <audio controls src={ex.audioData} className="w-full mb-3 rounded" />
                 <button
                   onClick={() => handleUnassign(ex._id)}
-                  className="text-yellow-300 font-medium hover:text-yellow-400 transition text-sm"
+                  className="text-red-600 hover:text-red-500 font-heading uppercase tracking-wide text-sm transition"
                 >
                   Unassign
                 </button>
@@ -124,7 +122,7 @@ function TeacherExercisesManager() {
         )}
 
         {!loading && selectedStudent && exercises.length === 0 && (
-          <p className="text-white text-center text-sm">
+          <p className="text-gray-400 text-center text-sm font-body">
             No exercises assigned to this student.
           </p>
         )}

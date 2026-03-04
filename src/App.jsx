@@ -5,28 +5,24 @@ import './App.css';
 import logo from './assets/logo.svg';
 import useUserStore from './store/userStore';
 
-// Custom hook for page tracking
 function usePageTracking() {
   const location = useLocation();
-  
   useEffect(() => {
-    // Track page view with gtag (production only)
     if (process.env.NODE_ENV === 'production' && window.gtag) {
       window.gtag('event', 'page_view', {
         page_title: document.title,
         page_location: window.location.href,
-        page_path: location.pathname + location.search
+        page_path: location.pathname + location.search,
       });
     }
   }, [location]);
 }
 
-// Helper function to track events
 function trackAnalyticsEvent(category, action, label = '') {
   if (process.env.NODE_ENV === 'production' && window.gtag) {
     window.gtag('event', action, {
       event_category: category,
-      event_label: label
+      event_label: label,
     });
   }
 }
@@ -35,7 +31,6 @@ function HomePage() {
   const { clearUser } = useUserStore();
   const navigate = useNavigate();
 
-  // Use the page tracking hook
   usePageTracking();
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -75,61 +70,42 @@ function HomePage() {
     setIsDesktop(desktop);
 
     setBrowserSupport({
-      isChrome,
-      isEdge,
-      isFirefox,
-      isSafari,
-      isChromeIOS,
+      isChrome, isEdge, isFirefox, isSafari, isChromeIOS,
       supportsInstall: isChrome || isEdge || (!desktop && !iOS),
     });
 
-    // PWA DETECTION: Check multiple browser indicators for installed status
-    // WHY: Critical for showing appropriate install prompts and UI states
-    // NOTE: Covers different browsers (Chrome, Safari, Firefox) and display modes
     const checkInstallStatus = () => {
-      // Check if running in standalone mode (PWA)
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          window.navigator.standalone === true ||
-                          document.referrer.includes('android-app://');
-      
-      // Additional check for mobile PWA
-      const isMobilePWA = !desktop && (
+      const isStandalone =
         window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true
-      );
-      
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://');
+      const isMobilePWA =
+        !desktop &&
+        (window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true);
       return isStandalone || isMobilePWA;
     };
 
     const installedStatus = checkInstallStatus();
     setIsInstalled(installedStatus);
 
-    // Check if app has ever been installed (persistent flag)
     const appEverInstalled = localStorage.getItem('kenToneAppInstalled');
-    
-    // Check if the installed message should be shown
     const hasShownInstalledMessage = localStorage.getItem('kenToneInstalledMessageShown');
-    
-    // Show installed message only when actually in PWA mode
+
     if (installedStatus && !hasShownInstalledMessage) {
       setShowInstalledMessage(true);
       localStorage.setItem('kenToneInstalledMessageShown', 'true');
     }
 
-    // Check if the install banner has been shown before OR if app was ever installed
     const hasShownInstallBanner = localStorage.getItem('kenToneInstallBannerShown');
     const shouldHideBanner = !!hasShownInstallBanner || !!appEverInstalled || installedStatus;
     setHasShownBanner(shouldHideBanner);
 
     const delay = desktop ? 500 : 300;
 
-    // INSTALL PROMPT: Capture and defer native PWA install prompt
-    // WHY: Ensures users get native install experience when available
-    // NOTE: Must prevent default to control when prompt appears, critical for UX
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Don't show banner if app was ever installed or currently installed
       if (!checkInstallStatus() && !shouldHideBanner) {
         setTimeout(() => {
           setShowInstallBanner(true);
@@ -140,17 +116,13 @@ function HomePage() {
     };
 
     const handleAppInstalled = () => {
-      // Mark app as permanently installed
       localStorage.setItem('kenToneAppInstalled', 'true');
       localStorage.setItem('kenToneInstallBannerShown', 'true');
-      
       setIsInstalled(true);
       setShowInstallBanner(false);
       setShowDesktopModal(false);
       setDeferredPrompt(null);
       setHasShownBanner(true);
-      
-      // Only show installed message if actually in PWA mode
       if (checkInstallStatus()) {
         setShowInstalledMessage(true);
         localStorage.setItem('kenToneInstalledMessageShown', 'true');
@@ -160,14 +132,12 @@ function HomePage() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Only show banner if not installed and hasn't been shown and app wasn't previously installed
     const timer = setTimeout(() => {
       const shouldShowBanner =
         !checkInstallStatus() &&
         !shouldHideBanner &&
         !appEverInstalled &&
         (iOS || deferredPrompt || (!desktop && browserSupport.supportsInstall));
-
       if (shouldShowBanner) {
         setShowInstallBanner(true);
         localStorage.setItem('kenToneInstallBannerShown', 'true');
@@ -175,19 +145,15 @@ function HomePage() {
       }
     }, delay);
 
-    // Listen for display mode changes
     const standaloneMediaQuery = window.matchMedia('(display-mode: standalone)');
-    const handleDisplayModeChange = (e) => {
+    const handleDisplayModeChange = () => {
       const newInstalledStatus = checkInstallStatus();
       setIsInstalled(newInstalledStatus);
-      
-      // If we're now in standalone mode and haven't shown the message
       if (newInstalledStatus && !localStorage.getItem('kenToneInstalledMessageShown')) {
         setShowInstalledMessage(true);
         localStorage.setItem('kenToneInstalledMessageShown', 'true');
       }
     };
-    
     standaloneMediaQuery.addListener(handleDisplayModeChange);
 
     return () => {
@@ -196,7 +162,7 @@ function HomePage() {
       standaloneMediaQuery.removeListener(handleDisplayModeChange);
       clearTimeout(timer);
     };
-  }, []); // Keep empty dependency array to avoid re-running
+  }, []);
 
   const handleCreateUserClick = () => {
     try {
@@ -216,30 +182,25 @@ function HomePage() {
 
   const handleInstallClick = async () => {
     trackAnalyticsEvent('PWA', 'Install_Click', isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop');
-    
+
     if (isIOS) {
       setShowIOSModal(true);
       setShowInstallBanner(false);
       return;
     }
 
-    // If we have a deferred prompt, use it
     if (deferredPrompt) {
       try {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-
         if (outcome === 'accepted') {
           trackAnalyticsEvent('PWA', 'Install_Accepted', 'Native_Prompt');
-          // Mark as installed and hide banner
           localStorage.setItem('kenToneAppInstalled', 'true');
           setShowInstallBanner(false);
           setHasShownBanner(true);
         } else {
           trackAnalyticsEvent('PWA', 'Install_Dismissed', 'Native_Prompt');
         }
-        // Don't set deferredPrompt to null if user dismissed - keep it for future attempts
-        // setDeferredPrompt(null);
       } catch (error) {
         if (isDesktop) setShowDesktopModal(true);
         else if (isIOS) setShowIOSModal(true);
@@ -248,16 +209,9 @@ function HomePage() {
       return;
     }
 
-    // No deferred prompt available - show appropriate modal/instructions
-    if (isDesktop) {
-      setShowDesktopModal(true);
-    } else if (isAndroid && browserSupport.supportsInstall) {
-      // For modern Android browsers, show instructions as fallback
-      setShowAndroidModal(true);
-    } else if (isIOS) {
-      setShowIOSModal(true);
-    }
-    // Note: Most Android users should never reach this point because they'll have deferredPrompt
+    if (isDesktop) setShowDesktopModal(true);
+    else if (isAndroid && browserSupport.supportsInstall) setShowAndroidModal(true);
+    else if (isIOS) setShowIOSModal(true);
     setShowInstallBanner(false);
   };
 
@@ -266,51 +220,36 @@ function HomePage() {
     setShowInstalledMessage(false);
   };
 
-  // Check if we should show the tip (not installed AND app was never installed)
   const shouldShowTip = !isInstalled && !localStorage.getItem('kenToneAppInstalled');
 
-  // Get device-specific tip text
   const getTipText = () => {
-    if (isIOS) {
-      return (
-        <>
-          💡 Tip: <span className="underline">Add KenTone to your home screen</span> for the best experience
-        </>
-      );
-    } else if (isAndroid) {
-      return (
-        <>
-          💡 Tip: <span className="underline">Add KenTone to your home screen</span> for the best experience
-        </>
-      );
-    } else {
-      return (
-        <>
-          💡 Tip: <span className="underline">Add KenTone to your desktop</span> for the best experience
-        </>
-      );
+    if (isIOS || isAndroid) {
+      return (<>💡 Tip: <span className="underline">Add to your home screen</span> for the best experience</>);
     }
+    return (<>💡 Tip: <span className="underline">Add to your desktop</span> for the best experience</>);
   };
 
+  // Modal shared styles
+  const modalBackdrop = "fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50";
+  const modalCard = "bg-neutral-900 border-2 border-red-600 rounded-lg p-6 max-w-md mx-auto shadow-lg";
+  const modalHeader = "flex justify-between items-center mb-4";
+  const modalTitle = "text-white text-lg font-heading uppercase tracking-wide flex items-center gap-2";
+  const modalClose = "text-gray-400 hover:text-white transition-colors";
+  const modalBody = "text-gray-300 text-sm font-body space-y-3";
+
   const DesktopInstallModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#334155] rounded-xl p-6 max-w-md mx-auto shadow-2xl border border-slate-600">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white text-lg font-semibold flex items-center gap-2">
-            <Monitor size={20} /> Install KenTone on Desktop
-          </h3>
-          <button
-            onClick={() => setShowDesktopModal(false)}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="Close modal"
-          >
+    <div className={modalBackdrop}>
+      <div className={modalCard}>
+        <div className={modalHeader}>
+          <h3 className={modalTitle}><Monitor size={20} /> Install on Desktop</h3>
+          <button onClick={() => setShowDesktopModal(false)} className={modalClose} aria-label="Close modal">
             <X size={20} />
           </button>
         </div>
-        <div className="text-gray-300 text-sm space-y-3">
-          <p>To install KenTone as a desktop app:</p>
+        <div className={modalBody}>
+          <p>To install as a desktop app:</p>
           <div className="space-y-2">
-            <p><strong>Chrome/Edge:</strong></p>
+            <p><strong className="text-white">Chrome/Edge:</strong></p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li>Click the install icon in the address bar</li>
               <li>Or go to Settings → More tools → Create shortcut</li>
@@ -322,41 +261,24 @@ function HomePage() {
   );
 
   const AndroidInstallModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white text-lg font-semibold flex items-center gap-2">
-            <Smartphone size={20} /> Add to Home Screen
-          </h3>
-          <button
-            onClick={() => setShowAndroidModal(false)}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="Close modal"
-          >
+    <div className={modalBackdrop}>
+      <div className={`${modalCard} max-w-sm`}>
+        <div className={modalHeader}>
+          <h3 className={modalTitle}><Smartphone size={20} /> Add to Home Screen</h3>
+          <button onClick={() => setShowAndroidModal(false)} className={modalClose} aria-label="Close modal">
             <X size={20} />
           </button>
         </div>
-        <div className="text-gray-300 text-sm space-y-3">
+        <div className={modalBody}>
           <p>The automatic install prompt isn't available right now.</p>
-          <p>To add KenTone to your home screen manually:</p>
+          <p>To add to your home screen manually:</p>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">1.</span>
-              <span>Tap the menu button <strong>⋮</strong> (three dots)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">2.</span>
-              <span>Look for <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">3.</span>
-              <span>Tap <strong>"Add"</strong> or <strong>"Install"</strong> to confirm</span>
-            </div>
+            <div className="flex items-center gap-2"><span>1.</span><span>Tap the menu button <strong className="text-white">⋮</strong></span></div>
+            <div className="flex items-center gap-2"><span>2.</span><span>Look for <strong className="text-white">"Add to Home screen"</strong> or <strong className="text-white">"Install app"</strong></span></div>
+            <div className="flex items-center gap-2"><span>3.</span><span>Tap <strong className="text-white">"Add"</strong> or <strong className="text-white">"Install"</strong> to confirm</span></div>
           </div>
-          <div className="bg-blue-900 bg-opacity-30 border border-blue-400 rounded-lg p-3 mt-3">
-            <p className="text-blue-300 text-xs">
-              💡 Try refreshing the page to see if the install prompt appears.
-            </p>
+          <div className="bg-neutral-800 border border-white/10 rounded-lg p-3 mt-3">
+            <p className="text-gray-400 text-xs">💡 Try refreshing the page to see if the install prompt appears.</p>
           </div>
         </div>
       </div>
@@ -364,59 +286,37 @@ function HomePage() {
   );
 
   const IOSInstallModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#334155] rounded-xl p-6 max-w-sm mx-auto shadow-2xl border border-slate-600">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-white text-lg font-semibold">Add to Home Screen</h3>
-          <button
-            onClick={() => setShowIOSModal(false)}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="Close modal"
-          >
+    <div className={modalBackdrop}>
+      <div className={`${modalCard} max-w-sm`}>
+        <div className={modalHeader}>
+          <h3 className={modalTitle}>Add to Home Screen</h3>
+          <button onClick={() => setShowIOSModal(false)} className={modalClose} aria-label="Close modal">
             <X size={20} />
           </button>
         </div>
-        <div className="text-gray-300 text-sm space-y-3">
-          {browserSupport.isChromeIOS ? (
+        <div className={modalBody}>
+          {browserSupport.isChromeIOS && (
             <>
-              <div className="bg-yellow-900 bg-opacity-30 border border-yellow-400 rounded-lg p-3 mb-3">
-                <p className="text-yellow-300 text-xs flex items-center gap-2">
+              <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-3 mb-3">
+                <p className="text-yellow-500 text-xs flex items-center gap-2">
                   <span>⚠️</span>
-                  <span>You're using Chrome on iOS. For the best experience, please open this page in <strong>Safari</strong> to add it to your home screen.</span>
+                  <span>You're using Chrome on iOS. For the best experience, open this page in <strong>Safari</strong> to add it to your home screen.</span>
                 </p>
               </div>
               <p>To switch to Safari:</p>
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">1.</span>
-                  <span>Copy this page's URL</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">2.</span>
-                  <span>Open Safari and paste the URL</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">3.</span>
-                  <span>Follow the instructions below</span>
-                </div>
+                <div className="flex items-center gap-2"><span>1.</span><span>Copy this page's URL</span></div>
+                <div className="flex items-center gap-2"><span>2.</span><span>Open Safari and paste the URL</span></div>
+                <div className="flex items-center gap-2"><span>3.</span><span>Follow the instructions below</span></div>
               </div>
-              <hr className="border-gray-600 my-4" />
+              <hr className="border-white/10 my-4" />
             </>
-          ) : null}
-          <p>To add KenTone to your home screen{browserSupport.isChromeIOS ? ' (in Safari)' : ''}:</p>
+          )}
+          <p>To add to your home screen{browserSupport.isChromeIOS ? ' (in Safari)' : ''}:</p>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">1.</span>
-              <span>Tap the Share button <strong>⬆️</strong> at the bottom</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">2.</span>
-              <span>Scroll down and tap <strong>"Add to Home Screen"</strong></span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">3.</span>
-              <span>Tap <strong>"Add"</strong> to confirm</span>
-            </div>
+            <div className="flex items-center gap-2"><span>1.</span><span>Tap the Share button <strong className="text-white">⬆️</strong> at the bottom</span></div>
+            <div className="flex items-center gap-2"><span>2.</span><span>Scroll down and tap <strong className="text-white">"Add to Home Screen"</strong></span></div>
+            <div className="flex items-center gap-2"><span>3.</span><span>Tap <strong className="text-white">"Add"</strong> to confirm</span></div>
           </div>
         </div>
       </div>
@@ -424,27 +324,24 @@ function HomePage() {
   );
 
   return (
-    <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 px-4 relative">
-      
+    <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 relative">
+
+      {/* Install banner */}
       {showInstallBanner && !isInstalled && (
         <div
-          className="fixed top-4 left-4 right-4 bg-[#334155] border border-orange-400 rounded-lg p-4 shadow-lg z-40 animate-slideDown"
+          className="fixed top-4 left-4 right-4 bg-black/90 backdrop-blur-sm border border-white/10 rounded-lg p-4 shadow-lg z-40 animate-slideDown"
           role="banner"
           aria-live="polite"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-400 rounded-lg">
-                {isDesktop ? (
-                  <Monitor size={20} className="text-white" />
-                ) : (
-                  <Smartphone size={20} className="text-white" />
-                )}
+              <div className="p-2 bg-red-600 rounded">
+                {isDesktop ? <Monitor size={20} className="text-white" /> : <Smartphone size={20} className="text-white" />}
               </div>
               <div>
-                <p className="text-white font-medium text-sm">Install KenTone</p>
+                <p className="text-white font-heading uppercase tracking-wide text-sm">Install App</p>
                 <p
-                  className="text-gray-300 text-xs cursor-pointer hover:underline"
+                  className="text-gray-400 text-xs font-body cursor-pointer hover:underline"
                   onClick={handleInstallClick}
                 >
                   {isDesktop ? 'Get the desktop app experience' : 'Get the full app experience'}
@@ -454,14 +351,14 @@ function HomePage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleInstallClick}
-                className="bg-orange-400 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                aria-label="Install KenTone app"
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-heading uppercase tracking-wide shadow-lg transition flex items-center gap-1 focus:outline-none"
+                aria-label="Install app"
               >
                 <Download size={14} /> Install
               </button>
               <button
                 onClick={() => setShowInstallBanner(false)}
-                className="text-gray-400 hover:text-white p-1 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 rounded"
+                className="text-gray-400 hover:text-white p-1 transition focus:outline-none rounded"
                 aria-label="Dismiss install prompt"
               >
                 <X size={16} />
@@ -476,29 +373,27 @@ function HomePage() {
       {showAndroidModal && <AndroidInstallModal />}
 
       {/* Main card */}
-      <div className="w-full max-w-sm bg-[#334155] rounded-xl shadow-xl p-8 sm:p-10 text-center">
+      <div className="w-full max-w-sm bg-neutral-900 border-2 border-red-600 rounded-lg shadow-lg p-8 sm:p-10 text-center">
         <div className="flex flex-col items-center mb-10">
           <img
             src={logo}
             alt="KenTone logo"
             className="w-32 h-32 sm:w-36 sm:h-36 object-contain mb-4 drop-shadow-md"
           />
-          <h1
-            style={{ fontFamily: "'Merriweather', serif", textShadow: '2px 4px 6px rgba(0, 0, 0, 0.3)' }}
-            className="text-[#f5f0e6] text-4xl sm:text-5xl font-semibold tracking-wide"
-          >
+          <h1 className="text-white text-4xl sm:text-5xl font-heading uppercase tracking-wide">
             KenTone
           </h1>
+          <div className="w-24 h-1 bg-red-600 mx-auto mt-4" />
         </div>
 
         {isInstalled && showInstalledMessage && (
-          <div className="mb-6 p-3 bg-green-900 bg-opacity-30 border border-green-400 rounded-lg relative">
-            <p className="text-green-300 text-sm flex items-center justify-center gap-2">
-              <span className="text-green-400">✓</span> Great! You're using the KenTone app
+          <div className="mb-6 p-3 bg-green-500/10 border border-green-500 rounded-lg relative">
+            <p className="text-green-500 text-sm font-body flex items-center justify-center gap-2">
+              <span>✓</span> You're using the KenTone app
             </p>
             <button
               onClick={handleDismissInstalledMessage}
-              className="absolute top-1 right-1 text-green-400 hover:text-green-300 p-1"
+              className="absolute top-1 right-1 text-green-500 hover:text-green-400 p-1"
               aria-label="Dismiss message"
             >
               <X size={14} />
@@ -508,24 +403,21 @@ function HomePage() {
 
         <div className="flex flex-col gap-4">
           <Link to="/LoginPage" className="w-full" onClick={handleLoginClick}>
-            <button
-              className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
-            >
+            <button className="w-full text-lg sm:text-xl font-heading uppercase tracking-wide text-white bg-red-600 hover:bg-red-700 py-3 rounded shadow-lg transition duration-200 focus:outline-none">
               Log In
             </button>
           </Link>
           <button
             onClick={handleCreateUserClick}
-            className="w-full text-lg sm:text-xl font-semibold text-[#f5f0e6] bg-[#64748b] hover:bg-[#fb923c] py-3 rounded transition duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+            className="w-full text-lg sm:text-xl font-heading uppercase tracking-wide text-white bg-red-600 hover:bg-red-700 py-3 rounded shadow-lg transition duration-200 focus:outline-none"
           >
             Create New User
           </button>
         </div>
 
-        {/* Tip only shows if app was never installed */}
         {shouldShowTip && (
           <p
-            className="text-gray-400 text-xs mt-4 cursor-pointer hover:underline"
+            className="text-gray-500 text-xs font-body mt-4 cursor-pointer hover:underline"
             onClick={handleInstallClick}
           >
             {getTipText()}

@@ -88,16 +88,19 @@ function AssignmentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-blue-900 text-white px-4 py-8 flex flex-col items-center">
-      <div className="w-full max-w-md bg-[#334155] rounded-xl shadow-xl p-6 flex flex-col gap-6 mt-4">
-        <h1 className="text-3xl font-bold text-center">Assign Exercises</h1>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 text-white px-4 py-8 flex flex-col items-center">
+      <div className="w-full max-w-md bg-neutral-900 border-2 border-red-600 rounded-lg shadow-lg p-6 flex flex-col gap-6 mt-4">
+
+        <h1 className="text-3xl font-heading uppercase tracking-wide text-center text-white">
+          Assign Exercises
+        </h1>
 
         <div>
-          <label className="block mb-2 text-sm">Choose Folder</label>
+          <label className="block mb-2 text-sm font-body text-gray-300">Choose Folder</label>
           <select
             value={selectedFolderId}
             onChange={handleFolderChange}
-            className="bg-white text-black w-full mb-4 p-2 rounded"
+            className="bg-neutral-800 border border-white/10 text-white w-full mb-4 p-2 rounded focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)]"
           >
             <option value="">Select Folder</option>
             {folders.map(f => (
@@ -109,21 +112,23 @@ function AssignmentPage() {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold mb-2">Select Exercises</h2>
+          <h2 className="text-lg font-heading uppercase tracking-wide mb-2 text-white">
+            Select Exercises
+          </h2>
           {loadingExercises ? (
             <div className="flex justify-center py-4">
               <PuffLoader color="#ffffff" size={50} speedMultiplier={1.2} />
             </div>
           ) : exercises.length === 0 ? (
-            <p className="text-sm">No exercises found in this folder.</p>
+            <p className="text-sm font-body text-gray-400">No exercises found in this folder.</p>
           ) : (
             exercises.map(ex => (
-              <label key={ex._id} className="block mb-1">
+              <label key={ex._id} className="flex items-center mb-1 font-body text-gray-200 text-sm">
                 <input
                   type="checkbox"
                   checked={selectedExerciseIds.includes(ex._id)}
                   onChange={() => toggleExercise(ex._id)}
-                  className="mr-2"
+                  className="mr-2 accent-red-600"
                 />
                 {ex.correctAnswer?.trim() || ex.question?.trim() || "Exercise name missing"}
               </label>
@@ -132,17 +137,19 @@ function AssignmentPage() {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold mb-2">Select Students</h2>
+          <h2 className="text-lg font-heading uppercase tracking-wide mb-2 text-white">
+            Select Students
+          </h2>
           {students.length === 0 ? (
-            <p className="text-sm">No students found.</p>
+            <p className="text-sm font-body text-gray-400">No students found.</p>
           ) : (
             students.map(st => (
-              <label key={st._id} className="block mb-1">
+              <label key={st._id} className="flex items-center mb-1 font-body text-gray-200 text-sm">
                 <input
                   type="checkbox"
                   checked={selectedStudentIds.includes(st._id)}
                   onChange={() => toggleStudent(st._id)}
-                  className="mr-2"
+                  className="mr-2 accent-red-600"
                 />
                 {st.fullName || "Unnamed Student"}
               </label>
@@ -153,10 +160,10 @@ function AssignmentPage() {
         <button
           onClick={handleAssign}
           disabled={selectedExerciseIds.length === 0 || selectedStudentIds.length === 0}
-          className={`w-full py-3 rounded text-lg font-semibold text-white transition ${
+          className={`w-full py-3 rounded text-lg font-heading uppercase tracking-wide text-white shadow-lg transition ${
             selectedExerciseIds.length === 0 || selectedStudentIds.length === 0
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-orange-500 hover:bg-orange-600"
+              ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+              : 'bg-red-600 hover:bg-red-700'
           }`}
         >
           Assign
@@ -170,8 +177,9 @@ function AssignmentPage() {
           ]}
         />
       </div>
-           {/* Home link outside the card */}
-           <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
+
+      {/* Home link outside the card */}
+      <NavLinks links={[{ label: '← Back to Home', to: '/' }]} isPrimary />
     </div>
   );
 }

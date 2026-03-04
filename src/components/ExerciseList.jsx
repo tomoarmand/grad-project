@@ -12,21 +12,16 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
   const inputRef = useRef(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
-  // INPUT SANITIZATION: Remove dangerous characters to prevent XSS attacks
-  // WHY: Exercise names are displayed in UI and could contain malicious content
   const sanitizeInput = (input) => {
     if (typeof input !== 'string') return '';
     return input
       .trim()
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<[^>]*>/g, '') // Remove all HTML tags
+      .replace(/<[^>]*>/g, '')
       .replace(/javascript:/gi, '')
-      .replace(/on\w+=/gi, ''); // Remove event handlers
+      .replace(/on\w+=/gi, '');
   };
 
-  // EXERCISE NAME VALIDATION: Ensure names meet requirements and contain valid characters
-  // WHY: Maintains data quality and prevents inappropriate content
-  // NOTE: Allows musical notation characters while enforcing length limits
   const validateExerciseName = (name) => {
     const sanitized = sanitizeInput(name);
     if (!sanitized || sanitized.length < 1) {
@@ -35,7 +30,6 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     if (sanitized.length > 200) {
       return { isValid: false, message: 'Exercise name must be 200 characters or less' };
     }
-    // Allow letters, numbers, spaces, and common musical notation characters
     const validNameRegex = /^[a-zA-ZÀ-ÿ0-9\s\-_.,!()&♪♫♬♩♭♮♯°]+$/;
     if (!validNameRegex.test(sanitized)) {
       return { isValid: false, message: 'Exercise name contains invalid characters' };
@@ -43,9 +37,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     return { isValid: true, sanitized };
   };
 
-  const handleInputFocus = () => {
-    setIsInputFocused(true);
-  };
+  const handleInputFocus = () => setIsInputFocused(true);
 
   const handleInputBlur = (e) => {
     setTimeout(() => {
@@ -56,23 +48,18 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
   };
 
   const handleNewNameChange = (value) => {
-    if (value.length <= 200) { // Enforce max length
+    if (value.length <= 200) {
       setNewName(value);
-      // Clear error when user starts typing
-      if (error) {
-        setError('');
-      }
+      if (error) setError('');
     }
   };
 
   const handleSave = async () => {
     const validation = validateExerciseName(newName);
-    
     if (!validation.isValid) {
       setError(validation.message);
       return;
     }
-
     try {
       await onRename(renamingId, validation.sanitized);
       setRenamingId(null);
@@ -127,7 +114,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
     a.correctAnswer.localeCompare(b.correctAnswer, undefined, { sensitivity: 'base' })
   );
 
-  const exerciseName = exerciseToDelete 
+  const exerciseName = exerciseToDelete
     ? exercises.find(ex => ex._id === exerciseToDelete)?.correctAnswer || 'this exercise'
     : 'this exercise';
 
@@ -137,7 +124,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
         {sortedExercises.map((ex) => (
           <li
             key={ex._id}
-            className="bg-slate-600 p-4 rounded-lg mb-4 flex flex-col gap-4"
+            className="bg-neutral-900 border-2 border-red-600 p-4 rounded-lg mb-4 flex flex-col gap-4"
           >
             {renamingId === ex._id ? (
               <div className="flex flex-col gap-3 w-full">
@@ -151,16 +138,16 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
                       onKeyDown={handleKeyDown}
-                      className={`w-full bg-white text-black border p-3 rounded-lg text-base transition ${
-                        error 
-                          ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68),0_0_6px_rgb(239,68,68)]' 
-                          : 'border-slate-300 focus:outline-none focus:shadow-[0_0_12px_rgb(255,120,0),0_0_6px_rgb(255,120,0)] focus:border-orange-500'
+                      className={`w-full bg-neutral-800 text-white border p-3 rounded-lg text-base font-body transition focus:outline-none ${
+                        error
+                          ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)]'
+                          : 'border-white/10 focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)]'
                       }`}
                       autoFocus
                       placeholder="Enter new name"
                       maxLength="200"
                     />
-                    {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
+                    {error && <p className="text-red-500 text-sm font-body mt-1">{error}</p>}
                   </div>
                   {isInputFocused && (
                     <MusicSymbolButton
@@ -172,7 +159,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
 
                 <div className="flex gap-3 justify-end">
                   <button
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-heading uppercase tracking-wide shadow-lg transition"
                     onClick={handleSave}
                     onMouseDown={(e) => e.preventDefault()}
                     disabled={!newName.trim()}
@@ -180,7 +167,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                     Save
                   </button>
                   <button
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                    className="border border-white/10 hover:bg-neutral-800 text-white px-4 py-2 rounded text-sm font-heading uppercase tracking-wide transition"
                     onClick={handleCancel}
                     onMouseDown={(e) => e.preventDefault()}
                   >
@@ -191,7 +178,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
             ) : (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-3">
-                  <p className="text-white text-base font-medium flex-grow">
+                  <p className="text-white text-base font-body font-medium flex-grow">
                     {sanitizeInput(ex.correctAnswer)}
                   </p>
                   <div className="flex gap-3 flex-shrink-0">
@@ -202,7 +189,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                         setError('');
                       }}
                       aria-label="Rename exercise"
-                      className="text-orange-400 hover:text-orange-500 focus:outline-none p-1 transition"
+                      className="text-gray-400 hover:text-white focus:outline-none p-1 transition"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -215,7 +202,7 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                     <button
                       onClick={() => confirmDeleteExercise(ex._id)}
                       aria-label="Delete exercise"
-                      className="text-red-500 hover:text-red-600 focus:outline-none p-1 transition"
+                      className="text-red-600 hover:text-red-500 focus:outline-none p-1 transition"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -229,11 +216,11 @@ function ExerciseList({ exercises, onDelete, onRename, loading }) {
                   </div>
                 </div>
 
-                <audio 
-                  controls 
-                  src={ex.audioData} 
+                <audio
+                  controls
+                  src={ex.audioData}
                   className="w-full rounded-lg"
-                  style={{height: '40px'}}
+                  style={{ height: '40px' }}
                 />
               </div>
             )}

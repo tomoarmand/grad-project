@@ -10,8 +10,10 @@ function NavLinks({ links, isBreadcrumb = false, isPrimary = false, isSubtle = f
             <Link
               to={to}
               className={`${
-                index === links.length - 1 ? 'text-orange-400 font-medium' : 'opacity-75'
-              } hover:underline focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-1 truncate max-w-[8ch] sm:max-w-none`}
+                index === links.length - 1
+                  ? 'text-red-600 font-heading uppercase tracking-wide'
+                  : 'text-gray-400 font-body'
+              } hover:underline focus:outline-none focus:ring-2 focus:ring-red-600 rounded px-1 truncate max-w-[8ch] sm:max-w-none`}
             >
               {label}
             </Link>
@@ -25,18 +27,18 @@ function NavLinks({ links, isBreadcrumb = false, isPrimary = false, isSubtle = f
     <div
       className={`mt-6 flex flex-col gap-2 text-center ${
         isPrimary
-          ? 'text-lg font-semibold'
+          ? 'text-lg font-heading uppercase tracking-wide text-white'
           : isSubtle
-          ? 'text-slate-400 text-sm' // subtle styling
-          : 'text-orange-200 text-sm sm:text-base font-medium'
+          ? 'text-gray-500 text-sm font-body'
+          : 'text-gray-300 text-sm sm:text-base font-body'
       }`}
     >
       {links.map(({ label, to }) => (
         <Link
           key={to}
           to={to}
-          className={`hover:underline focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1 ${
-            isSubtle ? 'hover:text-slate-200' : ''
+          className={`hover:underline focus:outline-none focus:ring-2 focus:ring-red-600 rounded px-2 py-1 transition ${
+            isSubtle ? 'hover:text-gray-200' : 'hover:text-white'
           }`}
         >
           {label}
