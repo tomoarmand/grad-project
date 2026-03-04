@@ -229,7 +229,6 @@ function HomePage() {
     return (<>💡 Tip: <span className="underline">Add to your desktop</span> for the best experience</>);
   };
 
-  // Modal shared styles
   const modalBackdrop = "fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50";
   const modalCard = "bg-neutral-900 border-2 border-red-600 rounded-lg p-6 max-w-md mx-auto shadow-lg";
   const modalHeader = "flex justify-between items-center mb-4";
@@ -326,7 +325,6 @@ function HomePage() {
   return (
     <div className="min-h-screen w-screen flex flex-col justify-center items-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900 px-4 relative">
 
-      {/* Install banner */}
       {showInstallBanner && !isInstalled && (
         <div
           className="fixed top-4 left-4 right-4 bg-black/90 backdrop-blur-sm border border-white/10 rounded-lg p-4 shadow-lg z-40 animate-slideDown"
@@ -381,7 +379,7 @@ function HomePage() {
             className="w-32 h-32 sm:w-36 sm:h-36 object-contain mb-4 drop-shadow-md"
           />
           <h1 className="text-white text-4xl sm:text-5xl font-heading uppercase tracking-wide">
-            KenTone
+            Ear Training App
           </h1>
           <div className="w-24 h-1 bg-red-600 mx-auto mt-4" />
         </div>
@@ -389,7 +387,7 @@ function HomePage() {
         {isInstalled && showInstalledMessage && (
           <div className="mb-6 p-3 bg-green-500/10 border border-green-500 rounded-lg relative">
             <p className="text-green-500 text-sm font-body flex items-center justify-center gap-2">
-              <span>✓</span> You're using the KenTone app
+              <span>✓</span> You're using the app
             </p>
             <button
               onClick={handleDismissInstalledMessage}
