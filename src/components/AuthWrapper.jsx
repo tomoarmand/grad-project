@@ -11,13 +11,17 @@ function AuthWrapper({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const checkSubscription = async () => {
     const storedToken = localStorage.getItem('authToken');
-    if (!storedToken) return;
+    if (!storedToken) {
+      setSubscriptionChecked(true);
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/stripe/subscription-status`, {
         headers: { Authorization: `Bearer ${storedToken}` }
@@ -27,6 +31,8 @@ function AuthWrapper({ children }) {
     } catch (err) {
       console.error('Subscription check failed:', err);
       setSubscriptionStatus('inactive');
+    } finally {
+      setSubscriptionChecked(true);
     }
   };
 
@@ -36,6 +42,7 @@ function AuthWrapper({ children }) {
     if (!token && authChecked) {
       setAuthChecked(false);
       setSubscriptionStatus(null);
+      setSubscriptionChecked(false);
     }
   }, [location.pathname]);
 
@@ -51,17 +58,20 @@ function AuthWrapper({ children }) {
           if (isValid === false) {
             clearUser();
             localStorage.removeItem('authToken');
+            setSubscriptionChecked(true);
           } else {
             await checkSubscription();
           }
         } else {
           clearUser();
           setSubscriptionStatus(null);
+          setSubscriptionChecked(true);
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
         clearUser();
         localStorage.removeItem('authToken');
+        setSubscriptionChecked(true);
       } finally {
         setAuthChecked(true);
         setIsLoading(false);
@@ -76,6 +86,7 @@ function AuthWrapper({ children }) {
   // Re-check subscription every time user navigates to StudentPage
   useEffect(() => {
     if (isAuthenticated && user?.role === 'student' && location.pathname === '/StudentPage') {
+      setSubscriptionChecked(false);
       checkSubscription();
     }
   }, [location.pathname, isAuthenticated, user]);
@@ -119,7 +130,7 @@ function AuthWrapper({ children }) {
     }
   }, [isLoading, authChecked, isAuthenticated, user, subscriptionStatus, location.pathname, navigate]);
 
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && user?.role === 'student' && !subscriptionChecked)) {
     return (
       <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900">
         <div className="flex flex-col items-center gap-4">
