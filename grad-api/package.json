@@ -33,6 +33,7 @@
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
     "react-ga4": "^2.1.0",
+    "stripe": "^22.1.0",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {

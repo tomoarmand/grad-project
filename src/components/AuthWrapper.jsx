@@ -3,14 +3,41 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { PuffLoader } from 'react-spinners';
 import useUserStore from '../store/userStore';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AuthWrapper({ children }) {
   const { user, isAuthenticated, verifyToken, initializeAuth, clearUser } = useUserStore();
 
   const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  const checkSubscription = async () => {
+    const storedToken = localStorage.getItem('authToken');
+    if (!storedToken) return;
+    try {
+      const res = await fetch(`${API_URL}/stripe/subscription-status`, {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+      const data = await res.json();
+      setSubscriptionStatus(data.subscriptionStatus);
+    } catch (err) {
+      console.error('Subscription check failed:', err);
+      setSubscriptionStatus('inactive');
+    }
+  };
+
+  // Reset auth check when token is removed (logout)
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token && authChecked) {
+      setAuthChecked(false);
+      setSubscriptionStatus(null);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -24,9 +51,12 @@ function AuthWrapper({ children }) {
           if (isValid === false) {
             clearUser();
             localStorage.removeItem('authToken');
+          } else {
+            await checkSubscription();
           }
         } else {
           clearUser();
+          setSubscriptionStatus(null);
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
@@ -43,30 +73,51 @@ function AuthWrapper({ children }) {
     }
   }, [authChecked, initializeAuth, verifyToken, clearUser]);
 
+  // Re-check subscription every time user navigates to StudentPage
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'student' && location.pathname === '/StudentPage') {
+      checkSubscription();
+    }
+  }, [location.pathname, isAuthenticated, user]);
+
   useEffect(() => {
     if (!isLoading && authChecked) {
       const path = location.pathname;
 
-      // Redirect authenticated users away from auth pages
       if (isAuthenticated && (path === '/LoginPage' || path === '/CreateUserPage')) {
-        if (user?.role === 'teacher') navigate('/TeacherPage', { replace: true });
-        else if (user?.role === 'student') navigate('/StudentPage', { replace: true });
+        if (user?.role === 'teacher') {
+          navigate('/TeacherPage', { replace: true });
+        } else if (user?.role === 'student') {
+          if (subscriptionStatus === 'active') {
+            navigate('/StudentPage', { replace: true });
+          } else if (subscriptionStatus !== null) {
+            navigate('/subscribe', { replace: true });
+          }
+        }
       }
 
-      // Redirect unauthenticated users from protected pages
       const protectedPaths = ['/TeacherPage', '/StudentPage', '/AssignmentPage', '/TeacherExercisesManager'];
       if (!isAuthenticated && protectedPaths.includes(path)) {
         navigate('/LoginPage', { replace: true });
       }
 
-      // Role-based protection
       if (isAuthenticated && user) {
         if (path === '/TeacherPage' && user.role !== 'teacher') navigate('/StudentPage', { replace: true });
         if (path === '/StudentPage' && user.role !== 'student') navigate('/TeacherPage', { replace: true });
         if (path === '/TeacherExercisesManager' && user.role !== 'teacher') navigate('/LoginPage', { replace: true });
       }
+
+      if (
+        isAuthenticated &&
+        user?.role === 'student' &&
+        subscriptionStatus !== null &&
+        subscriptionStatus !== 'active' &&
+        location.pathname === '/StudentPage'
+      ) {
+        navigate('/subscribe', { replace: true });
+      }
     }
-  }, [isLoading, authChecked, isAuthenticated, user, location.pathname, navigate]);
+  }, [isLoading, authChecked, isAuthenticated, user, subscriptionStatus, location.pathname, navigate]);
 
   if (isLoading) {
     return (

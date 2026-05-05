@@ -34,7 +34,6 @@ const initializePinHash = async () => {
   }
 };
 
-// Initialize PIN hash on startup
 initializePinHash().catch(console.error);
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.API_SECRET || 'fallback-secret-key';
@@ -61,8 +60,7 @@ const generateToken = (user) => {
   );
 };
 
-// Enhanced authentication middleware
-const authenticateToken = (req, res, next) => {
+export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -89,9 +87,8 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ===== NON-PARAMETERIZED ROUTES (defined first) =====
+// ===== NON-PARAMETERIZED ROUTES =====
 
-// Get all users (protected route - teacher only)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'teacher') {
@@ -106,17 +103,14 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Create user - using validation middleware
 router.post('/', validateUserCreation, async (req, res) => {
   try {
-    // Ensure PIN hash is initialized
     if (!hashInitialized) {
       await initializePinHash();
     }
 
     const { fullName, email, role = 'student', accessCode, password } = req.body;
 
-    // Teacher role requires access code verification
     if (role === 'teacher') {
       if (!accessCode) {
         return res.status(400).json({ error: 'Teacher access code is required' });
@@ -132,7 +126,6 @@ router.post('/', validateUserCreation, async (req, res) => {
       }
     }
 
-    // Check if user already exists - case insensitive check
     const normalizedEmail = email.toLowerCase().trim();
     const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const existingUser = await User.findOne({ 
@@ -143,14 +136,12 @@ router.post('/', validateUserCreation, async (req, res) => {
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
-    // Prepare user data
     const userData = {
       fullName,
       email: normalizedEmail,
       role
     };
 
-    // Handle password for students - OPTIONAL for creation (can be set later)
     if (role === 'student' && password) {
       if (password.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters' });
@@ -158,13 +149,9 @@ router.post('/', validateUserCreation, async (req, res) => {
       userData.password = await bcrypt.hash(password, 12);
     }
 
-    // Create new user with normalized email
     const user = await User.create(userData);
-
-    // Generate token
     const token = generateToken(user);
 
-    // Return user data with token
     res.status(201).json({
       _id: user._id,
       fullName: user.fullName,
@@ -178,7 +165,6 @@ router.post('/', validateUserCreation, async (req, res) => {
   } catch (error) {
     console.error('POST /users error:', error);
     
-    // Handle mongoose validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ error: 'Validation error', details: messages });
@@ -188,17 +174,14 @@ router.post('/', validateUserCreation, async (req, res) => {
   }
 });
 
-// Login route
 router.post('/login', validateUserLogin, async (req, res) => {
   try {
-    // Ensure PIN hash is initialized
     if (!hashInitialized) {
       await initializePinHash();
     }
 
     const { email, accessCode, password } = req.body;
 
-    // Case-insensitive email search to handle mixed-case emails in database
     const normalizedEmail = email.toLowerCase().trim();
     const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const user = await User.findOne({ 
@@ -209,7 +192,6 @@ router.post('/login', validateUserLogin, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Teacher login requires access code verification
     if (user.role === 'teacher') {
       if (!accessCode) {
         return res.status(401).json({ error: 'Teacher access code is required' });
@@ -225,9 +207,7 @@ router.post('/login', validateUserLogin, async (req, res) => {
       }
     }
 
-    // Student authentication logic
     if (user.role === 'student') {
-      // Check if student has a password set
       if (!user.password) {
         return res.status(200).json({ 
           _id: user._id,
@@ -248,10 +228,8 @@ router.post('/login', validateUserLogin, async (req, res) => {
       }
     }
 
-    // Generate token
     const token = generateToken(user);
 
-    // Return user data with token
     res.json({
       _id: user._id,
       fullName: user.fullName,
@@ -268,7 +246,6 @@ router.post('/login', validateUserLogin, async (req, res) => {
   }
 });
 
-// Setup password route for students who don't have one set
 router.post('/setup-password', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -281,7 +258,6 @@ router.post('/setup-password', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    // Case-insensitive email search
     const normalizedEmail = email.toLowerCase().trim();
     const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const user = await User.findOne({ 
@@ -296,14 +272,11 @@ router.post('/setup-password', async (req, res) => {
       return res.status(400).json({ error: 'Password setup is only for students' });
     }
 
-    // Hash and set the password
     user.password = await bcrypt.hash(password, 12);
     await user.save();
 
-    // Generate token
     const token = generateToken(user);
 
-    // Return user data with token
     res.json({
       _id: user._id,
       fullName: user.fullName,
@@ -320,7 +293,6 @@ router.post('/setup-password', async (req, res) => {
   }
 });
 
-// Teacher resets student password (NEW ENDPOINT)
 router.post('/teacher-reset-password', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'teacher') {
@@ -362,23 +334,16 @@ router.post('/teacher-reset-password', authenticateToken, async (req, res) => {
   }
 });
 
-// Enhanced token verification endpoint
 router.post('/verify-token', (req, res) => {
-  console.log('🔍 Backend: verify-token endpoint called');
-  console.log('🔍 Backend: Headers received:', req.headers.authorization ? 'Token present' : 'No token');
-  
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    console.log('🔍 Backend: No token provided');
     return res.status(401).json({ error: 'Access token required' });
   }
 
   jwt.verify(token, JWT_SECRET, async (err, decodedUser) => {
     if (err) {
-      console.log('🔍 Backend: Token verification failed:', err.message);
-      
       const errorResponses = {
         'TokenExpiredError': { status: 401, error: 'Token expired' },
         'JsonWebTokenError': { status: 401, error: 'Invalid token' },
@@ -390,15 +355,12 @@ router.post('/verify-token', (req, res) => {
     }
 
     try {
-      console.log('🔍 Backend: Token valid, fetching user data for ID:', decodedUser.userId);
       const user = await User.findById(decodedUser.userId).select('-__v');
       
       if (!user) {
-        console.log('🔍 Backend: User not found in database');
         return res.status(404).json({ error: 'User not found' });
       }
 
-      console.log('🔍 Backend: User found, returning data for:', user.email);
       res.json({
         _id: user._id,
         fullName: user.fullName,
@@ -408,18 +370,16 @@ router.post('/verify-token', (req, res) => {
         updatedAt: user.updatedAt
       });
     } catch (error) {
-      console.error('🔍 Backend: Database error during token verification:', error);
+      console.error('Database error during token verification:', error);
       res.status(500).json({ error: 'Server error during token verification' });
     }
   });
 });
 
-// ===== PARAMETERIZED ROUTES (defined after non-parameterized routes) =====
+// ===== PARAMETERIZED ROUTES =====
 
-// Get single user (protected route)
 router.get('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {
   try {
-    // Users can only view their own profile, teachers can view any profile
     if (req.user.role !== 'teacher' && req.user.userId !== req.params.id) {
       return res.status(403).json({ error: 'Access denied. You can only view your own profile.' });
     }
@@ -436,10 +396,8 @@ router.get('/:id', validateObjectIdParam('id'), authenticateToken, async (req, r
   }
 });
 
-// Update user (protected route)
 router.put('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {
   try {
-    // Users can only update their own profile, teachers can update any profile
     if (req.user.role !== 'teacher' && req.user.userId !== req.params.id) {
       return res.status(403).json({ error: 'Access denied. You can only update your own profile.' });
     }
@@ -473,7 +431,6 @@ router.put('/:id', validateObjectIdParam('id'), authenticateToken, async (req, r
   }
 });
 
-// Delete user (protected route - teacher only)
 router.delete('/:id', validateObjectIdParam('id'), authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'teacher') {

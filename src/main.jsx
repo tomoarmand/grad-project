@@ -9,6 +9,7 @@ import CreateUserPage from './components/CreateUserPage.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import AssignmentPage from './components/AssignmentPage.jsx';
 import TeacherExercisesManager from './components/TeacherExercisesManager.jsx';
+import SubscribePage from './components/SubscribePage.jsx';
 
 // Register the service worker
 if ('serviceWorker' in navigator) {
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/LoginPage" element={<LoginPage />} />
           <Route path="/AssignmentPage" element={<AssignmentPage />} />
           <Route path="/TeacherExercisesManager" element={<TeacherExercisesManager />} />
+          <Route path="/subscribe" element={<SubscribePage />} />
         </Routes>
       </AuthWrapper>
     </BrowserRouter>

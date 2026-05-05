@@ -14,34 +14,28 @@ import exerciseRoutes from './routes/exerciseRoutes.js';
 import folderRoutes from './routes/folderRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
 import folderAssignmentRoutes from './routes/folderAssignmentRoutes.js';
+import stripeRoutes from './routes/stripeRoutes.js';
 
 dotenv.config();
 
 const app = express();
 
-// Environment check
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// SECURITY HEADERS: Comprehensive protection via Helmet middleware
-// WHY: Prevents common web vulnerabilities (XSS, clickjacking, etc.)
-// NOTE: CSP allows necessary resources while blocking malicious scripts and styles
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // Added for dev tools
+      scriptSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https:", "wss:"], // Added wss for websockets
+      connectSrc: ["'self'", "https:", "wss:"],
     },
   },
 }));
 
-// ENVIRONMENT-AWARE RATE LIMITING: Bypass in dev, enforce in production
-// WHY: Prevents abuse while allowing development flexibility
-// NOTE: Different limits for auth (stricter) vs data operations (more lenient)
 const createRateLimiter = (options) => {
   if (isDevelopment) {
     return (req, res, next) => {
@@ -61,7 +55,6 @@ const createRateLimiter = (options) => {
   });
 };
 
-// Specific rate limiters
 const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: isProduction ? 100 : 200,
@@ -80,13 +73,14 @@ const assignmentLimiter = createRateLimiter({
   message: { error: 'Too many assignment operations, please try again later.', retryAfter: 15 * 60 },
 });
 
-// Data sanitization and parsing
-app.use(mongoSanitize());
-app.use(xss());
-app.use(hpp({ whitelist: ['studentIds', 'exerciseIds', 'folderIds'] }));
-app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// CRITICAL: Stripe webhook raw body parser must be first, before everything else
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe/webhook') {
+    express.raw({ type: 'application/json' })(req, res, next);
+  } else {
+    next();
+  }
+});
 
 // Development logging
 if (isDevelopment) {
@@ -96,27 +90,44 @@ if (isDevelopment) {
   });
 }
 
-// SECURE CORS: Allow specific origins with trailing slash normalization
-// WHY: Prevents unauthorized cross-origin requests while supporting deployment
-// NOTE: Handles mobile apps, development servers, and production domains
+// Data sanitization and parsing (skipped for webhook route)
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe/webhook') return next();
+  mongoSanitize()(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe/webhook') return next();
+  xss()(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe/webhook') return next();
+  hpp({ whitelist: ['studentIds', 'exerciseIds', 'folderIds'] })(req, res, next);
+});
+app.use(compression());
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe/webhook') return next();
+  express.json({ limit: '10mb' })(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe/webhook') return next();
+  express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+});
+
 const allowedOrigins = [
   'https://kentone.vercel.app',
+  'https://kentone-brothers.vercel.app',
   'http://localhost:5173',
   'http://localhost:4173',
   'http://localhost:3000',
   process.env.FRONTEND_URL
-].filter(Boolean).map(origin => origin.replace(/\/$/, '')); // Remove trailing slashes
+].filter(Boolean).map(origin => origin.replace(/\/$/, ''));
 
 console.log('CORS allowed origins:', allowedOrigins);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
-    // Normalize origin by removing trailing slash
     const normalizedOrigin = origin.replace(/\/$/, '');
-    
     if (allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
@@ -129,7 +140,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// MongoDB connection with better error handling
 const uri = process.env.MONGO_KEY;
 
 if (!uri) {
@@ -159,7 +169,6 @@ mongoose.connection.on('disconnected', () => {
   console.log('Database disconnected');
 });
 
-// Graceful shutdown
 const gracefulShutdown = async (signal) => {
   console.log(`Received ${signal}. Shutting down gracefully...`);
   try {
@@ -174,7 +183,6 @@ const gracefulShutdown = async (signal) => {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// Health check endpoints
 app.get('/', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -198,7 +206,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Apply rate limiters to specific routes
+// Apply rate limiters
 app.use('/users/login', authLimiter);
 app.use('/users', authLimiter);
 app.use('/exercises', dataLimiter);
@@ -207,6 +215,7 @@ app.use('/assignments', assignmentLimiter);
 app.use('/folder-assignments', assignmentLimiter);
 
 // Routes
+app.use('/stripe', stripeRoutes);
 app.use('/users', userRoutes);
 app.use('/exercises', exerciseRoutes);
 app.use('/folders', folderRoutes);
@@ -215,12 +224,10 @@ app.use('/folder-assignments', folderAssignmentRoutes);
 
 // Enhanced error handler
 app.use((error, req, res, next) => {
-  // Don't log client errors (4xx) as server errors
   if (!(error.status < 500)) {
     console.error('Server error:', error.message);
   }
 
-  // Handle specific error types
   if (error.type === 'entity.too.large') {
     return res.status(413).json({ error: 'Request payload too large' });
   }
@@ -240,12 +247,10 @@ app.use((error, req, res, next) => {
     return res.status(503).json({ error: 'Database temporarily unavailable' });
   }
 
-  // CORS errors
   if (error.message?.includes('CORS')) {
     return res.status(403).json({ error: 'Cross-origin request blocked' });
   }
 
-  // Generic error response
   res.status(error.status || 500).json({
     error: isProduction ? (error.status === 400 ? error.message : 'Something went wrong!') : error.message,
     stack: isDevelopment ? error.stack : undefined,
@@ -257,7 +262,6 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found', path: req.originalUrl });
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -266,7 +270,6 @@ const server = app.listen(PORT, () => {
   console.log(`Rate limiting: ${!isDevelopment ? 'ACTIVE' : 'DISABLED (development mode)'}`);
 });
 
-// Handle server errors
 server.on('error', (error) => {
   console.error('Server error:', error);
 });

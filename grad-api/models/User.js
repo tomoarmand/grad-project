@@ -31,13 +31,21 @@ const userSchema = new mongoose.Schema(
       default: null,
       sparse: true,
     },
-    // Add assigned folders for students
     assignedFolders: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Folder',
       },
     ],
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ['active', 'inactive', 'past_due', 'canceled'],
+      default: 'inactive',
+    },
   },
   {
     timestamps: true,
