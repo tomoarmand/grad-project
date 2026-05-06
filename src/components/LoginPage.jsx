@@ -209,7 +209,6 @@ function LoginPage() {
     }
   };
 
-  // Shared input classes
   const inputNormal = 'w-full px-4 py-3 text-base sm:text-lg rounded bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-200 focus:outline-none focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)] transition';
   const inputError = 'w-full px-4 py-3 text-base sm:text-lg rounded bg-gray-50 text-gray-900 placeholder-gray-400 border border-red-500 focus:outline-none focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)] transition';
 
@@ -261,7 +260,7 @@ function LoginPage() {
                 <input
                   className={errors.password ? inputError : inputNormal}
                   type="password"
-                  placeholder="Enter password (if set)"
+                  placeholder="Enter password"
                   value={password}
                   onChange={handlePasswordChange}
                   disabled={isLoading}
