@@ -125,7 +125,7 @@ function CreateUserPage() {
         if (user.role === 'teacher') {
           navigate('/TeacherPage');
         } else {
-          navigate('/StudentPage');
+          navigate('/subscribe');
         }
       } else {
         const error = await response.json();
@@ -139,7 +139,6 @@ function CreateUserPage() {
     }
   };
 
-  // Shared input classes
   const inputBase = 'w-full px-4 py-3 text-base sm:text-lg rounded bg-gray-50 text-gray-900 placeholder-gray-400 border transition focus:outline-none';
   const inputNormal = `${inputBase} border-gray-200 focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)]`;
   const inputError = `${inputBase} border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)]`;
