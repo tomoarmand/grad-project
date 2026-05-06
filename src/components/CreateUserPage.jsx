@@ -120,6 +120,9 @@ function CreateUserPage() {
 
       if (response.ok) {
         const user = await response.json();
+        if (user.token) {
+          localStorage.setItem('authToken', user.token);
+        }
         setUser(user);
 
         if (user.role === 'teacher') {
@@ -158,7 +161,6 @@ function CreateUserPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-          {/* Role selector */}
           <div>
             <select
               name="role"
@@ -173,7 +175,6 @@ function CreateUserPage() {
             {errors.role && <p className="text-red-500 text-sm font-body mt-2">{errors.role}</p>}
           </div>
 
-          {/* Full name input */}
           <div>
             <input
               name="fullName"
@@ -189,7 +190,6 @@ function CreateUserPage() {
             {errors.fullName && <p className="text-red-500 text-sm font-body mt-2">{errors.fullName}</p>}
           </div>
 
-          {/* Email input */}
           <div>
             <input
               name="email"
@@ -206,7 +206,6 @@ function CreateUserPage() {
             {errors.email && <p className="text-red-500 text-sm font-body mt-2">{errors.email}</p>}
           </div>
 
-          {/* Password input - only for students */}
           {formData.role === 'student' && (
             <div>
               <input
@@ -225,7 +224,6 @@ function CreateUserPage() {
             </div>
           )}
 
-          {/* Access code input - only for teachers */}
           {formData.role === 'teacher' && (
             <div>
               <input

@@ -36,13 +36,15 @@ function AuthWrapper({ children }) {
     }
   };
 
-  // Reset auth check when token is removed (logout)
+  // Reset auth check when token changes
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (!token && authChecked) {
       setAuthChecked(false);
       setSubscriptionStatus(null);
       setSubscriptionChecked(false);
+    } else if (token && authChecked && !isAuthenticated) {
+      setAuthChecked(false);
     }
   }, [location.pathname]);
 
