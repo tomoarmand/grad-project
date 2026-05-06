@@ -36,15 +36,13 @@ function AuthWrapper({ children }) {
     }
   };
 
-  // Reset auth check when token changes
+  // Reset auth check when token is removed (logout)
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (!token && authChecked) {
       setAuthChecked(false);
       setSubscriptionStatus(null);
       setSubscriptionChecked(false);
-    } else if (token && authChecked && !isAuthenticated) {
-      setAuthChecked(false);
     }
   }, [location.pathname]);
 
@@ -97,6 +95,9 @@ function AuthWrapper({ children }) {
     if (!isLoading && authChecked) {
       const path = location.pathname;
 
+      // Skip all redirect logic on /subscribe
+      if (path === '/subscribe') return;
+
       if (isAuthenticated && (path === '/LoginPage' || path === '/CreateUserPage')) {
         if (user?.role === 'teacher') {
           navigate('/TeacherPage', { replace: true });
@@ -132,7 +133,7 @@ function AuthWrapper({ children }) {
     }
   }, [isLoading, authChecked, isAuthenticated, user, subscriptionStatus, location.pathname, navigate]);
 
-  if (isLoading || (isAuthenticated && user?.role === 'student' && !subscriptionChecked)) {
+  if (isLoading || (!subscriptionChecked && !!localStorage.getItem('authToken'))) {
     return (
       <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-neutral-900 via-black to-neutral-900">
         <div className="flex flex-col items-center gap-4">
