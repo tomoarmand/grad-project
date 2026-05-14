@@ -12,6 +12,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   const mediaRecorderRef = useRef(null);
@@ -67,6 +68,81 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
     return MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "audio/webm";
   };
 
+  const uploadToCloudinary = async (blob) => {
+    if (blob.size > 10 * 1024 * 1024) {
+      setError("File is too large. Maximum size is 10MB.");
+      setIsUploading(false);
+      return;
+    }
+
+    const answerValidation = validateCorrectAnswer(correctAnswer);
+    if (!answerValidation.isValid) {
+      setError(answerValidation.message);
+      setIsUploading(false);
+      return;
+    }
+
+    const idsValidation = validateIds(teacherId, selectedFolder._id);
+    if (!idsValidation.isValid) {
+      setError(idsValidation.message);
+      setIsUploading(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", blob);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const res = await axios.post(UPLOAD_URL, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 30000,
+      });
+
+      if (!res.data || !res.data.secure_url) throw new Error("Invalid response from upload service");
+
+      const newExercise = {
+        audioData: res.data.secure_url,
+        correctAnswer: answerValidation.sanitized,
+        userId: sanitizeInput(teacherId.toString()),
+        folderId: sanitizeInput(selectedFolder._id.toString()),
+      };
+
+      await onSave(newExercise);
+      setCorrectAnswer("");
+      setIsInputFocused(false);
+      setError("");
+    } catch (err) {
+      console.error("Upload failed", err);
+      if (err.code === 'ECONNABORTED') setError("Upload timed out. Please try again.");
+      else if (err.response?.status === 413) setError("File is too large. Please use a shorter recording.");
+      else setError("Upload failed. Please check your connection and try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/webm', 'audio/m4a', 'audio/x-m4a'];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Invalid file type. Please upload an mp3, wav, m4a, or webm file.");
+      return;
+    }
+
+    const answerValidation = validateCorrectAnswer(correctAnswer);
+    if (!answerValidation.isValid) {
+      setError(answerValidation.message);
+      return;
+    }
+
+    setIsUploading(true);
+    await uploadToCloudinary(file);
+    e.target.value = '';
+  };
+
   const startRecording = async () => {
     const answerValidation = validateCorrectAnswer(correctAnswer);
     if (!answerValidation.isValid) {
@@ -94,62 +170,7 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       mediaRecorderRef.current.onstop = async () => {
         setIsUploading(true);
         const blob = new Blob(audioChunks.current, { type: mimeType });
-
-        if (blob.size > 10 * 1024 * 1024) {
-          setError("Recording is too large. Please record a shorter exercise.");
-          setIsUploading(false);
-          return;
-        }
-
-        const formData = new FormData();
-        formData.append("file", blob);
-        formData.append("upload_preset", UPLOAD_PRESET);
-
-        try {
-          const res = await axios.post(UPLOAD_URL, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-            timeout: 30000,
-          });
-
-          if (!res.data || !res.data.secure_url) throw new Error("Invalid response from upload service");
-
-          const audioData = res.data.secure_url;
-
-          const finalAnswerValidation = validateCorrectAnswer(correctAnswer);
-          const finalIdsValidation = validateIds(teacherId, selectedFolder._id);
-
-          if (!finalAnswerValidation.isValid) {
-            setError(finalAnswerValidation.message);
-            setIsUploading(false);
-            return;
-          }
-
-          if (!finalIdsValidation.isValid) {
-            setError(finalIdsValidation.message);
-            setIsUploading(false);
-            return;
-          }
-
-          const newExercise = {
-            audioData,
-            correctAnswer: finalAnswerValidation.sanitized,
-            userId: sanitizeInput(teacherId.toString()),
-            folderId: sanitizeInput(selectedFolder._id.toString()),
-          };
-
-          await onSave(newExercise);
-          setCorrectAnswer("");
-          setIsInputFocused(false);
-          setError("");
-        } catch (err) {
-          console.error("Upload failed", err);
-          if (err.code === 'ECONNABORTED') setError("Upload timed out. Please try again.");
-          else if (err.response?.status === 413) setError("File is too large. Please record a shorter exercise.");
-          else setError("Upload failed. Please check your connection and try again.");
-        } finally {
-          setIsUploading(false);
-        }
-
+        await uploadToCloudinary(blob);
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -203,11 +224,10 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
             <div className="flex-grow min-w-0">
               <input
                 ref={inputRef}
-                className={`w-full px-3 py-2 rounded bg-neutral-800 text-white placeholder-gray-500 border text-base font-body transition focus:outline-none ${
-                  error
+                className={`w-full px-3 py-2 rounded bg-neutral-800 text-white placeholder-gray-500 border text-base font-body transition focus:outline-none ${error
                     ? 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgb(239,68,68)]'
                     : 'border-white/10 focus:border-red-600 focus:shadow-[0_0_12px_rgb(220,38,38)]'
-                }`}
+                  }`}
                 type="text"
                 placeholder="Enter correct answer here..."
                 value={correctAnswer}
@@ -236,18 +256,38 @@ function RecordingComponent({ onSave, teacherId, selectedFolder }) {
       )}
 
       {!isRecording && !isUploading ? (
-        <button
-          className={`w-full py-2 rounded text-white font-heading uppercase tracking-wide shadow-lg transition duration-200 ${
-            correctAnswer.trim() && !error
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-gray-600 cursor-not-allowed text-gray-400"
-          }`}
-          onClick={startRecording}
-          disabled={!correctAnswer.trim() || !!error}
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          Record!
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            className={`w-full py-2 rounded text-white font-heading uppercase tracking-wide shadow-lg transition duration-200 ${correctAnswer.trim() && !error
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-gray-600 cursor-not-allowed text-gray-400"
+              }`}
+            onClick={startRecording}
+            disabled={!correctAnswer.trim() || !!error}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            Record!
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <button
+            className={`w-full py-2 rounded text-white font-heading uppercase tracking-wide shadow-lg transition duration-200 ${correctAnswer.trim() && !error
+                ? "bg-neutral-700 hover:bg-neutral-600 border border-white/10"
+                : "bg-gray-600 cursor-not-allowed text-gray-400"
+              }`}
+            onClick={() => fileInputRef.current.click()}
+            disabled={!correctAnswer.trim() || !!error}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            Upload File
+          </button>
+        </div>
       ) : isRecording ? (
         <div className="flex flex-col items-center gap-3 w-full">
           <div className="flex items-center gap-2">
